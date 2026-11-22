@@ -7,6 +7,12 @@ import {
   generateDeliverable,
   DELIVERABLE_REGISTRY
 } from './deliverableEngine';
+import {
+  detectImageGenerationIntent,
+  executeImageGeneration,
+  IMAGE_REGISTRY
+} from './imageEngine';
+import { ragEngine } from './ragEngine';
 
 /**
  * Centralized Server Configuration
@@ -569,29 +575,7 @@ export const KNOWLEDGE_CHUNKS: KnowledgeChunk[] = [
 ];
 
 export function searchKnowledgeChunks(query: string, topK: number = 3) {
-  const queryTerms = query.toLowerCase().split(/\W+/).filter(t => t.length > 2);
-  if (queryTerms.length === 0) return [];
-
-  const scored = KNOWLEDGE_CHUNKS.map(chunk => {
-    let score = 0;
-    const lowerText = chunk.text.toLowerCase();
-
-    for (const term of queryTerms) {
-      if (chunk.keywords.some(k => k.includes(term))) score += 0.4;
-      if (lowerText.includes(term)) score += 0.3;
-    }
-
-    const confidence = Math.min(0.98, Math.max(0.65, +(score / (queryTerms.length * 0.7)).toFixed(3)));
-    return {
-      chunk,
-      score: confidence
-    };
-  });
-
-  return scored
-    .filter(s => s.score > 0.6)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, topK);
+  return ragEngine.search(query, topK);
 }
 
 export function cleanDirectAnswer(raw: string): string {
@@ -919,14 +903,31 @@ export async function executeLumiWorkplan(
         agentContributions['Vision Agent'] = `Processed ${imageFiles.length} image inputs.`;
       } else if (step.agent === 'image_generation') {
         step.durationMs = Date.now() - stepStart;
-        if (!audit.runtimeOnline) {
-          step.status = 'failed';
-          step.error = `Image generation requires local model 'flux1-schnell' to be served. Execution halted without simulated assets.`;
-          validationErrors.push(step.error);
-        } else {
+        try {
+          const imgIntent = detectImageGenerationIntent(prompt);
+          const targetModel = audit.installedModels[0]?.name || 'qwen2.5:1.5b';
+          const artifact = await executeImageGeneration(
+            imgIntent.isImageGen ? imgIntent : { isImageGen: true, subject: prompt, format: 'png', width: 1024, height: 1024 },
+            callOllamaGenerate,
+            targetModel
+          );
           step.status = 'completed';
-          step.outputData = { status: 'Dispatched to flux1-schnell' };
-          agentContributions['Image Generation Agent'] = 'Dispatched prompt to flux1-schnell model.';
+          step.outputData = { artifactId: artifact.id, filename: artifact.filename, size: artifact.sizeKb };
+          agentContributions['Image Generation Agent'] = `Generated verified 1024×1024 image (${artifact.filename}).`;
+          agentOutputs['image_generation'] = artifact;
+          generatedFiles.push({
+            id: artifact.id,
+            name: artifact.filename,
+            size: artifact.sizeKb,
+            type: 'png',
+            content: artifact.base64Data,
+            description: `Decoded 1024×1024 PNG image of ${artifact.subject}`,
+            downloadUrl: artifact.downloadUrl
+          });
+        } catch (imgErr: any) {
+          step.status = 'failed';
+          step.error = `Image generation failed: ${imgErr.message}`;
+          validationErrors.push(step.error);
         }
       } else if (step.agent === 'math_code') {
         step.durationMs = Date.now() - stepStart;
@@ -1026,7 +1027,15 @@ export async function executeLumiWorkplan(
   // Stage 6: Compilation (Clean, professional answer without artificial boilerplate)
   let compiledText = '';
 
-  if (agentOutputs['reasoning_synthesis']) {
+  if (agentOutputs['image_generation']) {
+    const imgArt = agentOutputs['image_generation'];
+    const imgMarkdown = `\n\n![${imgArt.subject}](${imgArt.imageUrl})\n\n`;
+    if (agentOutputs['reasoning_synthesis']) {
+      compiledText = cleanDirectAnswer(agentOutputs['reasoning_synthesis']) + imgMarkdown;
+    } else {
+      compiledText = `I have generated an authentic image of **${imgArt.subject}** (${imgArt.width}×${imgArt.height}, ${imgArt.sizeKb}).` + imgMarkdown;
+    }
+  } else if (agentOutputs['reasoning_synthesis']) {
     compiledText = cleanDirectAnswer(agentOutputs['reasoning_synthesis']);
   } else {
     // Deterministic Markdown compilation from actual active outputs
@@ -1416,7 +1425,45 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
         }
       }
 
-      // Check for deliverable intent (PPTX, XLSX, DOCX, PDF, CSV)
+      // 1. Check for Image Generation intent (Direct execution without unnecessary agents)
+      const imageIntent = detectImageGenerationIntent(prompt);
+      if (imageIntent.isImageGen) {
+        try {
+          const artifact = await executeImageGeneration(
+            imageIntent,
+            callOllamaGenerate,
+            targetModel
+          );
+
+          res.end(JSON.stringify({
+            content: `I have generated an authentic image of **${artifact.subject}** (${artifact.width}×${artifact.height}, ${artifact.sizeKb}).\n\n![${artifact.subject}](${artifact.imageUrl})`,
+            model: 'image_generation',
+            generatedImages: [artifact],
+            generatedFiles: [
+              {
+                id: artifact.id,
+                name: artifact.filename,
+                size: artifact.sizeKb,
+                type: 'png',
+                content: artifact.base64Data,
+                description: `Decoded 1024×1024 PNG image of ${artifact.subject}`,
+                downloadUrl: artifact.downloadUrl
+              }
+            ]
+          }));
+          return;
+        } catch (imgErr: any) {
+          console.error('Image generation error:', imgErr);
+          res.statusCode = 500;
+          res.end(JSON.stringify({ error: `Image generation failed: ${imgErr.message}` }));
+          return;
+        }
+      }
+
+      // 2. Check for relevant organizational guidelines in persistent RAG knowledge base
+      const { guidelinesText, citations: guidelineCitations } = ragEngine.getRelevantGuidelines(prompt);
+
+      // 3. Check for deliverable intent (PPTX, XLSX, DOCX, PDF, CSV)
       const deliverableIntent = detectDeliverableIntent(prompt);
       if (deliverableIntent.isDeliverable) {
         let deliverableModel = targetModel;
@@ -1430,12 +1477,14 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
             deliverableIntent,
             prompt,
             callOllamaGenerate,
-            deliverableModel
+            deliverableModel,
+            guidelinesText
           );
 
           res.end(JSON.stringify({
             content: summary,
             model: deliverableModel,
+            citations: guidelineCitations.length > 0 ? guidelineCitations : undefined,
             generatedFiles: [
               {
                 id: deliverable.id,
@@ -1455,12 +1504,21 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
       }
 
       try {
-        const systemPrompt = isCoding
+        let systemPrompt = isCoding
           ? 'You are LUMI code intelligence. Write clean, complete, correct code with concise explanations. Format with Markdown.'
           : 'You are LUMI, an intelligent sovereign AI assistant. Provide concise, direct, helpful answers formatted in Markdown without unnecessary filler.';
+
+        if (guidelinesText) {
+          systemPrompt = `${systemPrompt}\n\nOrganizational Knowledge Base Standards:\n${guidelinesText}`;
+        }
+
         const response = await callOllamaGenerate(targetModel, prompt, systemPrompt);
         const clean = cleanDirectAnswer(response);
-        res.end(JSON.stringify({ content: clean, model: targetModel }));
+        res.end(JSON.stringify({
+          content: clean,
+          model: targetModel,
+          citations: guidelineCitations.length > 0 ? guidelineCitations : undefined
+        }));
       } catch (e: any) {
         res.statusCode = 500;
         res.end(JSON.stringify({ error: `Inference error: ${e.message}`, model: targetModel }));
@@ -1469,20 +1527,83 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
     return true;
   }
 
-  // 10. Deliverables Download Endpoint
+  // 10. Deliverables & Image Download Endpoint
   if (url.startsWith('/api/deliverables/download/')) {
     const fileId = url.replace('/api/deliverables/download/', '').split('?')[0];
     const file = DELIVERABLE_REGISTRY.get(fileId);
-    if (!file) {
-      res.statusCode = 404;
-      res.end(JSON.stringify({ error: 'Deliverable file not found or expired.' }));
+    if (file) {
+      res.setHeader('Content-Type', file.mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${file.name}"`);
+      res.setHeader('Content-Length', file.buffer.length);
+      res.end(file.buffer);
       return true;
     }
 
-    res.setHeader('Content-Type', file.mimeType);
-    res.setHeader('Content-Disposition', `attachment; filename="${file.name}"`);
-    res.setHeader('Content-Length', file.buffer.length);
-    res.end(file.buffer);
+    const img = IMAGE_REGISTRY.get(fileId);
+    if (img) {
+      const buf = Buffer.from(img.base64Data, 'base64');
+      res.setHeader('Content-Type', img.mimeType);
+      res.setHeader('Content-Disposition', `attachment; filename="${img.filename}"`);
+      res.setHeader('Content-Length', buf.length);
+      res.end(buf);
+      return true;
+    }
+
+    res.statusCode = 404;
+    res.end(JSON.stringify({ error: 'Deliverable file not found or expired.' }));
+    return true;
+  }
+
+  // 11. Image Asset Serving Endpoint
+  if (url.startsWith('/api/images/')) {
+    const imgId = url.replace('/api/images/', '').split('?')[0];
+    const img = IMAGE_REGISTRY.get(imgId);
+    if (!img) {
+      res.statusCode = 404;
+      res.end('Image not found');
+      return true;
+    }
+    const buf = Buffer.from(img.base64Data, 'base64');
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Length', buf.length);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.end(buf);
+    return true;
+  }
+
+  // 12. Persistent RAG Collections Endpoint
+  if (url === '/api/rag/collections' && req.method === 'GET') {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ collections: ragEngine.getCollectionsSummary() }));
+    return true;
+  }
+
+  // 13. Persistent RAG Documents Endpoint
+  if (url === '/api/rag/documents' && req.method === 'GET') {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ documents: ragEngine.getDocuments() }));
+    return true;
+  }
+
+  // 14. Persistent RAG Document Ingest Endpoint
+  if (url === '/api/rag/ingest' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      res.setHeader('Content-Type', 'application/json');
+      try {
+        const parsed = JSON.parse(body || '{}');
+        const filename = parsed.filename || 'document.txt';
+        const content = parsed.content || '';
+        const collection = parsed.collection || 'Organizational Standards';
+
+        const result = ragEngine.ingestDocument(filename, content, collection);
+        res.end(JSON.stringify({ success: true, ...result }));
+      } catch (err: any) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: `Ingestion failed: ${err.message}` }));
+      }
+    });
     return true;
   }
 

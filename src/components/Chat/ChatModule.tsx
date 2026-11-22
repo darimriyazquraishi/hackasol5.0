@@ -21,7 +21,8 @@ import {
   Edit3,
   PanelLeft,
   Plus,
-  Presentation
+  Presentation,
+  Sparkles
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { APP_CONFIG } from '../../config';
@@ -61,10 +62,9 @@ function isComplexOrchestrationTask(prompt: string, attachments: ChatAttachment[
   // Explicit complex multi-step tasks
   const asksForRefactorOrBuild = /refactor|scaffold|full-stack|multi-step|develop a (full|complete)|architecture design|build an? (app|application|system)|unit tests? for/i.test(p);
   const asksForSandboxVerification = /run (in|inside) sandbox|execute (in|with) sandbox|validate execution/i.test(p);
-  const asksForImageGen = /generate (an? )?image|create (an? )?(picture|image|graphic)|diffusion|flux|draw/i.test(p);
   const asksForMultiAgent = /multi-agent|orchestrate|compile (a )?deliverable|workplan|synthesize documents/i.test(p);
 
-  return Boolean(asksForRefactorOrBuild || asksForSandboxVerification || asksForImageGen || asksForMultiAgent);
+  return Boolean(asksForRefactorOrBuild || asksForSandboxVerification || asksForMultiAgent);
 }
 
 export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
@@ -73,7 +73,8 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
     addMessageToActiveConversation,
     createFile,
     createConversation,
-    toggleLeftNav
+    toggleLeftNav,
+    setActiveModule
   } = useWorkspace();
 
   const [inputVal, setInputVal] = useState('');
@@ -187,6 +188,7 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
             content: data.content || data.response || 'No response returned from model.',
             citations: data.citations,
             generatedFiles: data.generatedFiles,
+            generatedImages: data.generatedImages,
             model: data.model
           });
         } else {
@@ -415,6 +417,7 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
 
   const handleOpenFileInIDE = (file: GeneratedFilePreview) => {
     createFile('/', file.name, file.content);
+    setActiveModule('ide');
   };
 
   const getFileIcon = (ext: string) => {
@@ -574,6 +577,38 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
                     {msg.citations.map(c => (
                       <div key={c.id} className="p-2 rounded bg-[#080808] border border-[#262626] text-[#9C9C9C]">
                         <span className="text-[#F5F4F1] font-medium">{c.file}</span> ({c.section}) — {c.snippet}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Generated Authentic Images */}
+                {msg.generatedImages && msg.generatedImages.length > 0 && (
+                  <div className="space-y-3 pt-3 border-t border-[#262626]">
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-[#987654] font-semibold flex items-center space-x-1.5">
+                      <Sparkles className="w-3 h-3" />
+                      <span>Generated Image Asset (1024×1024 Non-Empty PNG)</span>
+                    </div>
+                    {msg.generatedImages.map(img => (
+                      <div key={img.id} className="p-3 rounded-xl bg-[#080808] border border-[#303030] space-y-2.5">
+                        <div className="rounded-lg overflow-hidden border border-[#222222] bg-[#000]">
+                          <img
+                            src={img.imageUrl}
+                            alt={img.subject}
+                            className="w-full max-w-md h-auto max-h-96 object-contain mx-auto"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] font-mono">
+                          <span className="text-[#D5D2CC]">{img.filename} ({img.width}×{img.height}, {img.sizeKb})</span>
+                          <a
+                            href={img.downloadUrl}
+                            download={img.filename}
+                            className="px-2.5 py-1 rounded bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1] flex items-center space-x-1 font-sans text-xs transition-colors"
+                          >
+                            <Download className="w-3 h-3" />
+                            <span>Download PNG</span>
+                          </a>
+                        </div>
                       </div>
                     ))}
                   </div>

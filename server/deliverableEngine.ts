@@ -616,25 +616,30 @@ export async function generateDeliverable(
   intent: DeliverableIntent,
   prompt: string,
   callOllama: (model: string, prompt: string, systemPrompt?: string) => Promise<string>,
-  targetModel: string
+  targetModel: string,
+  guidelinesText?: string
 ): Promise<{ deliverable: DeliverableFile; summary: string }> {
   const { type, topic, title, suggestedFilename } = intent;
 
   let modelSystemPrompt = '';
   let modelUserPrompt = '';
 
+  const guidelineInstruction = guidelinesText
+    ? `\n\nAdhere strictly to these organizational guidelines and formatting standards:\n${guidelinesText}`
+    : '';
+
   if (type === 'pptx') {
-    modelSystemPrompt = 'You are LUMI Presentation Architect. Generate structured PowerPoint slide content. Provide a Title, Subtitle, and 5-6 thematic slides with 3-4 bullet points per slide. Focus on accurate technical and domain concepts.';
-    modelUserPrompt = `Generate a comprehensive presentation outline for: "${topic}". Include title and structured slides with concise, informative bullet points.`;
+    modelSystemPrompt = `You are LUMI Presentation Architect. Generate structured PowerPoint slide content. Provide a Title, Subtitle, and 5-6 thematic slides with 3-4 bullet points per slide. Focus on accurate technical and domain concepts.${guidelineInstruction}`;
+    modelUserPrompt = `Generate a comprehensive presentation outline for: "${topic}". Include title and structured slides with concise, informative bullet points.${guidelineInstruction}`;
   } else if (type === 'xlsx') {
-    modelSystemPrompt = 'You are LUMI Data Analyst. Generate structured spreadsheet data with realistic columns, categories, and numerical metrics formatted as a markdown table with headers and data rows.';
-    modelUserPrompt = `Generate structured tabular spreadsheet data for: "${topic}". Include 5-8 columns and at least 6 detailed rows of numerical data.`;
+    modelSystemPrompt = `You are LUMI Data Analyst. Generate structured spreadsheet data with realistic columns, categories, and numerical metrics formatted as a markdown table with headers and data rows.${guidelineInstruction}`;
+    modelUserPrompt = `Generate structured tabular spreadsheet data for: "${topic}". Include 5-8 columns and at least 6 detailed rows of numerical data.${guidelineInstruction}`;
   } else if (type === 'docx' || type === 'pdf') {
-    modelSystemPrompt = 'You are LUMI Technical Writer. Write a complete, formal, highly detailed document with an Executive Summary, Key Dimensions, Methodological Considerations, and Strategic Recommendations formatted in Markdown with headers (# and ##) and bullet points.';
-    modelUserPrompt = `Write a comprehensive, professional report on: "${topic}". Provide detailed sections and concrete insights.`;
+    modelSystemPrompt = `You are LUMI Technical Writer. Write a complete, formal, highly detailed document with an Executive Summary, Key Dimensions, Methodological Considerations, and Strategic Recommendations formatted in Markdown with headers (# and ##) and bullet points.${guidelineInstruction}`;
+    modelUserPrompt = `Write a comprehensive, professional report on: "${topic}". Provide detailed sections and concrete insights.${guidelineInstruction}`;
   } else if (type === 'csv') {
-    modelSystemPrompt = 'You are LUMI Data Engineer. Output ONLY valid CSV text with a header row and realistic data rows. Do not include markdown commentary.';
-    modelUserPrompt = `Generate a CSV dataset for: "${topic}". Include header and at least 6 data rows.`;
+    modelSystemPrompt = `You are LUMI Data Engineer. Output ONLY valid CSV text with a header row and realistic data rows. Do not include markdown commentary.${guidelineInstruction}`;
+    modelUserPrompt = `Generate a CSV dataset for: "${topic}". Include header and at least 6 data rows.${guidelineInstruction}`;
   }
 
   // 1. Generate structured content with local model

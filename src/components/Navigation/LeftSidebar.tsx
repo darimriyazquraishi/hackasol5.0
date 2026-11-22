@@ -9,7 +9,8 @@ import {
   ShieldCheck,
   Trash2,
   MessagesSquare,
-  Check
+  Check,
+  Database
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { LumiLogo } from '../Branding/LumiLogo';
@@ -192,6 +193,27 @@ export const LeftSidebar: React.FC = () => {
                 className={`w-4 h-4 ${activeModule === 'ide' ? 'text-[#987654]' : 'text-[#9C9C9C]'}`}
               />
               {!leftNavCollapsed && <span>IDE Workspace</span>}
+            </div>
+          </button>
+
+          {/* RAG / Knowledge Base Workspace */}
+          <button
+            onClick={() => setActiveModule('knowledge')}
+            title={leftNavCollapsed ? 'RAG & Knowledge Base' : undefined}
+            className={`w-full h-8 rounded px-2.5 flex items-center justify-between text-xs transition-colors relative ${
+              activeModule === 'knowledge'
+                ? 'bg-[#191919] text-[#F5F4F1] font-medium border border-[#303030]'
+                : 'text-[#9C9C9C] hover:text-[#F5F4F1] hover:bg-[#191919]/60'
+            }`}
+          >
+            {activeModule === 'knowledge' && (
+              <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-[#987654] rounded-r" />
+            )}
+            <div className="flex items-center space-x-2.5 min-w-0">
+              <Database
+                className={`w-4 h-4 ${activeModule === 'knowledge' ? 'text-[#987654]' : 'text-[#9C9C9C]'}`}
+              />
+              {!leftNavCollapsed && <span>Knowledge Base</span>}
             </div>
           </button>
 

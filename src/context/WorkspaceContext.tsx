@@ -902,9 +902,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const basePath = parentPath && parentPath !== '/' ? parentPath : '';
     const fullPath = `${basePath}/${cleanName}`;
 
-    // Verify duplicate doesn't exist
-    if (findNodeByPath(files, fullPath)) {
-      alert(`A file or folder with the name "${cleanName}" already exists.`);
+    // If duplicate exists, update content and open
+    const existing = findNodeByPath(files, fullPath);
+    if (existing) {
+      if (content && existing.content !== content) {
+        setFiles(prev => updateContentHelper(prev, fullPath, content));
+      }
+      openFile(fullPath);
       return;
     }
 

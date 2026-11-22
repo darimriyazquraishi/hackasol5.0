@@ -242,12 +242,14 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
   };
 
   const formatInline = (str: string) => {
-    // Process bold, italic, inline code, and links
+    // Process bold, italic, inline code, links, and images
     const parts: React.ReactNode[] = [];
     let remaining = str;
     let keyIdx = 0;
 
     while (remaining.length > 0) {
+      // Image: ![alt](url)
+      const imgMatch = remaining.match(/^(.*?)!\[([^\]]*)\]\(([^)]+)\)(.*)$/s);
       // Inline Code: `...`
       const codeMatch = remaining.match(/^(.*?)`([^`]+)`(.*)$/s);
       // Bold: **...**
@@ -255,9 +257,12 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
       // Link: [text](url)
       const linkMatch = remaining.match(/^(.*?)\[([^\]]+)\]\(([^)]+)\)(.*)$/s);
 
-      type EarliestMatch = { type: 'code' | 'bold' | 'link'; match: RegExpMatchArray; index: number };
+      type EarliestMatch = { type: 'image' | 'code' | 'bold' | 'link'; match: RegExpMatchArray; index: number };
       let earliest: EarliestMatch | null = null;
 
+      if (imgMatch && (earliest === null || imgMatch[1].length < (earliest as EarliestMatch).index)) {
+        earliest = { type: 'image', match: imgMatch, index: imgMatch[1].length };
+      }
       if (codeMatch && (earliest === null || codeMatch[1].length < (earliest as EarliestMatch).index)) {
         earliest = { type: 'code', match: codeMatch, index: codeMatch[1].length };
       }
@@ -277,7 +282,24 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
         parts.push(earliest.match[1]);
       }
 
-      if (earliest.type === 'code') {
+      if (earliest.type === 'image') {
+        const altText = earliest.match[2];
+        const srcUrl = earliest.match[3];
+        parts.push(
+          <span key={`img-container-${keyIdx++}`} className="block my-3">
+            <img
+              src={srcUrl}
+              alt={altText || 'Generated visual deliverable'}
+              className="max-w-full md:max-w-md rounded-xl border border-[#303030] shadow-md object-contain bg-[#0a0a0a] cursor-pointer hover:border-[#987654] transition-colors"
+              onClick={() => window.open(srcUrl, '_blank')}
+            />
+            {altText && (
+              <span className="block text-[10px] text-[#9C9C9C] mt-1 font-mono">{altText}</span>
+            )}
+          </span>
+        );
+        remaining = earliest.match[4];
+      } else if (earliest.type === 'code') {
         parts.push(
           <code
             key={`code-${keyIdx++}`}

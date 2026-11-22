@@ -15,20 +15,64 @@ import { useWorkspace } from '../../context/WorkspaceContext';
 
 export const KnowledgeBaseModule: React.FC = () => {
   const { knowledgeCollections } = useWorkspace();
-  const [selectedCollectionId, setSelectedCollectionId] = useState(knowledgeCollections[0]?.id || '');
+  const [collections, setCollections] = useState(knowledgeCollections);
+  const [selectedCollectionId, setSelectedCollectionId] = useState(knowledgeCollections[0]?.id || 'col-1');
   const [testQuery, setTestQuery] = useState('');
   const [testResults, setTestResults] = useState<Array<{ id: string; text: string; score: number; file: string }>>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [ingestStatus, setIngestStatus] = useState<string | null>(null);
   const fileUploadRef = React.useRef<HTMLInputElement>(null);
 
-  const activeCollection = knowledgeCollections.find(c => c.id === selectedCollectionId) || knowledgeCollections[0];
+  const fetchCollections = async () => {
+    try {
+      const res = await fetch('/api/rag/collections');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.collections && data.collections.length > 0) {
+          setCollections(data.collections);
+        }
+      }
+    } catch {
+      // fallback to workspace collections
+    }
+  };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  React.useEffect(() => {
+    fetchCollections();
+  }, []);
+
+  const activeCollection = collections.find(c => c.id === selectedCollectionId) || collections[0];
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    setIngestStatus(`Ingested ${files[0].name} into ${activeCollection?.name || 'collection'}.`);
-    setTimeout(() => setIngestStatus(null), 3500);
+    const file = files[0];
+    setIngestStatus(`Ingesting ${file.name}...`);
+
+    try {
+      const text = await file.text();
+      const res = await fetch('/api/rag/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          content: text,
+          collection: activeCollection?.name || 'Organizational Standards'
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setIngestStatus(`Successfully ingested ${file.name} (${data.newChunksCount} chunks indexed).`);
+        await fetchCollections();
+      } else {
+        setIngestStatus(`Failed to ingest ${file.name}`);
+      }
+    } catch (err: any) {
+      setIngestStatus(`Ingest error: ${err.message}`);
+    }
+
+    setTimeout(() => setIngestStatus(null), 4500);
     if (fileUploadRef.current) fileUploadRef.current.value = '';
   };
 
@@ -88,7 +132,7 @@ export const KnowledgeBaseModule: React.FC = () => {
             type="file"
             ref={fileUploadRef}
             onChange={handleFileUpload}
-            accept=".md,.txt,.json,.csv"
+            accept=".md,.txt,.json,.csv,.pdf,.docx"
             className="hidden"
           />
           <button
@@ -106,11 +150,11 @@ export const KnowledgeBaseModule: React.FC = () => {
         {/* Left Column: Collections List */}
         <div className="space-y-3">
           <h2 className="text-xs font-mono uppercase tracking-wider text-[#9C9C9C] font-semibold">
-            Collections ({knowledgeCollections.length})
+            Collections ({collections.length})
           </h2>
 
           <div className="space-y-2">
-            {knowledgeCollections.map(col => {
+            {collections.map(col => {
               const isSelected = col.id === selectedCollectionId;
               return (
                 <div

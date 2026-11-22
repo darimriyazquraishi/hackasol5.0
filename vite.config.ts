@@ -22,6 +22,9 @@ export default defineConfig({
   plugins: [react(), lumiBackendPlugin()],
   server: {
     port: 3000,
-    host: true
+    host: true,
+    watch: {
+      ignored: ['**/dist/**', '**/scratch/**', '**/.git/**']
+    }
   }
 });

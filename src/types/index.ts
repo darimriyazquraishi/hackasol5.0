@@ -274,6 +274,20 @@ export interface CompilationResult {
   validation: ValidationResult;
 }
 
+export interface GeneratedImageArtifact {
+  id: string;
+  filename: string;
+  subject: string;
+  format: string;
+  width: number;
+  height: number;
+  sizeKb: string;
+  imageUrl: string;
+  downloadUrl: string;
+  base64Data: string;
+  createdAt: string;
+}
+
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
@@ -289,6 +303,7 @@ export interface ChatMessage {
   compiledResult?: CompilationResult;
   isApprovalPrompt?: boolean;
   generatedFiles?: GeneratedFilePreview[];
+  generatedImages?: GeneratedImageArtifact[];
   citations?: ChatSourceCitation[];
   codeBlock?: {
     language: string;
