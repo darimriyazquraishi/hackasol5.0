@@ -1,5 +1,15 @@
 export type NodeType = 'file' | 'folder';
 
+export interface UserProject {
+  id: string;
+  name: string;
+  language: string;
+  createdAt: string;
+  updatedAt: string;
+  entrypoint?: string;
+  fileCount?: number;
+}
+
 export interface FileNode {
   id: string;
   name: string;
@@ -85,6 +95,13 @@ export interface AssistantMessage {
   thoughts?: string;
   thoughtDuration?: string;
   toolCalls?: AssistantToolCall[];
+  proposedDiff?: {
+    filePath: string;
+    originalCode: string;
+    proposedCode: string;
+    diffSummary: string;
+    applied?: boolean;
+  };
 }
 
 // Navigation Modules

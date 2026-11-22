@@ -9,37 +9,21 @@ import { SettingsModule } from './components/Settings/SettingsModule';
 import { CommandPalette } from './components/CommandPalette/CommandPalette';
 
 const MainLayout: React.FC = () => {
-  const { activeModule, activeConversation } = useWorkspace();
-
-  // Initial landing page condition: active module is chat and there are zero messages.
-  // In accordance with Image 1, absolutely NO sidebars, headers, context panels,
-  // or extraneous elements may be rendered on the initial screen.
-  const isLandingView =
-    activeModule === 'chat' &&
-    (!activeConversation || activeConversation.messages.length === 0);
-
-  if (isLandingView) {
-    return (
-      <div className="h-screen w-screen overflow-hidden bg-black text-[#F5F4F1] font-sans">
-        <ChatModule isLandingView={true} />
-        <CommandPalette />
-      </div>
-    );
-  }
+  const { activeModule } = useWorkspace();
 
   return (
     <div className="h-screen w-screen flex overflow-hidden bg-[#080808] text-[#F5F4F1] font-sans">
-      {/* 1. Persistent Collapsible Left Navigation (Only in conversation or IDE/Settings views) */}
+      {/* 1. Persistent Collapsible Left Navigation (Always present before and after first message) */}
       <LeftSidebar />
 
-      {/* 2. Main Module Workspace: Chat-first by default, IDE, and Settings containing the entire AI Workbench */}
+      {/* 2. Main Module Workspace: Chat-first by default, IDE, Knowledge Base, Settings */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-        {activeModule === 'chat' && <ChatModule isLandingView={false} />}
+        {activeModule === 'chat' && <ChatModule />}
         {activeModule === 'ide' && <IDEModule />}
         {activeModule === 'knowledge' && <KnowledgeBaseModule />}
         {activeModule === 'settings' && <SettingsModule />}
         {activeModule !== 'chat' && activeModule !== 'ide' && activeModule !== 'knowledge' && activeModule !== 'settings' && (
-          <ChatModule isLandingView={false} />
+          <ChatModule />
         )}
       </main>
 

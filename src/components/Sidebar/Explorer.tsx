@@ -11,7 +11,11 @@ import {
   Trash2,
   Edit2,
   Copy,
-  MoreVertical
+  MoreVertical,
+  Play,
+  Plus,
+  Folder,
+  Layers
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { FileNode } from '../../types';
@@ -26,7 +30,6 @@ interface ContextMenuState {
 export const Explorer: React.FC = () => {
   const {
     files,
-    workspaceName,
     activeTabId,
     openFile,
     createFile,
@@ -34,13 +37,23 @@ export const Explorer: React.FC = () => {
     renameItem,
     deleteItem,
     toggleFolder,
-    openFolderFromDisk,
     exportProjectZip,
-    downloadFileItem
+    downloadFileItem,
+    userProjects,
+    activeProjectId,
+    activeProject,
+    selectUserProject,
+    createUserProject,
+    deleteUserProject,
+    runActiveProject
   } = useWorkspace();
 
   // Selected item path
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectTemplate, setNewProjectTemplate] = useState('python');
+  const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
 
   // Creating new item inline state
   const [isCreating, setIsCreating] = useState<{
@@ -275,61 +288,180 @@ export const Explorer: React.FC = () => {
         setContextMenu(null);
       }}
     >
-      {/* Explorer Workspace Header Bar */}
-      <div className="h-7 px-3 flex items-center justify-between text-[11px] font-bold text-[#bbbbbb] tracking-wider uppercase border-b border-[#2b2b2b] bg-[#1f1f1f]">
-        <span className="truncate">{workspaceName}</span>
-        <div className="flex items-center space-x-1 text-[#858585]">
-          <button
-            onClick={e => {
-              e.stopPropagation();
-              const parent = selectedPath && files.find(f => f.path === selectedPath)?.type === 'folder'
-                ? selectedPath
-                : null;
-              setIsCreating({ type: 'file', parentPath: parent });
-            }}
-            title="New File..."
-            className="p-1 hover:text-white hover:bg-[#333333] rounded"
-          >
-            <FilePlus className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={e => {
-              e.stopPropagation();
-              const parent = selectedPath && files.find(f => f.path === selectedPath)?.type === 'folder'
-                ? selectedPath
-                : null;
-              setIsCreating({ type: 'folder', parentPath: parent });
-            }}
-            title="New Folder..."
-            className="p-1 hover:text-white hover:bg-[#333333] rounded"
-          >
-            <FolderPlus className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={e => {
-              e.stopPropagation();
-              openFolderFromDisk();
-            }}
-            title="Open Local Folder From Disk..."
-            className="p-1 hover:text-white hover:bg-[#333333] rounded"
-          >
-            <FolderInput className="w-3.5 h-3.5" />
-          </button>
-          <button
-            onClick={e => {
-              e.stopPropagation();
-              exportProjectZip();
-            }}
-            title="Export Project as ZIP"
-            className="p-1 hover:text-white hover:bg-[#333333] rounded"
-          >
-            <Download className="w-3.5 h-3.5" />
-          </button>
+      {/* Explorer Workspace Header Bar with User Project Management */}
+      <div className="p-2 border-b border-[#2b2b2b] bg-[#1a1a1a] space-y-1.5">
+        <div className="flex items-center justify-between text-[11px] font-bold text-[#bbbbbb] tracking-wider uppercase">
+          <div className="flex items-center space-x-1.5 min-w-0">
+            <Layers className="w-3.5 h-3.5 text-[#987654] shrink-0" />
+            <span className="truncate text-white font-mono text-xs">
+              {activeProject ? activeProject.name : 'User Projects'}
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-1">
+            {activeProject && (
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  runActiveProject();
+                }}
+                title="Run Project in Sandboxed Environment"
+                className="p-1 rounded bg-emerald-950 hover:bg-emerald-900 border border-emerald-700 text-emerald-400 flex items-center space-x-0.5 text-[10px] font-mono cursor-pointer"
+              >
+                <Play className="w-3 h-3 fill-current" />
+                <span>Run</span>
+              </button>
+            )}
+
+            <button
+              onClick={e => {
+                e.stopPropagation();
+                setIsCreatingProject(v => !v);
+              }}
+              title="Create New User Project"
+              className="p-1 rounded hover:bg-[#333333] text-[#bbbbbb] hover:text-white"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
+
+        {/* Project Selector Dropdown if multiple projects exist */}
+        {userProjects.length > 0 && (
+          <div className="flex items-center justify-between text-[11px] pt-1">
+            <select
+              value={activeProjectId || ''}
+              onChange={e => selectUserProject(e.target.value)}
+              className="w-full bg-[#121212] text-[#D5D2CC] border border-[#303030] rounded px-2 py-1 text-xs outline-none font-mono"
+            >
+              {userProjects.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.language})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Inline New Project Form */}
+        {isCreatingProject && (
+          <div className="p-2 rounded bg-[#121212] border border-[#987654] space-y-2 text-xs">
+            <div className="font-mono text-[10px] uppercase text-[#987654] font-semibold">New Project</div>
+            <input
+              type="text"
+              placeholder="Project Name"
+              value={newProjectName}
+              onChange={e => setNewProjectName(e.target.value)}
+              className="w-full bg-[#1c1c1c] text-white px-2 py-1 rounded border border-[#303030] outline-none text-xs"
+              autoFocus
+            />
+            <div className="flex items-center space-x-1">
+              <select
+                value={newProjectTemplate}
+                onChange={e => setNewProjectTemplate(e.target.value)}
+                className="bg-[#1c1c1c] text-white px-2 py-1 rounded border border-[#303030] text-[11px] flex-1 outline-none"
+              >
+                <option value="python">Python Project</option>
+                <option value="node">Node.js Project</option>
+                <option value="c">C / C++ Project</option>
+                <option value="web">Web (HTML/CSS/JS)</option>
+                <option value="empty">Empty Project</option>
+              </select>
+              <button
+                onClick={() => {
+                  if (newProjectName.trim()) {
+                    createUserProject(newProjectName.trim(), newProjectTemplate);
+                    setNewProjectName('');
+                    setIsCreatingProject(false);
+                  }
+                }}
+                className="px-2.5 py-1 rounded bg-[#987654] hover:bg-[#765B43] text-white font-mono text-xs font-semibold"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* File Actions toolbar when project is active */}
+        {activeProject && (
+          <div className="flex items-center justify-between pt-1 border-t border-[#262626] text-[#858585] text-xs">
+            <span className="text-[10px] uppercase font-mono text-[#737373]">{files.length} Files</span>
+            <div className="flex items-center space-x-1">
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  const parent = selectedPath && files.find(f => f.path === selectedPath)?.type === 'folder'
+                    ? selectedPath
+                    : null;
+                  setIsCreating({ type: 'file', parentPath: parent });
+                }}
+                title="New File"
+                className="p-1 hover:text-white hover:bg-[#333333] rounded"
+              >
+                <FilePlus className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  const parent = selectedPath && files.find(f => f.path === selectedPath)?.type === 'folder'
+                    ? selectedPath
+                    : null;
+                  setIsCreating({ type: 'folder', parentPath: parent });
+                }}
+                title="New Folder"
+                className="p-1 hover:text-white hover:bg-[#333333] rounded"
+              >
+                <FolderPlus className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  exportProjectZip();
+                }}
+                title="Export Project as ZIP"
+                className="p-1 hover:text-white hover:bg-[#333333] rounded"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* File Tree Container */}
+      {/* File Tree or Empty Project State */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden py-1">
+        {!activeProject || userProjects.length === 0 ? (
+          <div className="p-4 space-y-3 text-center">
+            <div className="w-10 h-10 rounded-full bg-[#1c1c1c] border border-[#303030] flex items-center justify-center mx-auto text-[#987654]">
+              <Layers className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-xs font-semibold text-white font-mono uppercase tracking-wide">No Project Active</h3>
+              <p className="text-[11px] text-[#888888] leading-relaxed">
+                Create an isolated user workspace to write, compile, and run code. LUMI internal files are strictly isolated.
+              </p>
+            </div>
+
+            <div className="pt-2 space-y-1.5">
+              {[
+                { name: 'New Python Project', template: 'python' },
+                { name: 'New Node.js Project', template: 'node' },
+                { name: 'New C Project', template: 'c' },
+                { name: 'New Web Project', template: 'web' }
+              ].map(tpl => (
+                <button
+                  key={tpl.template}
+                  onClick={() => createUserProject(tpl.name, tpl.template)}
+                  className="w-full py-1.5 px-2 rounded bg-[#161616] hover:bg-[#202020] border border-[#2b2b2b] text-left text-xs font-mono text-[#D5D2CC] hover:text-white flex items-center space-x-2 transition-colors"
+                >
+                  <Plus className="w-3 h-3 text-[#987654]" />
+                  <span>{tpl.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
         {/* Inline input for root creation */}
         {isCreating && isCreating.parentPath === null && (
           <div className="flex items-center h-6 px-3 bg-[#37373d]">

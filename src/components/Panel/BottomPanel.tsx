@@ -20,7 +20,8 @@ export const BottomPanel: React.FC = () => {
     panelTab,
     setPanelTab,
     problems,
-    openFile
+    openFile,
+    projectOutput
   } = useWorkspace();
 
   const [height, setHeight] = useState(240);
@@ -151,12 +152,16 @@ export const BottomPanel: React.FC = () => {
         )}
 
         {panelTab === 'output' && (
-          <div className="p-3 font-mono text-xs text-[#858585] overflow-y-auto h-full space-y-1 select-text">
-            <div>[Extensions] Extension Host initialized successfully.</div>
-            <div>[Prettier] Loaded configuration from .prettierrc.</div>
-            <div>[TypeScript] Language service initialized (TypeScript v5.7.3).</div>
-            <div>[Git] Found 1 working repository.</div>
-            <div className="text-green-400">[Ready] Workspace compiled and ready for development.</div>
+          <div className="p-3 font-mono text-xs text-[#858585] overflow-y-auto h-full space-y-2 select-text">
+            {projectOutput ? (
+              <pre className="whitespace-pre-wrap text-emerald-400 font-mono text-xs leading-relaxed">{projectOutput}</pre>
+            ) : (
+              <>
+                <div className="text-white font-semibold">User Project Sandbox Execution Console</div>
+                <div>Sandbox isolation status: NOMINAL (Resource limit: 10s, CWD: projectRoot).</div>
+                <div className="text-[#987654]">Click 'Run' on any open project to execute within the local sandbox.</div>
+              </>
+            )}
           </div>
         )}
 

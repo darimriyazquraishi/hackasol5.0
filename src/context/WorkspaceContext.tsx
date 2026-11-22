@@ -18,7 +18,8 @@ import {
   ChatMessage,
   ConversationThread,
   ChatAttachment,
-  WorkplanApproval
+  WorkplanApproval,
+  UserProject
 } from '../types';
 import {
   HardwareProfile,
@@ -61,6 +62,19 @@ interface WorkspaceContextType {
   toggleAssistant: () => void;
   theme: EditorTheme;
   setTheme: (theme: EditorTheme) => void;
+
+  // User Projects & IDE Isolation (Part 5)
+  userProjects: UserProject[];
+  activeProjectId: string | null;
+  activeProject: UserProject | null;
+  projectOutput: string;
+  setProjectOutput: (out: string) => void;
+  loadUserProjects: () => Promise<void>;
+  selectUserProject: (id: string) => Promise<void>;
+  createUserProject: (name: string, template?: string) => Promise<void>;
+  deleteUserProject: (id: string) => Promise<void>;
+  renameUserProject: (id: string, newName: string) => Promise<void>;
+  runActiveProject: (entrypoint?: string) => Promise<void>;
 
   // LUMI Navigation & Modules
   activeModule: LumiModule;
@@ -248,41 +262,20 @@ const INITIAL_CONVERSATIONS: ConversationThread[] = [
 ];
 
 export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Try to load persisted files from localStorage if available
-  const [files, setFiles] = useState<FileNode[]>(() => {
-    try {
-      const saved = localStorage.getItem('vscode_clone_files');
-      if (saved) {
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      console.warn('Could not load files from localStorage', e);
-    }
-    return defaultWorkspaceFiles;
-  });
+  // User Projects & IDE Isolation (Part 5)
+  const [userProjects, setUserProjects] = useState<UserProject[]>([]);
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [projectOutput, setProjectOutput] = useState<string>('');
 
-  const [workspaceName, setWorkspaceName] = useState<string>('vscode-web-workspace');
+  // Strictly isolated user project files - NEVER expose LUMI source code or fake files (Part 5.1)
+  const [files, setFiles] = useState<FileNode[]>([]);
+  const [workspaceName, setWorkspaceName] = useState<string>('user-workspace');
   const [isNative, setIsNative] = useState<boolean>(false);
   const [rootNativeHandle, setRootNativeHandle] = useState<any>(null);
 
   // Tabs for IDE
-  const [tabs, setTabs] = useState<Tab[]>([
-    {
-      id: 'file-app',
-      name: 'App.tsx',
-      path: '/src/App.tsx',
-      language: 'typescript',
-      isDirty: false
-    },
-    {
-      id: 'file-readme',
-      name: 'README.md',
-      path: '/README.md',
-      language: 'markdown',
-      isDirty: false
-    }
-  ]);
-  const [activeTabId, setActiveTabId] = useState<string | null>('file-app');
+  const [tabs, setTabs] = useState<Tab[]>([]);
+  const [activeTabId, setActiveTabId] = useState<string | null>(null);
 
   // URL Hash Synchronisation for Refresh Resilience (Requirement 12)
   const parseHash = (): { module: LumiModule; cat: SettingsCategory; sub: SettingsSubSection } => {
@@ -770,19 +763,148 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   }, [files, isNative]);
 
-  // Derive active file node from activeTabId
-  const activeTab = tabs.find(t => t.id === activeTabId);
-  const activeFile = activeTab ? findNodeByPath(files, activeTab.path) : null;
+  // Active project derived
+  const activeProject = userProjects.find(p => p.id === activeProjectId) || null;
 
   // Toggle helpers
   const toggleSidebar = () => setSidebarVisible(v => !v);
   const togglePanel = () => setPanelVisible(v => !v);
   const toggleAssistant = () => setAssistantVisible(v => !v);
 
+  // Select User Project and load its files
+  const selectUserProject = useCallback(async (projId: string) => {
+    setActiveProjectId(projId);
+    setTabs([]);
+    setActiveTabId(null);
+    try {
+      const res = await fetch(`/api/ide/projects/${projId}/files`);
+      if (res.ok) {
+        const data = await res.json();
+        setFiles(data.files || []);
+      }
+    } catch (e) {
+      console.error('Failed to load project files:', e);
+    }
+  }, []);
+
+  // Load all user projects
+  const loadUserProjects = useCallback(async () => {
+    try {
+      const res = await fetch('/api/ide/projects');
+      if (res.ok) {
+        const data = await res.json();
+        const projs: UserProject[] = data.projects || [];
+        setUserProjects(projs);
+        if (projs.length > 0 && !activeProjectId) {
+          selectUserProject(projs[0].id);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load user projects:', e);
+    }
+  }, [activeProjectId, selectUserProject]);
+
+  useEffect(() => {
+    loadUserProjects();
+  }, []);
+
+  // Create User Project
+  const createUserProject = useCallback(async (name: string, template: string = 'python') => {
+    try {
+      const res = await fetch('/api/ide/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, template })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const newProj: UserProject = data.project;
+        setUserProjects(prev => [newProj, ...prev]);
+        await selectUserProject(newProj.id);
+      }
+    } catch (e) {
+      console.error('Failed to create project:', e);
+    }
+  }, [selectUserProject]);
+
+  // Delete User Project
+  const deleteUserProject = useCallback(async (projId: string) => {
+    try {
+      const res = await fetch(`/api/ide/projects/${projId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setUserProjects(prev => prev.filter(p => p.id !== projId));
+        if (activeProjectId === projId) {
+          setActiveProjectId(null);
+          setFiles([]);
+          setTabs([]);
+          setActiveTabId(null);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to delete project:', e);
+    }
+  }, [activeProjectId]);
+
+  // Rename User Project
+  const renameUserProject = useCallback(async (projId: string, newName: string) => {
+    try {
+      const res = await fetch(`/api/ide/projects/${projId}/rename`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUserProjects(prev => prev.map(p => p.id === projId ? data.project : p));
+      }
+    } catch (e) {
+      console.error('Failed to rename project:', e);
+    }
+  }, []);
+
+  // Run Project in Sandboxed Environment
+  const runActiveProject = useCallback(async (entrypoint?: string) => {
+    if (!activeProjectId) return;
+    try {
+      setPanelVisible(true);
+      setPanelTab('terminal');
+      setProjectOutput('Launching sandboxed execution in project directory...\n');
+      const res = await fetch(`/api/ide/projects/${activeProjectId}/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entrypoint })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const out = `$ ${data.command}\n${data.stdout || ''}\n${data.stderr ? 'Errors:\n' + data.stderr : ''}\n\n[Process completed with exit code ${data.exitCode} in ${data.durationMs}ms]`;
+        setProjectOutput(out);
+      }
+    } catch (e: any) {
+      setProjectOutput(`Execution failure: ${e.message}`);
+    }
+  }, [activeProjectId, setPanelVisible, setPanelTab]);
+
+  // Derive active file node from activeTabId
+  const activeTab = tabs.find(t => t.id === activeTabId);
+  const activeFile = activeTab ? findNodeByPath(files, activeTab.path) : null;
+
   // Open File
-  const openFile = useCallback((path: string) => {
-    const node = findNodeByPath(files, path);
-    if (!node || node.type !== 'file') return;
+  const openFile = useCallback(async (path: string) => {
+    let node = findNodeByPath(files, path);
+    let content = node?.content || '';
+
+    if (activeProjectId) {
+      try {
+        const res = await fetch(`/api/ide/projects/${activeProjectId}/file?path=${encodeURIComponent(path)}`);
+        if (res.ok) {
+          const fileData = await res.json();
+          content = fileData.content || '';
+          setFiles(prev => updateContentHelper(prev, path, content));
+        }
+      } catch (e) {
+        console.error('Failed to fetch file content:', e);
+      }
+    }
 
     setTabs(currentTabs => {
       const existing = currentTabs.find(t => t.path === path);
@@ -791,16 +913,17 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return currentTabs;
       }
       const newTab: Tab = {
-        id: node.id,
-        name: node.name,
-        path: node.path,
-        language: node.language || detectLanguage(node.name),
+        id: node ? node.id : `tab-${path}`,
+        name: path.split('/').pop() || 'file',
+        path,
+        content,
+        language: node?.language || detectLanguage(path),
         isDirty: false
       };
       setActiveTabId(newTab.id);
       return [...currentTabs, newTab];
     });
-  }, [files]);
+  }, [files, activeProjectId]);
 
   // Close Tab
   const closeTab = useCallback((id: string) => {
@@ -835,17 +958,6 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setTabs(prev =>
       prev.map(tab => (tab.path === path ? { ...tab, isDirty: true } : tab))
     );
-
-    // Track in git
-    setGitState(prev => {
-      if (!prev.modifiedFiles.includes(path)) {
-        return {
-          ...prev,
-          modifiedFiles: [...prev.modifiedFiles, path]
-        };
-      }
-      return prev;
-    });
   }, []);
 
   // Save current active file
@@ -857,69 +969,97 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       prev.map(t => (t.id === activeTab.id ? { ...t, isDirty: false } : t))
     );
 
-    // If native file on disk, write to disk!
+    if (activeProjectId) {
+      try {
+        await fetch(`/api/ide/projects/${activeProjectId}/file`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: activeTab.path, content: activeFile.content || '' })
+        });
+      } catch (e) {
+        console.error('Failed to save file to project:', e);
+      }
+    }
+
     if (activeFile.isNative && activeFile.handle) {
       await saveNativeFile(activeFile.handle, activeFile.content || '');
     }
-  }, [activeTab, activeFile]);
+  }, [activeTab, activeFile, activeProjectId]);
 
   // Create File
-  const createFile = useCallback((parentPath: string | null, name: string, content: string = '') => {
+  const createFile = useCallback(async (parentPath: string | null, name: string, content: string = '') => {
     const cleanName = name.trim();
     if (!cleanName) return;
 
     const basePath = parentPath && parentPath !== '/' ? parentPath : '';
     const fullPath = `${basePath}/${cleanName}`;
 
-    // If duplicate exists, update content and open
-    const existing = findNodeByPath(files, fullPath);
-    if (existing) {
-      if (content && existing.content !== content) {
-        setFiles(prev => updateContentHelper(prev, fullPath, content));
+    if (activeProjectId) {
+      try {
+        await fetch(`/api/ide/projects/${activeProjectId}/file`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: fullPath, content })
+        });
+        const treeRes = await fetch(`/api/ide/projects/${activeProjectId}/files`);
+        if (treeRes.ok) {
+          const treeData = await treeRes.json();
+          setFiles(treeData.files || []);
+        }
+      } catch (e) {
+        console.error('Failed to create file in project:', e);
       }
-      openFile(fullPath);
-      return;
+    } else {
+      const newNode: FileNode = {
+        id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        name: cleanName,
+        path: fullPath,
+        type: 'file',
+        content,
+        language: detectLanguage(cleanName),
+        isDirty: false
+      };
+      setFiles(prev => addNode(prev, parentPath, newNode));
     }
 
-    const newNode: FileNode = {
-      id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-      name: cleanName,
-      path: fullPath,
-      type: 'file',
-      content,
-      language: detectLanguage(cleanName),
-      isDirty: false
-    };
-
-    setFiles(prev => addNode(prev, parentPath, newNode));
-    // Immediately open newly created file
     openFile(fullPath);
-  }, [files, openFile]);
+  }, [activeProjectId, openFile]);
 
   // Create Folder
-  const createFolder = useCallback((parentPath: string | null, name: string) => {
+  const createFolder = useCallback(async (parentPath: string | null, name: string) => {
     const cleanName = name.trim();
     if (!cleanName) return;
 
     const basePath = parentPath && parentPath !== '/' ? parentPath : '';
     const fullPath = `${basePath}/${cleanName}`;
 
-    if (findNodeByPath(files, fullPath)) {
-      alert(`A file or folder with the name "${cleanName}" already exists.`);
-      return;
+    if (activeProjectId) {
+      try {
+        await fetch(`/api/ide/projects/${activeProjectId}/folder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: fullPath })
+        });
+        const treeRes = await fetch(`/api/ide/projects/${activeProjectId}/files`);
+        if (treeRes.ok) {
+          const treeData = await treeRes.json();
+          setFiles(treeData.files || []);
+        }
+      } catch (e) {
+        console.error('Failed to create folder in project:', e);
+      }
+    } else {
+      const newFolder: FileNode = {
+        id: `folder-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        name: cleanName,
+        path: fullPath,
+        type: 'folder',
+        isOpen: true,
+        children: []
+      };
+      setFiles(prev => addNode(prev, parentPath, newFolder));
     }
-
-    const newFolder: FileNode = {
-      id: `folder-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-      name: cleanName,
-      path: fullPath,
-      type: 'folder',
-      isOpen: true,
-      children: []
-    };
-
-    setFiles(prev => addNode(prev, parentPath, newFolder));
-  }, [files]);
+  }, [activeProjectId]);
 
   // Rename File or Folder
   const renameItem = useCallback((path: string, newName: string) => {
@@ -953,11 +1093,23 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [files]);
 
   // Delete File or Folder
-  const deleteItem = useCallback((path: string) => {
-    const target = findNodeByPath(files, path);
-    if (!target) return;
-
-    setFiles(prev => deleteNodeHelper(prev, path));
+  const deleteItem = useCallback(async (path: string) => {
+    if (activeProjectId) {
+      try {
+        await fetch(`/api/ide/projects/${activeProjectId}/file?path=${encodeURIComponent(path)}`, {
+          method: 'DELETE'
+        });
+        const treeRes = await fetch(`/api/ide/projects/${activeProjectId}/files`);
+        if (treeRes.ok) {
+          const treeData = await treeRes.json();
+          setFiles(treeData.files || []);
+        }
+      } catch (e) {
+        console.error('Failed to delete file from project:', e);
+      }
+    } else {
+      setFiles(prev => deleteNodeHelper(prev, path));
+    }
 
     // Close any tabs associated with the deleted item
     setTabs(prev => {
@@ -967,7 +1119,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
       return remaining;
     });
-  }, [files, activeTabId]);
+  }, [activeProjectId, activeTabId]);
 
   // Toggle Folder open/closed
   const toggleFolder = useCallback((path: string) => {
@@ -1196,7 +1348,20 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         unstageFile,
         commitChanges,
 
-        toggleExtension
+        toggleExtension,
+
+        // User Projects & IDE Isolation (Part 5)
+        userProjects,
+        activeProjectId,
+        activeProject,
+        projectOutput,
+        setProjectOutput,
+        loadUserProjects,
+        selectUserProject,
+        createUserProject,
+        deleteUserProject,
+        renameUserProject,
+        runActiveProject
       }}
     >
       {children}

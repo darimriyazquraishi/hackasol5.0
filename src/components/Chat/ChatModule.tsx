@@ -5,7 +5,6 @@ import {
   Copy,
   Check,
   FileText,
-  ArrowUp,
   Square,
   X,
   Download,
@@ -14,15 +13,14 @@ import {
   FileImage,
   FileCode,
   File,
-  AlertCircle,
   Play,
   CheckCircle2,
   Layers,
   Edit3,
   PanelLeft,
-  Plus,
   Presentation,
-  Sparkles
+  Sparkles,
+  Save
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { APP_CONFIG } from '../../config';
@@ -39,40 +37,11 @@ interface ChatModuleProps {
   isLandingView?: boolean;
 }
 
-/**
- * Heuristic to classify whether a prompt is a simple conversational query
- * or requires multi-agent orchestration and workplan approval (Requirement 4).
- */
-function isComplexOrchestrationTask(prompt: string, attachments: ChatAttachment[]): boolean {
-  // If user attached assets, it inherently requires multimodal parsing/vision
-  if (attachments && attachments.length > 0) return true;
-
-  const p = prompt.toLowerCase().trim();
-
-  // Simple greetings and identity queries
-  const isGreetingOrIdentity = /^(hi|hello|hey|greetings|who are you|what is lumi|introduce yourself|help)(\s+.*|\?|!)?$/i.test(p);
-  if (isGreetingOrIdentity) return false;
-
-  // General questions, explanations, factual queries, and hardware lookups
-  const isFactualOrExplain = /^(what is|explain|define|tell me about|how does|why is|what are my hardware specs|check gpu|system specs)/i.test(p);
-  if (isFactualOrExplain && !/refactor|develop a|build an? (app|system)|sandbox|synthesize|multi-agent|generate an? image/i.test(p)) {
-    return false;
-  }
-
-  // Explicit complex multi-step tasks
-  const asksForRefactorOrBuild = /refactor|scaffold|full-stack|multi-step|develop a (full|complete)|architecture design|build an? (app|application|system)|unit tests? for/i.test(p);
-  const asksForSandboxVerification = /run (in|inside) sandbox|execute (in|with) sandbox|validate execution/i.test(p);
-  const asksForMultiAgent = /multi-agent|orchestrate|compile (a )?deliverable|workplan|synthesize documents/i.test(p);
-
-  return Boolean(asksForRefactorOrBuild || asksForSandboxVerification || asksForMultiAgent);
-}
-
-export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
+export const ChatModule: React.FC<ChatModuleProps> = () => {
   const {
     activeConversation,
     addMessageToActiveConversation,
     createFile,
-    createConversation,
     toggleLeftNav,
     setActiveModule
   } = useWorkspace();
@@ -84,22 +53,19 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
-  const [editedPlan, setEditedPlan] = useState<LumiWorkplan | null>(null);
+  const [editedInterpretation, setEditedInterpretation] = useState('');
+  const [editedDeliverables, setEditedDeliverables] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const landingInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const messages = activeConversation?.messages || [];
-  const showLanding = isLandingView !== undefined ? isLandingView : (messages.length === 0);
 
   useEffect(() => {
-    if (!showLanding) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages.length, isGenerating, showLanding]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length, isGenerating]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -139,12 +105,12 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
   };
 
   /**
-   * Handle user message submission.
-   * Simple queries route directly to /api/chat without workplans.
-   * Complex tasks route to /api/orchestrate/plan for structured approval.
+   * Stage 1: User message submission.
+   * MANDATORY WORKPLAN: Every prompt, without exception, prepares a structured
+   * workplan for review before any execution takes place (Part 1).
    */
-  const handleSend = async () => {
-    const text = inputVal.trim();
+  const handleSend = async (overrideText?: string) => {
+    const text = (overrideText !== undefined ? overrideText : inputVal).trim();
     if ((!text && attachments.length === 0) || isGenerating) return;
 
     const currentAttachments = [...attachments];
@@ -164,77 +130,40 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    const isComplex = isComplexOrchestrationTask(text, currentAttachments);
-
     try {
-      if (!isComplex) {
-        // Simple conversational route -> direct natural response
-        const res = await fetch(APP_CONFIG.endpoints.chat, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: text,
-            model: selectedReasoningModel
-          }),
-          signal: controller.signal
-        });
+      // Stage 2: Capability Analysis & Workplan Generation
+      const res = await fetch(APP_CONFIG.endpoints.orchestratePlan, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: text,
+          attachments: currentAttachments,
+          preferredReasoningModel: selectedReasoningModel
+        }),
+        signal: controller.signal
+      });
 
-        if (res.ok) {
-          const data = await res.json();
-          addMessageToActiveConversation({
-            id: `asst-${Date.now()}`,
-            sender: 'assistant',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            content: data.content || data.response || 'No response returned from model.',
-            citations: data.citations,
-            generatedFiles: data.generatedFiles,
-            generatedImages: data.generatedImages,
-            model: data.model
-          });
-        } else {
-          const errData = await res.json().catch(() => ({}));
-          addMessageToActiveConversation({
-            id: `asst-${Date.now()}`,
-            sender: 'assistant',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            content: errData.content || errData.error || 'Failed to process message.'
-          });
-        }
+      if (res.ok) {
+        const data = await res.json();
+        const plan: LumiWorkplan = data.workplan;
+
+        const planMessage: ChatMessage = {
+          id: `plan-msg-${Date.now()}`,
+          sender: 'assistant',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          content: 'LUMI has analyzed the capabilities required for this task and prepared a structured workplan for review.',
+          lumiWorkplan: plan,
+          isApprovalPrompt: true
+        };
+        addMessageToActiveConversation(planMessage);
       } else {
-        // Complex multi-step task -> Stage 2 Workplan requiring approval
-        const res = await fetch(APP_CONFIG.endpoints.orchestratePlan, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: text,
-            attachments: currentAttachments,
-            preferredReasoningModel: selectedReasoningModel
-          }),
-          signal: controller.signal
+        const errData = await res.json().catch(() => ({}));
+        addMessageToActiveConversation({
+          id: `asst-${Date.now()}`,
+          sender: 'assistant',
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          content: errData.error || 'Failed to analyze task capabilities.'
         });
-
-        if (res.ok) {
-          const data = await res.json();
-          const plan: LumiWorkplan = data.workplan;
-
-          const planMessage: ChatMessage = {
-            id: `plan-msg-${Date.now()}`,
-            sender: 'assistant',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            content: 'LUMI has analyzed the capabilities required for this task and prepared a structured workplan for review.',
-            lumiWorkplan: plan,
-            isApprovalPrompt: true
-          };
-          addMessageToActiveConversation(planMessage);
-        } else {
-          const errData = await res.json().catch(() => ({}));
-          addMessageToActiveConversation({
-            id: `asst-${Date.now()}`,
-            sender: 'assistant',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            content: errData.error || 'Failed to analyze task capabilities.'
-          });
-        }
       }
     } catch (err: any) {
       if (err.name === 'AbortError') {
@@ -242,7 +171,7 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
           id: `abort-${Date.now()}`,
           sender: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          content: 'Response generation cancelled.'
+          content: 'Workplan analysis cancelled.'
         });
       } else {
         addMessageToActiveConversation({
@@ -328,13 +257,31 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
     }
   };
 
-  const handleCancelWorkplan = (planId: string) => {
+  /**
+   * Action: Reject Workplan
+   */
+  const handleRejectWorkplan = (planId: string) => {
     addMessageToActiveConversation({
-      id: `cancel-${Date.now()}`,
+      id: `reject-${Date.now()}`,
       sender: 'assistant',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       content: 'Execution cancelled. Workplan rejected by user.'
     });
+  };
+
+  /**
+   * Action: Save In-Place Edited Workplan & Execute
+   */
+  const handleSaveAndApproveEditedPlan = (originalPlan: LumiWorkplan) => {
+    const modifiedPlan: LumiWorkplan = {
+      ...originalPlan,
+      taskInterpretation: editedInterpretation.trim() || originalPlan.taskInterpretation,
+      expectedDeliverables: editedDeliverables.trim()
+        ? editedDeliverables.split(',').map(d => d.trim()).filter(Boolean)
+        : originalPlan.expectedDeliverables
+    };
+    setEditingPlanId(null);
+    handleApproveWorkplan(modifiedPlan);
   };
 
   const handleRunCodeInSandbox = async (code: string, language: string = 'javascript') => {
@@ -360,7 +307,6 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
   };
 
   const handleDownloadGeneratedFile = (file: GeneratedFilePreview) => {
-    // If backend provided a direct download URL, trigger native download
     if (file.downloadUrl) {
       const a = document.createElement('a');
       a.href = file.downloadUrl;
@@ -371,7 +317,6 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
       return;
     }
 
-    // Binary file formats (pptx, xlsx, docx, pdf) encoded in base64
     const binaryExts = ['pptx', 'xlsx', 'docx', 'pdf'];
     if (binaryExts.includes(file.type.toLowerCase())) {
       try {
@@ -403,7 +348,6 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
       }
     }
 
-    // Text file formats (csv, markdown, txt, code)
     const blob = new Blob([file.content], { type: file.type === 'csv' ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -450,60 +394,9 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
     }
   };
 
-  // ==========================================
-  // 1. EXACT IMAGE 1 LANDING PAGE IMPLEMENTATION
-  // ==========================================
-  if (showLanding) {
-    return (
-      <div className="h-screen w-screen bg-black flex flex-col items-center justify-center relative overflow-hidden select-none">
-        {/* Prominently centered LUMI Logo + L U M I wordmark matching Image 1 */}
-        <div className="flex flex-col items-center justify-center -mt-10 sm:-mt-14 w-full max-w-4xl px-4">
-          <img
-            src="/lumi-logo.jpg"
-            alt="LUMI"
-            className="h-64 sm:h-72 md:h-80 lg:h-[300px] w-auto object-contain pointer-events-none select-none transition-transform"
-          />
-
-          {/* Centered Single Prompt Input Box matching Image 1 exactly */}
-          <div className="w-[704px] max-w-[92vw] mt-10 sm:mt-12">
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                handleSend();
-              }}
-              className="relative w-full flex items-center h-[56px] bg-[#141414]/90 border border-[#2e2e2e] focus-within:border-[#3d3d3d] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] px-5 transition-colors"
-            >
-              <input
-                ref={landingInputRef}
-                type="text"
-                value={inputVal}
-                onChange={e => setInputVal(e.target.value)}
-                placeholder="Ask Lumi anything..."
-                className="w-full bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 text-[#F5F4F1] placeholder-[#737373] text-[15px] font-sans pr-14 caret-[#F5F4F1]"
-                autoFocus
-              />
-
-              <button
-                type="submit"
-                disabled={isGenerating}
-                className="absolute right-3 w-10 h-10 rounded-xl bg-[#c4a47c] hover:bg-[#b89569] active:scale-95 flex items-center justify-center text-[#141414] transition-all cursor-pointer shadow-sm shrink-0"
-                title="Send message"
-              >
-                <Send className="w-4 h-4 text-[#141414]" />
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ==========================================
-  // 2. CONVERSATION INTERFACE
-  // ==========================================
   return (
     <div className="flex-1 flex flex-col h-full bg-[#080808] text-[#F5F4F1] font-sans overflow-hidden select-none">
-      {/* Conversational Header Bar */}
+      {/* 1. Conversational Header Bar (Persistent across empty and conversation states) */}
       <div className="h-12 px-4 border-b border-[#303030] flex items-center justify-between bg-[#080808] shrink-0 z-20">
         <div className="flex items-center space-x-2.5 min-w-0">
           <button
@@ -520,19 +413,46 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
         </div>
       </div>
 
-      {/* Message Stream */}
+      {/* 2. Message Stream / Empty Welcome State */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6 select-text">
         <div className="max-w-3xl mx-auto space-y-6">
-          {/* Starting LUMI Logo remains prominently displayed during conversation */}
-          <div className="flex flex-col items-center justify-center pt-2 pb-6 border-b border-[#1f1f1f] select-none">
-            <img
-              src="/lumi-logo.jpg"
-              alt="LUMI"
-              className="h-32 sm:h-40 w-auto object-contain pointer-events-none select-none transition-transform"
-            />
-          </div>
 
-          {/* Render All Messages */}
+          {/* Initial Welcome Hero when conversation has zero messages */}
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center pt-8 pb-12 select-none text-center">
+              <img
+                src="/lumi-logo.jpg"
+                alt="LUMI"
+                className="h-44 sm:h-52 w-auto object-contain pointer-events-none select-none transition-transform"
+              />
+              <h2 className="mt-4 text-xl font-mono tracking-widest text-[#F5F4F1] uppercase font-bold">
+                L U M I
+              </h2>
+              <p className="mt-1 text-xs text-[#9C9C9C] max-w-md">
+                Local Unified Multimodal Intelligence Workbench. Every prompt is structured into a verified workplan prior to execution.
+              </p>
+
+              {/* Quick Prompt Ideas */}
+              <div className="mt-6 flex flex-wrap justify-center gap-2 max-w-lg">
+                {[
+                  'Calculate compressed-air energy audit for 3x250kW compressors',
+                  'Audit local hardware specs and dedicated VRAM ceiling',
+                  'Generate presentation on refinery energy efficiency',
+                  'Create an authentic 1024x1024 image of a pizza'
+                ].map((hint, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSend(hint)}
+                    className="px-3 py-1.5 rounded-xl bg-[#141414] hover:bg-[#1c1c1c] border border-[#2a2a2a] text-[11px] text-[#D5D2CC] hover:text-[#F5F4F1] transition-colors font-sans"
+                  >
+                    {hint}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Render All Messages in Conversation */}
           {messages.map(msg => (
             <div
               key={msg.id}
@@ -657,7 +577,7 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
                   </div>
                 )}
 
-                {/* Stage 3: Human Approval of Workplan Interface */}
+                {/* Stage 3: Human Approval of Workplan Interface (Part 1) */}
                 {msg.lumiWorkplan && msg.isApprovalPrompt && (
                   <div className="mt-3 p-4 rounded-xl bg-[#080808] border border-[#987654]/60 space-y-4 font-sans">
                     <div className="flex items-center justify-between border-b border-[#262626] pb-2.5">
@@ -675,9 +595,18 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
                     {/* Task Interpretation */}
                     <div className="space-y-1">
                       <div className="text-[10px] font-mono uppercase text-[#9C9C9C]">Task Interpretation</div>
-                      <p className="text-xs text-[#F5F4F1] bg-[#141414] p-2.5 rounded border border-[#222222]">
-                        {msg.lumiWorkplan.taskInterpretation}
-                      </p>
+                      {editingPlanId === msg.lumiWorkplan.id ? (
+                        <textarea
+                          rows={2}
+                          value={editedInterpretation}
+                          onChange={e => setEditedInterpretation(e.target.value)}
+                          className="w-full text-xs text-[#F5F4F1] bg-[#141414] p-2.5 rounded border border-[#987654] outline-none"
+                        />
+                      ) : (
+                        <p className="text-xs text-[#F5F4F1] bg-[#141414] p-2.5 rounded border border-[#222222]">
+                          {msg.lumiWorkplan.taskInterpretation}
+                        </p>
+                      )}
                     </div>
 
                     {/* Selected Agents & Models */}
@@ -720,44 +649,76 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
                     {/* Expected Deliverables */}
                     <div className="space-y-1">
                       <div className="text-[10px] font-mono uppercase text-[#9C9C9C]">Expected Deliverables</div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {msg.lumiWorkplan.expectedDeliverables.map(deliv => (
-                          <span key={deliv} className="px-2 py-0.5 rounded bg-[#191919] border border-[#303030] text-[10px] font-mono text-[#D5D2CC]">
-                            {deliv}
-                          </span>
-                        ))}
-                      </div>
+                      {editingPlanId === msg.lumiWorkplan.id ? (
+                        <input
+                          type="text"
+                          value={editedDeliverables}
+                          onChange={e => setEditedDeliverables(e.target.value)}
+                          placeholder="Comma-separated deliverable names"
+                          className="w-full text-xs text-[#F5F4F1] bg-[#141414] p-2 rounded border border-[#987654] outline-none"
+                        />
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {msg.lumiWorkplan.expectedDeliverables.map(deliv => (
+                            <span key={deliv} className="px-2 py-0.5 rounded bg-[#191919] border border-[#303030] text-[10px] font-mono text-[#D5D2CC]">
+                              {deliv}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Action Controls: Approve, Edit, Cancel */}
+                    {/* Action Controls: Approve, Edit, Reject */}
                     {executingPlanId !== msg.lumiWorkplan.id && (
                       <div className="flex items-center space-x-2.5 pt-2 border-t border-[#262626]">
-                        <button
-                          onClick={() => handleApproveWorkplan(msg.lumiWorkplan!)}
-                          disabled={isGenerating}
-                          className="px-4 py-2 rounded bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1] font-mono text-xs font-semibold flex items-center space-x-1.5 transition-colors"
-                        >
-                          <Play className="w-3.5 h-3.5 fill-current" />
-                          <span>Approve Workplan</span>
-                        </button>
+                        {editingPlanId === msg.lumiWorkplan.id ? (
+                          <>
+                            <button
+                              onClick={() => handleSaveAndApproveEditedPlan(msg.lumiWorkplan!)}
+                              disabled={isGenerating}
+                              className="px-4 py-2 rounded bg-emerald-700 hover:bg-emerald-600 text-[#F5F4F1] font-mono text-xs font-semibold flex items-center space-x-1.5 transition-colors"
+                            >
+                              <Save className="w-3.5 h-3.5" />
+                              <span>Save & Approve</span>
+                            </button>
+                            <button
+                              onClick={() => setEditingPlanId(null)}
+                              className="px-3 py-2 rounded bg-[#191919] hover:bg-[#202020] text-[#9C9C9C] border border-[#303030] font-mono text-xs transition-colors"
+                            >
+                              Cancel Edit
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => handleApproveWorkplan(msg.lumiWorkplan!)}
+                              disabled={isGenerating}
+                              className="px-4 py-2 rounded bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1] font-mono text-xs font-semibold flex items-center space-x-1.5 transition-colors"
+                            >
+                              <Play className="w-3.5 h-3.5 fill-current" />
+                              <span>Approve Workplan</span>
+                            </button>
 
-                        <button
-                          onClick={() => {
-                            setEditingPlanId(msg.lumiWorkplan!.id);
-                            setEditedPlan(JSON.parse(JSON.stringify(msg.lumiWorkplan)));
-                          }}
-                          className="px-3 py-2 rounded bg-[#191919] hover:bg-[#202020] text-[#D5D2CC] border border-[#303030] font-mono text-xs flex items-center space-x-1 transition-colors"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>Edit Workplan</span>
-                        </button>
+                            <button
+                              onClick={() => {
+                                setEditingPlanId(msg.lumiWorkplan!.id);
+                                setEditedInterpretation(msg.lumiWorkplan!.taskInterpretation);
+                                setEditedDeliverables(msg.lumiWorkplan!.expectedDeliverables.join(', '));
+                              }}
+                              className="px-3 py-2 rounded bg-[#191919] hover:bg-[#202020] text-[#D5D2CC] border border-[#303030] font-mono text-xs flex items-center space-x-1 transition-colors"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Edit Workplan</span>
+                            </button>
 
-                        <button
-                          onClick={() => handleCancelWorkplan(msg.lumiWorkplan!.id)}
-                          className="px-3 py-2 rounded bg-[#191919] hover:bg-[#202020] text-[#9C9C9C] hover:text-red-400 border border-[#303030] font-mono text-xs transition-colors"
-                        >
-                          Cancel
-                        </button>
+                            <button
+                              onClick={() => handleRejectWorkplan(msg.lumiWorkplan!.id)}
+                              className="px-3 py-2 rounded bg-[#191919] hover:bg-[#202020] text-[#9C9C9C] hover:text-red-400 border border-[#303030] font-mono text-xs transition-colors"
+                            >
+                              Reject Workplan
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
@@ -839,44 +800,6 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
                         ))}
                       </div>
                     )}
-
-                    {/* Compiled Artifact Files */}
-                    {msg.compiledResult.files && msg.compiledResult.files.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="text-[10px] font-mono uppercase text-[#9C9C9C]">Compiled Deliverable Files</div>
-                        {msg.compiledResult.files.map(gen => (
-                          <div
-                            key={gen.id}
-                            className="p-3 rounded-xl bg-[#080808] border border-[#303030] flex items-center justify-between"
-                          >
-                            <div className="flex items-center space-x-2.5 min-w-0 pr-2">
-                              {getFileIcon(gen.type)}
-                              <div className="min-w-0">
-                                <div className="font-mono text-xs text-[#F5F4F1] font-medium truncate">{gen.name}</div>
-                                <div className="text-[10px] text-[#9C9C9C]">{gen.size} • {gen.description}</div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center space-x-1.5 shrink-0">
-                              <button
-                                onClick={() => handleOpenFileInIDE(gen)}
-                                className="px-2 py-1 rounded bg-[#191919] hover:bg-[#202020] border border-[#303030] text-[11px] font-mono text-[#D5D2CC] hover:text-[#F5F4F1] transition-colors flex items-center space-x-1"
-                              >
-                                <Code2 className="w-3 h-3 text-[#987654]" />
-                                <span>Edit in IDE</span>
-                              </button>
-                              <button
-                                onClick={() => handleDownloadGeneratedFile(gen)}
-                                className="px-2 py-1 rounded bg-[#987654] hover:bg-[#765B43] text-[11px] font-mono text-[#F5F4F1] transition-colors flex items-center space-x-1"
-                              >
-                                <Download className="w-3 h-3" />
-                                <span>Download</span>
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -904,7 +827,7 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
         </div>
       </div>
 
-      {/* Stage 1 Interactive Composer Section (In Conversation View) */}
+      {/* 3. Persistent Message Composer (Anchored at the bottom in ALL states) */}
       <div className="p-4 border-t border-[#303030] bg-[#080808] shrink-0">
         <div className="max-w-3xl mx-auto">
           {attachments.length > 0 && (
@@ -928,12 +851,13 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
             </div>
           )}
 
+          {/* Hidden File Input for Attachments */}
           <input
             type="file"
             ref={fileInputRef}
             onChange={handleFileSelect}
             multiple
-            accept=".pdf,.docx,.pptx,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.webp"
+            accept=".pdf,.docx,.pptx,.xlsx,.csv,.txt,.png,.jpg,.jpeg,.webp,.py,.js,.ts,.json"
             className="hidden"
           />
 
@@ -954,10 +878,12 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
             />
 
             <div className="flex items-center justify-between pt-2 border-t border-[#222222] text-xs">
+              {/* Mandatory Always-Available Attachment Button (Part 7) */}
               <button
+                type="button"
                 onClick={() => fileInputRef.current?.click()}
-                title="Attach Document or Image"
-                className="p-1 hover:text-[#F5F4F1] hover:bg-[#202020] rounded text-[#9C9C9C] transition-colors flex items-center space-x-1 text-[11px] font-mono"
+                title="Attach Document, Image or Dataset"
+                className="p-1 hover:text-[#F5F4F1] hover:bg-[#202020] rounded text-[#9C9C9C] transition-colors flex items-center space-x-1 text-[11px] font-mono cursor-pointer"
               >
                 <Paperclip className="w-3.5 h-3.5" />
                 <span>Attach Asset</span>
@@ -974,11 +900,11 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
                   </button>
                 ) : (
                   <button
-                    onClick={handleSend}
+                    onClick={() => handleSend()}
                     disabled={!inputVal.trim() && attachments.length === 0}
                     className={`px-3 py-1 rounded-xl text-xs font-medium font-sans flex items-center space-x-1.5 transition-colors ${
                       inputVal.trim() || attachments.length > 0
-                        ? 'bg-[#c4a47c] hover:bg-[#b89569] text-[#141414]'
+                        ? 'bg-[#c4a47c] hover:bg-[#b89569] text-[#141414] cursor-pointer'
                         : 'bg-[#222222] text-[#6e6e6e] cursor-not-allowed'
                     }`}
                   >

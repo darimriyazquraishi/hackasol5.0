@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "id": "doc-1795388603571-swkg",
+    "name": "01_Controlled_PDF_and_Document_Creation_Guideline.pdf",
+    "extension": ".pdf",
+    "sizeBytes": 8397,
+    "size": "8.2 KB",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795388603571-swkg_01_Controlled_PDF_and_Document_Creation_Guideline.pdf",
+    "uploadedAt": "2026-11-22T23:03:23.600Z",
+    "status": "indexed",
+    "extractedTextLength": 6432,
+    "chunkCount": 16
+  },
+  {
+    "id": "doc-1795388615861-l4fy",
+    "name": "02_Technical_Report_and_Engineering_Document_Guideline.pdf",
+    "extension": ".pdf",
+    "sizeBytes": 7011,
+    "size": "6.8 KB",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795388615861-l4fy_02_Technical_Report_and_Engineering_Document_Guideline.pdf",
+    "uploadedAt": "2026-11-22T23:03:35.877Z",
+    "status": "indexed",
+    "extractedTextLength": 5294,
+    "chunkCount": 13
+  }
+]
