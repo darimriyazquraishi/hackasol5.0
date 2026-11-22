@@ -20,7 +20,8 @@ import {
   Layers,
   Edit3,
   PanelLeft,
-  Plus
+  Plus,
+  Presentation
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { APP_CONFIG } from '../../config';
@@ -184,7 +185,9 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
             sender: 'assistant',
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             content: data.content || data.response || 'No response returned from model.',
-            citations: data.citations
+            citations: data.citations,
+            generatedFiles: data.generatedFiles,
+            model: data.model
           });
         } else {
           const errData = await res.json().catch(() => ({}));
@@ -355,7 +358,51 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
   };
 
   const handleDownloadGeneratedFile = (file: GeneratedFilePreview) => {
-    const blob = new Blob([file.content], { type: 'text/plain;charset=utf-8' });
+    // If backend provided a direct download URL, trigger native download
+    if (file.downloadUrl) {
+      const a = document.createElement('a');
+      a.href = file.downloadUrl;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
+
+    // Binary file formats (pptx, xlsx, docx, pdf) encoded in base64
+    const binaryExts = ['pptx', 'xlsx', 'docx', 'pdf'];
+    if (binaryExts.includes(file.type.toLowerCase())) {
+      try {
+        const cleanBase64 = file.content.replace(/^data:[^;]+;base64,/, '');
+        const byteCharacters = atob(cleanBase64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const mimeMap: Record<string, string> = {
+          pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          pdf: 'application/pdf'
+        };
+        const blob = new Blob([byteArray], { type: mimeMap[file.type.toLowerCase()] || 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return;
+      } catch (e) {
+        console.error('Binary decode failed, falling back to text blob:', e);
+      }
+    }
+
+    // Text file formats (csv, markdown, txt, code)
+    const blob = new Blob([file.content], { type: file.type === 'csv' ? 'text/csv;charset=utf-8' : 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -372,13 +419,18 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
 
   const getFileIcon = (ext: string) => {
     switch (ext.toLowerCase()) {
-      case 'pdf':
-      case 'docx':
-      case 'txt':
-        return <FileText className="w-4 h-4 text-[#987654]" />;
+      case 'pptx':
+      case 'ppt':
+        return <Presentation className="w-4 h-4 text-amber-500" />;
       case 'xlsx':
+      case 'xls':
       case 'csv':
         return <FileSpreadsheet className="w-4 h-4 text-emerald-400" />;
+      case 'docx':
+      case 'doc':
+      case 'pdf':
+      case 'txt':
+        return <FileText className="w-4 h-4 text-[#987654]" />;
       case 'png':
       case 'jpg':
       case 'jpeg':
@@ -522,6 +574,49 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
                     {msg.citations.map(c => (
                       <div key={c.id} className="p-2 rounded bg-[#080808] border border-[#262626] text-[#9C9C9C]">
                         <span className="text-[#F5F4F1] font-medium">{c.file}</span> ({c.section}) — {c.snippet}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Generated Native Deliverables (PowerPoint, Excel, Word, PDF, CSV) */}
+                {((msg.generatedFiles && msg.generatedFiles.length > 0) || (msg.compiledResult?.files && msg.compiledResult.files.length > 0)) && (
+                  <div className="space-y-2 pt-3 border-t border-[#262626]">
+                    <div className="text-[10px] font-mono uppercase tracking-wider text-[#987654] font-semibold flex items-center space-x-1.5">
+                      <Download className="w-3 h-3" />
+                      <span>Generated Deliverables</span>
+                    </div>
+                    {(msg.generatedFiles || msg.compiledResult?.files || []).map(gen => (
+                      <div
+                        key={gen.id}
+                        className="p-3 rounded-xl bg-[#080808] border border-[#303030] hover:border-[#987654]/60 transition-colors flex items-center justify-between"
+                      >
+                        <div className="flex items-center space-x-2.5 min-w-0 pr-2">
+                          {getFileIcon(gen.type)}
+                          <div className="min-w-0">
+                            <div className="font-mono text-xs text-[#F5F4F1] font-medium truncate">{gen.name}</div>
+                            <div className="text-[10px] text-[#9C9C9C]">{gen.size} • {gen.description || `${gen.type.toUpperCase()} Deliverable`}</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-1.5 shrink-0">
+                          {['md', 'txt', 'csv', 'json', 'py', 'js', 'ts'].includes(gen.type.toLowerCase()) && (
+                            <button
+                              onClick={() => handleOpenFileInIDE(gen)}
+                              className="px-2 py-1 rounded bg-[#191919] hover:bg-[#202020] border border-[#303030] text-[11px] font-mono text-[#D5D2CC] hover:text-[#F5F4F1] transition-colors flex items-center space-x-1"
+                            >
+                              <Code2 className="w-3 h-3 text-[#987654]" />
+                              <span>Edit in IDE</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDownloadGeneratedFile(gen)}
+                            className="px-2.5 py-1 rounded bg-[#987654] hover:bg-[#765B43] text-[11px] font-mono text-[#F5F4F1] transition-colors flex items-center space-x-1.5 font-medium shadow-sm cursor-pointer"
+                          >
+                            <Download className="w-3 h-3" />
+                            <span>Download {gen.type.toUpperCase()}</span>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

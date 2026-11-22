@@ -2,6 +2,11 @@ import os from 'os';
 import http from 'http';
 import { execSync, spawn } from 'child_process';
 import type { IncomingMessage, ServerResponse } from 'http';
+import {
+  detectDeliverableIntent,
+  generateDeliverable,
+  DELIVERABLE_REGISTRY
+} from './deliverableEngine';
 
 /**
  * Centralized Server Configuration
@@ -1064,6 +1069,36 @@ export async function executeLumiWorkplan(
     description: 'Verified deliverable containing multi-agent findings.'
   });
 
+  // Check if user requested an actual native file deliverable (PPTX, XLSX, DOCX, PDF, CSV)
+  const delivIntent = detectDeliverableIntent(prompt);
+  if (delivIntent.isDeliverable) {
+    try {
+      let targetModel = audit.installedModels[0]?.name || 'qwen2.5:1.5b';
+      if (delivIntent.type === 'xlsx' || delivIntent.type === 'csv') {
+        const coderModel = audit.installedModels.find(m => /coder/i.test(m.name));
+        if (coderModel) targetModel = coderModel.name;
+      }
+      const { deliverable } = await generateDeliverable(
+        delivIntent,
+        prompt,
+        callOllamaGenerate,
+        targetModel
+      );
+      generatedFiles.unshift({
+        id: deliverable.id,
+        name: deliverable.name,
+        size: deliverable.size,
+        type: deliverable.type,
+        content: deliverable.content,
+        description: deliverable.description,
+        downloadUrl: deliverable.downloadUrl
+      });
+      agentContributions['Deliverable Engine'] = `Compiled native ${delivIntent.type.toUpperCase()} file (${deliverable.name}).`;
+    } catch (e: any) {
+      console.error('Workplan deliverable generation error:', e);
+    }
+  }
+
   // Stage 7: Validation
   const allStepsCompleted = executedWorkplan.executionSequence.every(s => s.status === 'completed');
   validationChecks.push({
@@ -1381,6 +1416,44 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
         }
       }
 
+      // Check for deliverable intent (PPTX, XLSX, DOCX, PDF, CSV)
+      const deliverableIntent = detectDeliverableIntent(prompt);
+      if (deliverableIntent.isDeliverable) {
+        let deliverableModel = targetModel;
+        if (deliverableIntent.type === 'xlsx' || deliverableIntent.type === 'csv') {
+          const coderModel = audit.installedModels.find(m => /coder/i.test(m.name));
+          if (coderModel) deliverableModel = coderModel.name;
+        }
+
+        try {
+          const { deliverable, summary } = await generateDeliverable(
+            deliverableIntent,
+            prompt,
+            callOllamaGenerate,
+            deliverableModel
+          );
+
+          res.end(JSON.stringify({
+            content: summary,
+            model: deliverableModel,
+            generatedFiles: [
+              {
+                id: deliverable.id,
+                name: deliverable.name,
+                size: deliverable.size,
+                type: deliverable.type,
+                content: deliverable.content,
+                description: deliverable.description,
+                downloadUrl: deliverable.downloadUrl
+              }
+            ]
+          }));
+          return;
+        } catch (delivErr: any) {
+          console.error('Deliverable generation failed, proceeding with LLM answer:', delivErr);
+        }
+      }
+
       try {
         const systemPrompt = isCoding
           ? 'You are LUMI code intelligence. Write clean, complete, correct code with concise explanations. Format with Markdown.'
@@ -1393,6 +1466,23 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
         res.end(JSON.stringify({ error: `Inference error: ${e.message}`, model: targetModel }));
       }
     });
+    return true;
+  }
+
+  // 10. Deliverables Download Endpoint
+  if (url.startsWith('/api/deliverables/download/')) {
+    const fileId = url.replace('/api/deliverables/download/', '').split('?')[0];
+    const file = DELIVERABLE_REGISTRY.get(fileId);
+    if (!file) {
+      res.statusCode = 404;
+      res.end(JSON.stringify({ error: 'Deliverable file not found or expired.' }));
+      return true;
+    }
+
+    res.setHeader('Content-Type', file.mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${file.name}"`);
+    res.setHeader('Content-Length', file.buffer.length);
+    res.end(file.buffer);
     return true;
   }
 

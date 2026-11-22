@@ -208,6 +208,7 @@ export interface GeneratedFilePreview {
   type: string;
   content: string;
   description?: string;
+  downloadUrl?: string;
 }
 
 export interface ChatSourceCitation {
