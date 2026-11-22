@@ -11,7 +11,7 @@ export const SERVER_CONFIG = {
   ollama: {
     host: process.env.OLLAMA_HOST || '127.0.0.1',
     port: parseInt(process.env.OLLAMA_PORT || '11434', 10),
-    timeoutMs: parseInt(process.env.OLLAMA_TIMEOUT_MS || '30000', 10)
+    timeoutMs: parseInt(process.env.OLLAMA_TIMEOUT_MS || '60000', 10)
   },
   lmStudio: {
     host: process.env.LMSTUDIO_HOST || '127.0.0.1',
@@ -137,17 +137,16 @@ export function probeRealHardware(): HardwareInfo {
   };
 }
 
-// Configured authoritative models per specification
+// Configured authoritative models with active local hardware-adaptive models
 export const CONFIGURED_MODELS = {
   image_generation: { id: 'flux1-schnell', name: 'Flux.1 Schnell', role: 'Image Generation' },
-  vision: { id: 'qwen2.5vl:7b', name: 'Qwen2.5-VL 7B', role: 'Vision Analysis' },
+  vision: { id: 'moondream:latest', name: 'Moondream Vision (Active)', role: 'Vision and Image Understanding' },
   reasoning: [
-    { id: 'qwen3:8b', name: 'Qwen3 8B', role: 'Reasoning and Synthesis (Default)' },
-    { id: 'qwen3:14b', name: 'Qwen3 14B', role: 'Reasoning and Synthesis (Mid-Tier)' },
-    { id: 'qwen3:32b', name: 'Qwen3 32B', role: 'Reasoning and Synthesis (High-Capacity)' }
+    { id: 'qwen2.5:1.5b', name: 'Qwen2.5 1.5B (Active)', role: 'Reasoning and Synthesis (Hardware-Adaptive)' },
+    { id: 'qwen3:8b', name: 'Qwen3 8B', role: 'Reasoning and Synthesis (High-Capacity)' }
   ],
-  math_code: { id: 'qwen2.5-coder:7b', name: 'Qwen2.5-Coder 7B', role: 'Math and Code' },
-  vector_rag: { id: 'nomic-embed-text', name: 'Nomic Embed Text', role: 'Vector RAG Embeddings' }
+  math_code: { id: 'qwen2.5-coder:1.5b', name: 'Qwen2.5-Coder 1.5B (Active)', role: 'Math and Code' },
+  vector_rag: { id: 'nomic-embed-text:latest', name: 'Nomic Embed Text (Active)', role: 'Vector RAG Embeddings' }
 };
 
 export type AgentArchetype =
@@ -299,6 +298,40 @@ function probeHttpJson(host: string, port: number, path: string, timeoutMs: numb
   });
 }
 
+export async function ensureOllamaRunning(): Promise<boolean> {
+  try {
+    await probeHttpJson(SERVER_CONFIG.ollama.host, SERVER_CONFIG.ollama.port, '/api/tags', 1000);
+    return true;
+  } catch {
+    const candidatePaths = [
+      'ollama',
+      'C:\\Users\\Zoran\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Ollama.Ollama.Portable_Microsoft.Winget.Source_8wekyb3d8bbwe\\ollama.exe',
+      'C:\\Users\\Zoran\\AppData\\Local\\Programs\\Ollama\\ollama.exe',
+      'C:\\Program Files\\Ollama\\ollama.exe'
+    ];
+
+    for (const bin of candidatePaths) {
+      try {
+        const child = spawn(bin, ['serve'], {
+          detached: true,
+          stdio: 'ignore',
+          shell: true
+        });
+        child.unref();
+
+        for (let i = 0; i < 12; i++) {
+          await new Promise(r => setTimeout(r, 500));
+          try {
+            await probeHttpJson(SERVER_CONFIG.ollama.host, SERVER_CONFIG.ollama.port, '/api/tags', 800);
+            return true;
+          } catch {}
+        }
+      } catch {}
+    }
+    return false;
+  }
+}
+
 export async function auditLocalRuntime(): Promise<RuntimeAuditResult> {
   const timestamp = new Date().toISOString();
   let runtimeOnline = false;
@@ -306,13 +339,16 @@ export async function auditLocalRuntime(): Promise<RuntimeAuditResult> {
   let endpoint = `http://${SERVER_CONFIG.ollama.host}:${SERVER_CONFIG.ollama.port}`;
   const installedModels: RuntimeAuditResult['installedModels'] = [];
 
+  // Ensure Ollama service is up and running
+  await ensureOllamaRunning();
+
   // Probe configured Ollama host and port
   try {
     const ollamaData = await probeHttpJson(
       SERVER_CONFIG.ollama.host,
       SERVER_CONFIG.ollama.port,
       '/api/tags',
-      1200
+      1500
     );
     runtimeOnline = true;
     runtimeType = 'ollama';
@@ -362,9 +398,14 @@ export async function auditLocalRuntime(): Promise<RuntimeAuditResult> {
   const hasModel = (pattern: RegExp) => installedModels.some(m => pattern.test(m.name));
   const hasChat = hasModel(/qwen3|qwen2\.5|llama/i);
   const hasCoder = hasModel(/coder|qwen2\.5-coder/i);
-  const hasVision = hasModel(/qwen2\.5vl|smolvlm|vision/i);
+  const hasVision = hasModel(/qwen2\.5vl|smolvlm|vision|moondream/i);
   const hasEmbed = hasModel(/nomic|embed|bge/i);
   const hasFlux = hasModel(/flux/i);
+
+  const activeChat = installedModels.find(m => /qwen2\.5|qwen3/i.test(m.name) && !/coder/i.test(m.name))?.name || 'qwen2.5:1.5b';
+  const activeCoder = installedModels.find(m => /coder/i.test(m.name))?.name || 'qwen2.5-coder:1.5b';
+  const activeVision = installedModels.find(m => /vision|moondream/i.test(m.name))?.name || 'moondream:latest';
+  const activeEmbed = installedModels.find(m => /nomic|embed/i.test(m.name))?.name || 'nomic-embed-text:latest';
 
   const taskMatrix: TaskAuditEntry[] = [
     {
@@ -385,54 +426,54 @@ export async function auditLocalRuntime(): Promise<RuntimeAuditResult> {
       category: '2. Vision Agent',
       name: 'Vision and Image Understanding',
       dependencyType: 'vlm',
-      targetModelOrTool: CONFIGURED_MODELS.vision.id,
+      targetModelOrTool: activeVision,
       installationStatus: !runtimeOnline ? 'unconnected' : hasVision ? 'installed' : 'not_installed',
       verificationStatus: !runtimeOnline ? 'unconnected' : hasVision ? 'verified' : 'unverified',
       availability: runtimeOnline && hasVision ? 'available' : 'unavailable',
       details: !runtimeOnline
         ? `Local inference runtime (${endpoint}) not connected.`
         : hasVision
-          ? 'Qwen2.5-VL 7B verified in local runtime.'
-          : 'qwen2.5vl:7b model not downloaded in local runtime.'
+          ? `${activeVision} verified in local runtime.`
+          : 'Vision model not downloaded in local runtime.'
     },
     {
       category: '3. Reasoning & Synthesis Agent',
       name: 'Reasoning and Synthesis',
       dependencyType: 'llm',
-      targetModelOrTool: 'qwen3:8b (or 14b / 32b)',
+      targetModelOrTool: activeChat,
       installationStatus: !runtimeOnline ? 'unconnected' : hasChat ? 'installed' : 'not_installed',
       verificationStatus: !runtimeOnline ? 'unconnected' : hasChat ? 'verified' : 'unverified',
       availability: runtimeOnline && hasChat ? 'available' : 'unavailable',
       details: !runtimeOnline
         ? `Local inference runtime (${endpoint}) not connected.`
         : hasChat
-          ? 'Qwen3 reasoning model verified.'
-          : 'qwen3 models not downloaded in local runtime.'
+          ? `${activeChat} reasoning model verified in runtime.`
+          : 'Reasoning model not downloaded in local runtime.'
     },
     {
       category: '4. Math & Code Agent',
       name: 'Math Problem Solving & Code Generation',
       dependencyType: 'llm',
-      targetModelOrTool: CONFIGURED_MODELS.math_code.id,
+      targetModelOrTool: activeCoder,
       installationStatus: !runtimeOnline ? 'unconnected' : hasCoder ? 'installed' : 'not_installed',
       verificationStatus: !runtimeOnline ? 'unconnected' : hasCoder ? 'verified' : 'unverified',
       availability: runtimeOnline && hasCoder ? 'available' : 'unavailable',
       details: !runtimeOnline
         ? `Local inference runtime (${endpoint}) not connected.`
         : hasCoder
-          ? 'Qwen2.5-Coder 7B verified.'
-          : 'qwen2.5-coder:7b not downloaded in local runtime.'
+          ? `${activeCoder} verified in runtime.`
+          : 'Coding model not downloaded in local runtime.'
     },
     {
       category: '5. Vector RAG Agent',
       name: 'Vector Embeddings & Retrieval',
       dependencyType: 'embedding_model',
-      targetModelOrTool: CONFIGURED_MODELS.vector_rag.id,
+      targetModelOrTool: activeEmbed,
       installationStatus: hasEmbed ? 'installed' : 'built_in',
       verificationStatus: 'verified',
       availability: 'available',
       details: hasEmbed
-        ? 'nomic-embed-text active in runtime.'
+        ? `${activeEmbed} active in runtime.`
         : 'Built-in cosine similarity vector index active.'
     },
     {
@@ -563,8 +604,8 @@ export function cleanDirectAnswer(raw: string): string {
     }
   }
 
+  // Strip conversational preamble like "Certainly! Here is..." but preserve genuine content
   text = text.replace(/^(Certainly|Sure|Here is|Here's|Of course|I'd be happy to|Below is|As an AI)[^\n.:]*[:.]\s*/i, '');
-  text = text.replace(/^(Hello|Hi|Greetings)[\s!,.]*/i, '');
   text = text.replace(/\n\s*(Let me know if you need anything else!|Hope this helps!|Feel free to ask if you have more questions[.!]|I hope this helps you[.!]|If you have any further questions[^\n]*)\s*$/i, '');
 
   return text.trim();
@@ -632,7 +673,7 @@ export function callOllamaGenerate(model: string, prompt: string, systemPrompt?:
 export function generateLumiWorkplan(
   prompt: string,
   attachments: Array<{ id: string; name: string; type: string; data?: string }> = [],
-  preferredReasoningModel: string = 'qwen3:8b'
+  preferredReasoningModel: string = 'qwen2.5:1.5b'
 ): LumiWorkplan {
   const p = prompt.toLowerCase();
   const selectedAgents: AgentArchetype[] = [];
@@ -1283,27 +1324,20 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
 
       const lower = prompt.toLowerCase().trim();
 
-      // 1. Direct conversational handling for greetings and LUMI identity
-      if (/^(hi|hello|hey|greetings|who are you|what is lumi|introduce yourself|help)(\s+.*|\?|!)?$/i.test(lower)) {
-        res.end(JSON.stringify({
-          content: "Hello! I am LUMI (Local Unified Multimodal Intelligence), your private desktop AI workbench running locally on your machine. How can I assist you today?"
-        }));
-        return;
-      }
-
-      // 2. Hardware specs query
+      // 1. Hardware specs query
       if (lower.includes('hardware') || lower.includes('vram') || lower.includes('gpu') || lower.includes('specs')) {
         const hw = probeRealHardware();
         const directAnswer = `### Hardware Specifications\n- **GPU**: ${hw.gpu.name} (${hw.gpu.totalVramMB} MB VRAM, Driver ${hw.gpu.driverVersion})\n- **CPU**: ${hw.cpu.model} (${hw.cpu.cores} cores, ${hw.cpu.threads} threads)\n- **RAM**: ${hw.ram.totalGB} GB total (${hw.ram.freeGB} GB free)\n- **VRAM Ceiling**: 3.2 GB maximum allocated model footprint.`;
-        res.end(JSON.stringify({ content: directAnswer }));
+        res.end(JSON.stringify({ content: directAnswer, model: 'system-telemetry' }));
         return;
       }
 
-      // 3. Ground-truth knowledge retrieval
+      // 2. Ground-truth knowledge retrieval
       const ragMatches = searchKnowledgeChunks(prompt, 1);
       if (ragMatches.length > 0 && ragMatches[0].score > 0.8) {
         res.end(JSON.stringify({
           content: ragMatches[0].chunk.text,
+          model: CONFIGURED_MODELS.vector_rag.id,
           citations: [
             {
               id: ragMatches[0].chunk.id,
@@ -1318,32 +1352,45 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
         return;
       }
 
-      // 4. Runtime status check for generative queries
-      const audit = await auditLocalRuntime();
+      // 3. Runtime status check for real generative inference
+      let audit = await auditLocalRuntime();
       if (!audit.runtimeOnline) {
-        if (/quantum computing/i.test(lower)) {
-          res.end(JSON.stringify({
-            content: "Quantum computing leverages principles of quantum mechanics—primarily **superposition** and **entanglement**—to process information in quantum bits (qubits), solving complex computational problems exponentially faster than classical computers for specific applications.\n\n- **Superposition**: Unlike classical bits (0 or 1), a qubit exists in a probability distribution of both states simultaneously.\n- **Entanglement**: Interconnected qubits share correlated quantum states regardless of distance.\n\n*(Note: Local inference runtime is currently offline. Start Ollama at " + audit.endpoint + " for dynamic generative LLM responses.)*"
-          }));
-          return;
-        }
+        // Attempt daemon auto-recovery
+        await ensureOllamaRunning();
+        audit = await auditLocalRuntime();
+      }
 
+      if (!audit.runtimeOnline || audit.installedModels.length === 0) {
         res.statusCode = 503;
         res.end(JSON.stringify({
           error: 'Local inference service is unavailable.',
-          details: `Start Ollama at ${audit.endpoint} to enable generative LLM inference.`
+          details: `Local Ollama service at ${audit.endpoint} has not registered available models. Run 'ollama serve' and pull a model.`
         }));
         return;
       }
 
+      // 4. Dynamic model routing based on query domain
+      const isCoding = /(python|javascript|typescript|function|def\s+|class\s+|algorithm|script|prime|code|program|compile|regex)/i.test(prompt);
+      let targetModel = model;
+      if (!targetModel || targetModel === 'qwen3:8b') {
+        if (isCoding && audit.installedModels.some(m => /coder/i.test(m.name))) {
+          targetModel = audit.installedModels.find(m => /coder/i.test(m.name))!.name;
+        } else {
+          targetModel = audit.installedModels.find(m => /qwen2\.5:1\.5b/i.test(m.name))?.name
+            || audit.installedModels[0].name;
+        }
+      }
+
       try {
-        const targetModel = model || (audit.installedModels[0]?.name) || CONFIGURED_MODELS.reasoning[0].id;
-        const response = await callOllamaGenerate(targetModel, prompt);
+        const systemPrompt = isCoding
+          ? 'You are LUMI code intelligence. Write clean, complete, correct code with concise explanations. Format with Markdown.'
+          : 'You are LUMI, an intelligent sovereign AI assistant. Provide concise, direct, helpful answers formatted in Markdown without unnecessary filler.';
+        const response = await callOllamaGenerate(targetModel, prompt, systemPrompt);
         const clean = cleanDirectAnswer(response);
-        res.end(JSON.stringify({ content: clean }));
+        res.end(JSON.stringify({ content: clean, model: targetModel }));
       } catch (e: any) {
         res.statusCode = 500;
-        res.end(JSON.stringify({ error: `Inference error: ${e.message}` }));
+        res.end(JSON.stringify({ error: `Inference error: ${e.message}`, model: targetModel }));
       }
     });
     return true;

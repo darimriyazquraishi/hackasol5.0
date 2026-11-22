@@ -76,7 +76,7 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
   } = useWorkspace();
 
   const [inputVal, setInputVal] = useState('');
-  const [selectedReasoningModel] = useState('qwen3:8b');
+  const [selectedReasoningModel] = useState('qwen2.5:1.5b');
   const [isGenerating, setIsGenerating] = useState(false);
   const [executingPlanId, setExecutingPlanId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -463,20 +463,20 @@ export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
             {activeConversation?.title || 'Intelligence Chat'}
           </h1>
         </div>
-
-        <button
-          onClick={createConversation}
-          title="New Conversation (Reset to landing screen)"
-          className="px-2.5 py-1 rounded bg-[#191919] hover:bg-[#222222] text-[#D5D2CC] hover:text-[#F5F4F1] border border-[#303030] text-xs font-mono flex items-center space-x-1.5 transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5 text-[#987654]" />
-          <span>New Chat</span>
-        </button>
       </div>
 
       {/* Message Stream */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6 select-text">
         <div className="max-w-3xl mx-auto space-y-6">
+          {/* Starting LUMI Logo remains prominently displayed during conversation */}
+          <div className="flex flex-col items-center justify-center pt-2 pb-6 border-b border-[#1f1f1f] select-none">
+            <img
+              src="/lumi-logo.jpg"
+              alt="LUMI"
+              className="h-32 sm:h-40 w-auto object-contain pointer-events-none select-none transition-transform"
+            />
+          </div>
+
           {/* Render All Messages */}
           {messages.map(msg => (
             <div
