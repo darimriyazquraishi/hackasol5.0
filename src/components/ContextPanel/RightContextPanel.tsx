@@ -105,31 +105,33 @@ export const RightContextPanel: React.FC = () => {
             </div>
 
             {/* Attached Sources */}
-            <div className="space-y-2">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-[#9C9C9C] font-semibold">
-                Indexed Knowledge Collections ({knowledgeCollections.length})
-              </span>
-              <div className="space-y-1.5">
-                {knowledgeCollections.map(col => (
-                  <div
-                    key={col.id}
-                    className="p-2 rounded bg-[#191919] border border-[#303030] flex items-start justify-between"
-                  >
-                    <div className="min-w-0 pr-2">
-                      <div className="font-medium text-[#F5F4F1] text-[11px] truncate">
-                        {col.name}
+            {knowledgeCollections.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#9C9C9C] font-semibold">
+                  Indexed Knowledge Documents ({knowledgeCollections.length})
+                </span>
+                <div className="space-y-1.5">
+                  {knowledgeCollections.map(col => (
+                    <div
+                      key={col.id}
+                      className="p-2 rounded bg-[#191919] border border-[#303030] flex items-start justify-between"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <div className="font-medium text-[#F5F4F1] text-[11px] truncate">
+                          {col.name}
+                        </div>
+                        <div className="text-[10px] text-[#9C9C9C] font-mono mt-0.5">
+                          {col.chunkCount} chunk(s)
+                        </div>
                       </div>
-                      <div className="text-[10px] text-[#9C9C9C] font-mono mt-0.5">
-                        {col.chunkCount} chunk(s) • {col.embeddingModel}
-                      </div>
+                      <span className="text-[10px] text-emerald-400 font-mono shrink-0">
+                        INDEXED
+                      </span>
                     </div>
-                    <span className="text-[10px] text-emerald-400 font-mono shrink-0">
-                      INDEXED
-                    </span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 

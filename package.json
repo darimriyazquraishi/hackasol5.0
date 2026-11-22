@@ -17,6 +17,7 @@
     "exceljs": "^4.4.0",
     "jszip": "^3.10.1",
     "lucide-react": "^0.475.0",
+    "pdf-parse": "^2.4.5",
     "pdfkit": "^0.21.0",
     "pngjs": "^7.0.0",
     "pptxgenjs": "^4.0.1",

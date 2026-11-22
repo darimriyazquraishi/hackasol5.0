@@ -1,275 +1,286 @@
-import React, { useState } from 'react';
-import {
-  Database,
-  Upload,
-  Search,
-  FileText,
-  Sliders,
-  CheckCircle2,
-  Layers,
-  ArrowRight,
-  ExternalLink,
-  Plus
-} from 'lucide-react';
-import { useWorkspace } from '../../context/WorkspaceContext';
+import React, { useState, useEffect, useRef } from 'react';
+import { Upload, Trash2, FileText, AlertCircle, Loader2 } from 'lucide-react';
+
+interface StoredDocument {
+  id: string;
+  name: string;
+  extension: string;
+  sizeBytes: number;
+  size: string;
+  originalPath: string;
+  uploadedAt: string;
+  status: 'indexed' | 'processing' | 'failed';
+  extractedTextLength: number;
+  chunkCount: number;
+  error?: string;
+}
 
 export const KnowledgeBaseModule: React.FC = () => {
-  const { knowledgeCollections } = useWorkspace();
-  const [collections, setCollections] = useState(knowledgeCollections);
-  const [selectedCollectionId, setSelectedCollectionId] = useState(knowledgeCollections[0]?.id || 'col-1');
-  const [testQuery, setTestQuery] = useState('');
-  const [testResults, setTestResults] = useState<Array<{ id: string; text: string; score: number; file: string }>>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [ingestStatus, setIngestStatus] = useState<string | null>(null);
-  const fileUploadRef = React.useRef<HTMLInputElement>(null);
+  const [documents, setDocuments] = useState<StoredDocument[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{ text: string; isError?: boolean } | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchCollections = async () => {
+  const fetchDocuments = async () => {
     try {
-      const res = await fetch('/api/rag/collections');
+      const res = await fetch('/api/rag/documents');
       if (res.ok) {
         const data = await res.json();
-        if (data.collections && data.collections.length > 0) {
-          setCollections(data.collections);
-        }
+        setDocuments(data.documents || []);
       }
     } catch {
-      // fallback to workspace collections
+      // ignore
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  React.useEffect(() => {
-    fetchCollections();
+  useEffect(() => {
+    fetchDocuments();
   }, []);
 
-  const activeCollection = collections.find(c => c.id === selectedCollectionId) || collections[0];
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  const handleUploadFiles = async (files: FileList | File[]) => {
     if (!files || files.length === 0) return;
-    const file = files[0];
-    setIngestStatus(`Ingesting ${file.name}...`);
 
-    try {
-      const text = await file.text();
-      const res = await fetch('/api/rag/ingest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filename: file.name,
-          content: text,
-          collection: activeCollection?.name || 'Organizational Standards'
-        })
-      });
+    setIsUploading(true);
+    setStatusMessage({ text: `Uploading and indexing ${files.length} document(s)...` });
 
-      if (res.ok) {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        const base64Data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            const commaIdx = result.indexOf(',');
+            resolve(commaIdx !== -1 ? result.slice(commaIdx + 1) : result);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        const res = await fetch('/api/rag/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: file.name,
+            fileData: base64Data
+          })
+        });
+
         const data = await res.json();
-        setIngestStatus(`Successfully ingested ${file.name} (${data.newChunksCount} chunks indexed).`);
-        await fetchCollections();
-      } else {
-        setIngestStatus(`Failed to ingest ${file.name}`);
+        if (!res.ok || !data.success) {
+          setStatusMessage({
+            text: `Failed to index "${file.name}": ${data.error || 'Extraction error'}`,
+            isError: true
+          });
+        }
+      } catch (err: any) {
+        setStatusMessage({
+          text: `Error processing "${file.name}": ${err.message}`,
+          isError: true
+        });
       }
-    } catch (err: any) {
-      setIngestStatus(`Ingest error: ${err.message}`);
     }
 
-    setTimeout(() => setIngestStatus(null), 4500);
-    if (fileUploadRef.current) fileUploadRef.current.value = '';
+    await fetchDocuments();
+    setIsUploading(false);
+    setTimeout(() => {
+      setStatusMessage(null);
+    }, 4000);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
-  const handleTestSearch = async () => {
-    if (!testQuery.trim()) return;
-    setIsSearching(true);
+  const handleDelete = async (docId: string) => {
     try {
-      const res = await fetch('/api/rag/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: testQuery, topK: 3 })
+      const res = await fetch(`/api/rag/documents/${docId}`, {
+        method: 'DELETE'
       });
       if (res.ok) {
-        const data = await res.json();
-        if (data.results && data.results.length > 0) {
-          setTestResults(
-            data.results.map((r: any) => ({
-              id: r.chunk.id,
-              file: `${r.chunk.file} (${r.chunk.section})`,
-              score: r.score,
-              text: r.chunk.text
-            }))
-          );
-        } else {
-          setTestResults([]);
-        }
+        setDocuments(prev => prev.filter(d => d.id !== docId));
+        setConfirmDeleteId(null);
       } else {
-        setTestResults([]);
+        const data = await res.json().catch(() => ({}));
+        setStatusMessage({
+          text: data.error || 'Failed to delete document',
+          isError: true
+        });
+        setTimeout(() => setStatusMessage(null), 3500);
       }
-    } catch {
-      setTestResults([]);
-    } finally {
-      setIsSearching(false);
+    } catch (err: any) {
+      setStatusMessage({ text: `Delete failed: ${err.message}`, isError: true });
+      setTimeout(() => setStatusMessage(null), 3500);
     }
   };
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#080808] text-[#F5F4F1] font-sans select-none">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#303030] pb-4">
-        <div>
-          <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold font-mono tracking-tight text-[#F5F4F1]">
-              KNOWLEDGE BASE & RAG
-            </h1>
-            <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-[#191919] text-[#987654] border border-[#303030]">
-              DENSE VECTORS
-            </span>
-          </div>
-          <p className="text-xs text-[#9C9C9C] mt-1">
-            Local vector indexes, document chunking, and semantic retrieval engines.
-          </p>
-        </div>
+    <div
+      className={`h-full flex flex-col bg-[#080808] text-[#F5F4F1] font-sans p-8 overflow-y-auto select-none transition-colors ${
+        isDragging ? 'bg-[#12100d] ring-2 ring-[#c4a47c]/40 ring-inset' : ''
+      }`}
+      onDragOver={e => {
+        e.preventDefault();
+        setIsDragging(true);
+      }}
+      onDragLeave={e => {
+        e.preventDefault();
+        setIsDragging(false);
+      }}
+      onDrop={e => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          handleUploadFiles(e.dataTransfer.files);
+        }
+      }}
+    >
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept=".pdf,.docx,.pptx,.xlsx,.csv,.txt,.md"
+        onChange={e => e.target.files && handleUploadFiles(e.target.files)}
+        className="hidden"
+      />
 
-        <div className="flex items-center space-x-2">
-          <input
-            type="file"
-            ref={fileUploadRef}
-            onChange={handleFileUpload}
-            accept=".md,.txt,.json,.csv,.pdf,.docx"
-            className="hidden"
-          />
-          <button
-            onClick={() => fileUploadRef.current?.click()}
-            className="px-3 py-1.5 rounded text-xs font-mono bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1] transition-colors flex items-center space-x-1.5"
-          >
+      {/* Top Header Bar */}
+      <div className="flex items-center justify-between pb-6 border-b border-[#222222] shrink-0">
+        <h1 className="text-xl font-medium tracking-tight text-[#F5F4F1]">
+          Knowledge Base
+        </h1>
+
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className="px-4 py-2 rounded-xl bg-[#c4a47c] hover:bg-[#b89569] text-[#141414] font-medium text-xs flex items-center space-x-2 transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+        >
+          {isUploading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
             <Upload className="w-3.5 h-3.5" />
-            <span>Ingest Document</span>
-          </button>
-          {ingestStatus && <span className="text-[11px] font-mono text-emerald-400">{ingestStatus}</span>}
-        </div>
+          )}
+          <span>Upload Document</span>
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Collections List */}
-        <div className="space-y-3">
-          <h2 className="text-xs font-mono uppercase tracking-wider text-[#9C9C9C] font-semibold">
-            Collections ({collections.length})
-          </h2>
+      {/* Minimal Processing & Status Notification */}
+      {statusMessage && (
+        <div
+          className={`mt-4 p-3 rounded-xl border text-xs font-mono flex items-center space-x-2 shrink-0 ${
+            statusMessage.isError
+              ? 'bg-red-950/40 border-red-900/60 text-red-300'
+              : 'bg-[#141414] border-[#303030] text-[#c4a47c]'
+          }`}
+        >
+          {statusMessage.isError ? (
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+          ) : (
+            <Loader2 className="w-4 h-4 shrink-0 animate-spin text-[#c4a47c]" />
+          )}
+          <span className="truncate">{statusMessage.text}</span>
+        </div>
+      )}
 
+      {/* Main Content Area */}
+      <div className="mt-6 flex-1">
+        {isLoading ? (
+          <div className="py-20 text-center text-xs text-[#6e6e6e] font-mono">
+            Loading documents...
+          </div>
+        ) : documents.length === 0 ? (
+          <div className="py-24 text-center text-xs text-[#6e6e6e] font-sans">
+            No documents uploaded.
+          </div>
+        ) : (
           <div className="space-y-2">
-            {collections.map(col => {
-              const isSelected = col.id === selectedCollectionId;
+            {documents.map(doc => {
+              const extClean = (doc.extension || '').replace('.', '').toUpperCase() || 'FILE';
+              const isConfirming = confirmDeleteId === doc.id;
+
               return (
                 <div
-                  key={col.id}
-                  onClick={() => setSelectedCollectionId(col.id)}
-                  className={`p-3 rounded cursor-pointer transition-colors border ${
-                    isSelected
-                      ? 'bg-[#191919] border-[#987654]'
-                      : 'bg-[#121212] border-[#303030] hover:bg-[#191919]'
-                  }`}
+                  key={doc.id}
+                  className="p-3.5 rounded-xl bg-[#121212] border border-[#222222] hover:border-[#333333] flex items-center justify-between transition-colors"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-xs text-[#F5F4F1]">{col.name}</span>
-                    <span className="text-[10px] font-mono text-[#987654]">{col.size}</span>
+                  {/* Document Information */}
+                  <div className="flex items-center space-x-3 min-w-0 pr-4">
+                    <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-[#c4a47c]" />
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium text-[#F5F4F1] truncate">
+                        {doc.name}
+                      </div>
+                      <div className="text-[11px] text-[#737373] space-x-2 pt-0.5">
+                        <span className="font-mono">{extClean}</span>
+                        <span>•</span>
+                        <span>
+                          {new Date(doc.uploadedAt).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </span>
+                        {doc.status === 'failed' && (
+                          <>
+                            <span>•</span>
+                            <span className="text-red-400 font-mono text-[10px]">
+                              {doc.error || 'Failed'}
+                            </span>
+                          </>
+                        )}
+                        {doc.status === 'processing' && (
+                          <>
+                            <span>•</span>
+                            <span className="text-[#c4a47c] font-mono text-[10px]">
+                              Processing...
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[11px] text-[#9C9C9C] mt-1 line-clamp-2 leading-relaxed">
-                    {col.description}
-                  </p>
-                  <div className="flex items-center justify-between pt-2 mt-2 border-t border-[#262626] text-[10px] font-mono text-[#9C9C9C]">
-                    <span>{col.documentCount} docs • {col.chunkCount} chunks</span>
-                    <span>{col.lastUpdated}</span>
+
+                  {/* Delete Action with Confirmation */}
+                  <div className="shrink-0 flex items-center space-x-2">
+                    {isConfirming ? (
+                      <div className="flex items-center space-x-1.5 text-xs">
+                        <span className="text-[11px] text-[#9c9c9c] pr-1">Delete?</span>
+                        <button
+                          onClick={() => handleDelete(doc.id)}
+                          className="px-2 py-1 rounded bg-red-950/80 hover:bg-red-900 text-red-200 border border-red-800 text-[11px] transition-colors cursor-pointer"
+                        >
+                          Confirm
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-2 py-1 rounded bg-[#202020] hover:bg-[#282828] text-[#cccccc] text-[11px] transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(doc.id)}
+                        title="Delete Document"
+                        className="p-1.5 rounded-lg text-[#6e6e6e] hover:text-red-400 hover:bg-[#1f1f1f] transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );
             })}
           </div>
-
-          {/* Ingestion & Chunking Settings Card */}
-          <div className="p-3.5 rounded bg-[#191919] border border-[#303030] space-y-2 text-xs">
-            <div className="font-semibold text-xs font-mono text-[#F5F4F1] flex items-center space-x-2">
-              <Sliders className="w-3.5 h-3.5 text-[#987654]" />
-              <span>Indexing Parameters</span>
-            </div>
-            <div className="space-y-1.5 font-mono text-[11px] text-[#D5D2CC] pt-1">
-              <div className="flex justify-between">
-                <span className="text-[#9C9C9C]">Chunk Size:</span>
-                <span>512 tokens</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#9C9C9C]">Chunk Overlap:</span>
-                <span>64 tokens</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#9C9C9C]">Embedding Model:</span>
-                <span className="text-[#987654]">BGE-Large-EN-v1.5</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#9C9C9C]">Distance Metric:</span>
-                <span>Cosine Similarity</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Retrieval Testing & Citation Inspector */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="p-4 rounded bg-[#191919] border border-[#303030] space-y-3">
-            <h2 className="text-xs font-mono uppercase tracking-wider text-[#9C9C9C] font-semibold">
-              Semantic Retrieval Playground
-            </h2>
-
-            <div className="flex space-x-2">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  placeholder="Test query: e.g. How does LUMI manage memory isolation?"
-                  value={testQuery}
-                  onChange={e => setTestQuery(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleTestSearch()}
-                  className="w-full bg-[#080808] border border-[#303030] focus:border-[#987654] text-xs text-[#F5F4F1] pl-8 pr-3 py-2 rounded outline-none font-mono"
-                />
-                <Search className="w-3.5 h-3.5 text-[#9C9C9C] absolute left-2.5 top-2.5" />
-              </div>
-
-              <button
-                onClick={handleTestSearch}
-                disabled={!testQuery.trim() || isSearching}
-                className="px-4 py-2 rounded bg-[#987654] hover:bg-[#765B43] text-xs font-mono font-medium text-[#F5F4F1] transition-colors"
-              >
-                {isSearching ? 'Searching...' : 'Run Query'}
-              </button>
-            </div>
-
-            <div className="text-[11px] font-mono text-[#9C9C9C]">
-              Searching index: <span className="text-[#F5F4F1]">{activeCollection?.name}</span> • Top-k: 5
-            </div>
-          </div>
-
-          {/* Test Results Output */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-mono uppercase tracking-wider text-[#9C9C9C] font-semibold">
-              Retrieved Chunks & Citations
-            </h3>
-
-            {testResults.length === 0 ? (
-              <div className="p-8 rounded bg-[#121212] border border-[#262626] text-center text-xs text-[#9C9C9C] font-mono">
-                Submit a query to inspect matched dense vector chunks and cosine similarity rankings.
-              </div>
-            ) : (
-              testResults.map(res => (
-                <div key={res.id} className="p-3.5 rounded bg-[#191919] border border-[#303030] space-y-2">
-                  <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="text-[#F5F4F1] font-medium">{res.file}</span>
-                    <span className="text-[#987654] font-semibold">
-                      Score: {res.score.toFixed(3)}
-                    </span>
-                  </div>
-                  <p className="text-xs text-[#D5D2CC] leading-relaxed font-mono bg-[#080808] p-3 rounded border border-[#262626]">
-                    "{res.text}"
-                  </p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

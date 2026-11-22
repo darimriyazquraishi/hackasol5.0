@@ -12,3 +12,7 @@ yarn-error.log*
 Thumbs.db
 scratch/
 test-images.png
+data/images/*
+!data/images/.gitkeep
+data/knowledge/files/*
+!data/knowledge/files/.gitkeep

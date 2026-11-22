@@ -521,39 +521,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Dynamic LUMI Model Registry populated from inference runtime audit
   const [models, setModels] = useState<ModelItem[]>([]);
 
-  // LUMI Authoritative Knowledge Collections matching indexed chunks
-  const [knowledgeCollections, setKnowledgeCollections] = useState<KnowledgeCollection[]>([
-    {
-      id: 'kc-1',
-      name: 'Core System Architecture',
-      description: 'LUMI technical specifications, memory residency contracts, and runtime topology.',
-      documentCount: 2,
-      chunkCount: 2,
-      embeddingModel: 'nomic-embed-text',
-      lastUpdated: 'Indexed',
-      size: '14.2 KB'
-    },
-    {
-      id: 'kc-2',
-      name: 'Security & Sandbox Bounds',
-      description: 'Process isolation specifications, local loopback socket boundaries, and memory constraints.',
-      documentCount: 1,
-      chunkCount: 1,
-      embeddingModel: 'nomic-embed-text',
-      lastUpdated: 'Indexed',
-      size: '6.8 KB'
-    },
-    {
-      id: 'kc-3',
-      name: 'Hardware Guardrails',
-      description: 'GTX 1650 4GB VRAM ceiling limits, memory allocation tables, and preemption guardrails.',
-      documentCount: 1,
-      chunkCount: 1,
-      embeddingModel: 'nomic-embed-text',
-      lastUpdated: 'Indexed',
-      size: '5.4 KB'
-    }
-  ]);
+  // LUMI Authoritative Knowledge Collections (populated dynamically from uploaded documents)
+  const [knowledgeCollections, setKnowledgeCollections] = useState<KnowledgeCollection[]>([]);
 
   // LUMI Authoritative Multi-Agent Workflow Pipeline Nodes
   const [workflowNodes, setWorkflowNodes] = useState<WorkflowNode[]>([

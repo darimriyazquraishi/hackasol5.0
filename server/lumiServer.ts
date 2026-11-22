@@ -539,41 +539,6 @@ export interface KnowledgeChunk {
   keywords: string[];
 }
 
-export const KNOWLEDGE_CHUNKS: KnowledgeChunk[] = [
-  {
-    id: 'k-1',
-    collection: 'Core System Architecture',
-    file: 'system_architecture_spec.md',
-    section: 'Section 3.2: Memory Residency',
-    text: 'Memory residency constraints mandate that local model weights allocate exclusively within contiguous GPU memory pages, avoiding paging swaps across system PCIe lanes.',
-    keywords: ['memory', 'residency', 'gpu', 'vram', 'pcie', 'isolation', 'constraint', 'constraints']
-  },
-  {
-    id: 'k-2',
-    collection: 'Core System Architecture',
-    file: 'runtime_topology.md',
-    section: 'Section 4.1: Vector Index Storage',
-    text: 'Vector embeddings are committed to local NVMe storage using flat binary memory maps to maintain zero page fault latency during cosine similarity queries.',
-    keywords: ['vector', 'embeddings', 'nvme', 'storage', 'cosine', 'search', 'architecture']
-  },
-  {
-    id: 'k-3',
-    collection: 'Security & Sandbox Bounds',
-    file: 'security_sandbox_policy.md',
-    section: 'Section 8.1: Socket Isolation',
-    text: 'Direct loopback communication maintains strict boundaries on active embedding indexes, validating cryptographic checksums prior to vector query dispatch.',
-    keywords: ['security', 'sandbox', 'socket', 'isolation', 'checksum', 'loopback', 'policy']
-  },
-  {
-    id: 'k-4',
-    collection: 'Hardware Guardrails',
-    file: 'hardware_allocation_matrix.md',
-    section: 'Section 1.3: Laptop VRAM Ceiling',
-    text: 'On systems with 4 GB dedicated VRAM such as the GTX 1650, total allocated weights must not exceed 3.2 GB to prevent system graphics driver preemption.',
-    keywords: ['laptop', 'gtx 1650', 'vram', 'ceiling', 'allocation', 'hardware', 'guardrails']
-  }
-];
-
 export function searchKnowledgeChunks(query: string, topK: number = 3) {
   return ragEngine.search(query, topK);
 }
@@ -1571,39 +1536,73 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
     return true;
   }
 
-  // 12. Persistent RAG Collections Endpoint
-  if (url === '/api/rag/collections' && req.method === 'GET') {
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ collections: ragEngine.getCollectionsSummary() }));
-    return true;
-  }
-
-  // 13. Persistent RAG Documents Endpoint
+  // 12. Persistent RAG Documents Endpoint (List strictly user-uploaded documents)
   if (url === '/api/rag/documents' && req.method === 'GET') {
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ documents: ragEngine.getDocuments() }));
     return true;
   }
 
-  // 14. Persistent RAG Document Ingest Endpoint
-  if (url === '/api/rag/ingest' && req.method === 'POST') {
+  // 13. Persistent RAG Document Ingest / Upload Endpoint
+  if ((url === '/api/rag/ingest' || url === '/api/rag/upload') && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => { body += chunk; });
-    req.on('end', () => {
+    req.on('end', async () => {
       res.setHeader('Content-Type', 'application/json');
       try {
         const parsed = JSON.parse(body || '{}');
-        const filename = parsed.filename || 'document.txt';
-        const content = parsed.content || '';
-        const collection = parsed.collection || 'Organizational Standards';
+        const filename = parsed.filename || 'uploaded_document.txt';
+        let fileBuffer: Buffer;
 
-        const result = ragEngine.ingestDocument(filename, content, collection);
-        res.end(JSON.stringify({ success: true, ...result }));
+        if (parsed.fileData) {
+          fileBuffer = Buffer.from(parsed.fileData, 'base64');
+        } else {
+          fileBuffer = Buffer.from(parsed.content || '', 'utf-8');
+        }
+
+        const result = await ragEngine.ingestDocumentFile(filename, fileBuffer);
+        if (result.success) {
+          res.end(JSON.stringify(result));
+        } else {
+          res.statusCode = 422;
+          res.end(JSON.stringify(result));
+        }
       } catch (err: any) {
         res.statusCode = 400;
-        res.end(JSON.stringify({ error: `Ingestion failed: ${err.message}` }));
+        res.end(JSON.stringify({ success: false, error: `Upload processing failed: ${err.message}` }));
       }
     });
+    return true;
+  }
+
+  // 14. Persistent RAG Document Deletion Endpoint
+  if (url.startsWith('/api/rag/documents/') && req.method === 'DELETE') {
+    const docId = url.replace('/api/rag/documents/', '').split('?')[0];
+    const deleted = ragEngine.deleteDocument(docId);
+    res.setHeader('Content-Type', 'application/json');
+    if (deleted) {
+      res.end(JSON.stringify({ success: true, deletedId: docId }));
+    } else {
+      res.statusCode = 404;
+      res.end(JSON.stringify({ success: false, error: 'Document not found' }));
+    }
+    return true;
+  }
+
+  // 15. Persistent RAG Document Download Endpoint
+  if (url.startsWith('/api/rag/download/') && req.method === 'GET') {
+    const docId = url.replace('/api/rag/download/', '').split('?')[0];
+    const doc = ragEngine.getDocuments().find(d => d.id === docId);
+    if (doc && doc.originalPath && fs.existsSync(doc.originalPath)) {
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${doc.name}"`);
+      const fileBuf = fs.readFileSync(doc.originalPath);
+      res.end(fileBuf);
+      return true;
+    }
+    res.statusCode = 404;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ error: 'File not found on disk' }));
     return true;
   }
 

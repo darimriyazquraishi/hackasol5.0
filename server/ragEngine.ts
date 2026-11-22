@@ -1,9 +1,23 @@
 import fs from 'fs';
 import path from 'path';
 
+export interface StoredDocument {
+  id: string;
+  name: string;
+  extension: string;
+  sizeBytes: number;
+  size: string;
+  originalPath: string;
+  uploadedAt: string;
+  status: 'indexed' | 'processing' | 'failed';
+  extractedTextLength: number;
+  chunkCount: number;
+  error?: string;
+}
+
 export interface KnowledgeChunk {
   id: string;
-  collection: string;
+  docId: string;
   file: string;
   section: string;
   text: string;
@@ -11,244 +25,456 @@ export interface KnowledgeChunk {
   createdAt: string;
 }
 
-export interface IngestedDocument {
-  id: string;
-  name: string;
-  collection: string;
-  sizeBytes: number;
-  chunkCount: number;
-  uploadedAt: string;
+export interface StoredVector {
+  chunkId: string;
+  docId: string;
+  terms: Record<string, number>;
 }
 
-const KNOWLEDGE_DIR = path.resolve(process.cwd(), 'scratch', 'knowledge');
-const CHUNKS_FILE = path.join(KNOWLEDGE_DIR, 'chunks.json');
+// Dedicated persistent local storage paths
+const KNOWLEDGE_DIR = path.resolve(process.cwd(), 'data', 'knowledge');
+const FILES_DIR = path.join(KNOWLEDGE_DIR, 'files');
 const DOCS_FILE = path.join(KNOWLEDGE_DIR, 'documents.json');
+const CHUNKS_FILE = path.join(KNOWLEDGE_DIR, 'chunks.json');
+const VECTORS_FILE = path.join(KNOWLEDGE_DIR, 'vectors.json');
 
-// Ensure storage directory
+// Ensure storage directories exist
 try {
-  if (!fs.existsSync(KNOWLEDGE_DIR)) {
-    fs.mkdirSync(KNOWLEDGE_DIR, { recursive: true });
+  if (!fs.existsSync(FILES_DIR)) {
+    fs.mkdirSync(FILES_DIR, { recursive: true });
   }
-} catch {
-  // ignore
+} catch (e) {
+  console.error('Failed to initialize persistent knowledge storage directory:', e);
 }
 
-// Built-in foundational system chunks
-const DEFAULT_SYSTEM_CHUNKS: KnowledgeChunk[] = [
-  {
-    id: 'k-1',
-    collection: 'Core System Architecture',
-    file: 'system_architecture_spec.md',
-    section: 'Section 3.2: Memory Residency',
-    text: 'Memory residency constraints mandate that local model weights allocate exclusively within contiguous GPU memory pages, avoiding paging swaps across system PCIe lanes.',
-    keywords: ['memory', 'residency', 'gpu', 'vram', 'pcie', 'isolation', 'constraint', 'constraints'],
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'k-2',
-    collection: 'Core System Architecture',
-    file: 'runtime_topology.md',
-    section: 'Section 4.1: Vector Index Storage',
-    text: 'Vector embeddings are committed to local NVMe storage using flat binary memory maps to maintain zero page fault latency during cosine similarity queries.',
-    keywords: ['vector', 'embeddings', 'nvme', 'storage', 'cosine', 'search', 'architecture'],
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'k-3',
-    collection: 'Security & Sandbox Bounds',
-    file: 'security_sandbox_policy.md',
-    section: 'Section 8.1: Socket Isolation',
-    text: 'Direct loopback communication maintains strict boundaries on active embedding indexes, validating cryptographic checksums prior to vector query dispatch.',
-    keywords: ['security', 'sandbox', 'socket', 'isolation', 'checksum', 'loopback', 'policy'],
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'k-4',
-    collection: 'Hardware Guardrails',
-    file: 'hardware_allocation_matrix.md',
-    section: 'Section 1.3: Laptop VRAM Ceiling',
-    text: 'On systems with 4 GB dedicated VRAM such as the GTX 1650, total allocated weights must not exceed 3.2 GB to prevent system graphics driver preemption.',
-    keywords: ['laptop', 'gtx 1650', 'vram', 'ceiling', 'allocation', 'hardware', 'guardrails'],
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'k-5',
-    collection: 'Organizational Standards',
-    file: 'PPT_Generation_Guidelines.md',
-    section: 'Section 1.0: Executive Presentation Standards',
-    text: 'Corporate Presentation Rules: Always structure slide decks with 16:9 widescreen layout. The palette must adhere to Deep Black (#080808) background, Warm Taupe (#987654) headers and accents, and Off-White (#F5F4F1) body typography. Every presentation must begin with an executive Title Slide and include concise, high-impact bulleted takeaways rather than dense paragraphs.',
-    keywords: ['presentation', 'powerpoint', 'ppt', 'slides', 'guidelines', 'corporate', 'rules', 'formatting', 'branding', 'taupe', 'black', 'template'],
-    createdAt: new Date().toISOString()
+/**
+ * Genuine Text Extraction Pipeline for multiple document types
+ */
+async function extractTextFromBuffer(filename: string, buffer: Buffer): Promise<string> {
+  const ext = path.extname(filename).toLowerCase();
+
+  // 1. PDF Extraction
+  if (ext === '.pdf') {
+    try {
+      const { PDFParse } = await import('pdf-parse');
+      const parser = new PDFParse({ data: buffer });
+      const res = await parser.getText();
+      return (res.text || '').trim();
+    } catch (e: any) {
+      throw new Error(`PDF text extraction failed: ${e.message}`);
+    }
   }
-];
+
+  // 2. Word (.docx) Extraction
+  if (ext === '.docx') {
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = await JSZip.loadAsync(buffer);
+      const docXml = await zip.file('word/document.xml')?.async('text');
+      if (!docXml) return '';
+      return docXml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    } catch (e: any) {
+      throw new Error(`DOCX text extraction failed: ${e.message}`);
+    }
+  }
+
+  // 3. PowerPoint (.pptx) Extraction
+  if (ext === '.pptx') {
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = await JSZip.loadAsync(buffer);
+      const slideFiles = Object.keys(zip.files)
+        .filter(f => f.startsWith('ppt/slides/slide') && f.endsWith('.xml'))
+        .sort((a, b) => {
+          const numA = parseInt(a.replace(/[^0-9]/g, '') || '0', 10);
+          const numB = parseInt(b.replace(/[^0-9]/g, '') || '0', 10);
+          return numA - numB;
+        });
+
+      let slidesText = '';
+      for (const sf of slideFiles) {
+        const sXml = await zip.file(sf)?.async('text');
+        if (sXml) {
+          const slideClean = sXml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+          if (slideClean) slidesText += `[Slide ${sf}]: ${slideClean}\n\n`;
+        }
+      }
+      return slidesText.trim();
+    } catch (e: any) {
+      throw new Error(`PPTX text extraction failed: ${e.message}`);
+    }
+  }
+
+  // 4. Excel (.xlsx) Extraction
+  if (ext === '.xlsx') {
+    try {
+      const ExcelJS = (await import('exceljs')).default;
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(buffer);
+      let sheetText = '';
+      wb.eachSheet(sheet => {
+        sheetText += `[Sheet: ${sheet.name}]\n`;
+        sheet.eachRow(row => {
+          if (Array.isArray(row.values)) {
+            const rowContent = row.values
+              .slice(1)
+              .filter(v => v !== null && v !== undefined && v !== '')
+              .map(v => (typeof v === 'object' && v && 'text' in (v as any) ? (v as any).text : String(v)))
+              .join(' | ');
+            if (rowContent) sheetText += rowContent + '\n';
+          }
+        });
+        sheetText += '\n';
+      });
+      return sheetText.trim();
+    } catch (e: any) {
+      throw new Error(`XLSX text extraction failed: ${e.message}`);
+    }
+  }
+
+  // 5. CSV, TXT, Markdown, etc.
+  return buffer.toString('utf-8').trim();
+}
+
+/**
+ * Format bytes into human readable format
+ */
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 class RagKnowledgeEngine {
+  private documents: StoredDocument[] = [];
   private chunks: KnowledgeChunk[] = [];
-  private documents: IngestedDocument[] = [];
+  private vectors: StoredVector[] = [];
 
   constructor() {
     this.loadFromDisk();
   }
 
-  private loadFromDisk() {
+  /**
+   * Load strictly user-uploaded persistent data from disk.
+   * Zero hardcoded or dummy documents.
+   */
+  public loadFromDisk() {
     try {
-      if (fs.existsSync(CHUNKS_FILE)) {
-        const raw = fs.readFileSync(CHUNKS_FILE, 'utf-8');
-        this.chunks = JSON.parse(raw);
-      } else {
-        this.chunks = [...DEFAULT_SYSTEM_CHUNKS];
-        this.saveToDisk();
-      }
-
+      // 1. Load documents registry
       if (fs.existsSync(DOCS_FILE)) {
         const rawDocs = fs.readFileSync(DOCS_FILE, 'utf-8');
         this.documents = JSON.parse(rawDocs);
       } else {
-        this.documents = [
-          {
-            id: 'doc-sys-1',
-            name: 'PPT_Generation_Guidelines.md',
-            collection: 'Organizational Standards',
-            sizeBytes: 840,
-            chunkCount: 1,
-            uploadedAt: new Date().toISOString()
-          }
-        ];
-        fs.writeFileSync(DOCS_FILE, JSON.stringify(this.documents, null, 2), 'utf-8');
+        this.documents = [];
+      }
+
+      // 2. Load chunk records
+      if (fs.existsSync(CHUNKS_FILE)) {
+        const rawChunks = fs.readFileSync(CHUNKS_FILE, 'utf-8');
+        this.chunks = JSON.parse(rawChunks);
+      } else {
+        this.chunks = [];
+      }
+
+      // 3. Load vectors
+      if (fs.existsSync(VECTORS_FILE)) {
+        const rawVectors = fs.readFileSync(VECTORS_FILE, 'utf-8');
+        this.vectors = JSON.parse(rawVectors);
+      } else {
+        this.vectors = [];
       }
     } catch (e) {
-      console.error('Failed to load RAG knowledge from disk, using defaults:', e);
-      this.chunks = [...DEFAULT_SYSTEM_CHUNKS];
+      console.error('Error loading persistent knowledge base from disk:', e);
+      this.documents = [];
+      this.chunks = [];
+      this.vectors = [];
     }
   }
 
-  private saveToDisk() {
+  /**
+   * Persist current state synchronously to disk
+   */
+  public saveToDisk() {
     try {
-      fs.writeFileSync(CHUNKS_FILE, JSON.stringify(this.chunks, null, 2), 'utf-8');
       fs.writeFileSync(DOCS_FILE, JSON.stringify(this.documents, null, 2), 'utf-8');
+      fs.writeFileSync(CHUNKS_FILE, JSON.stringify(this.chunks, null, 2), 'utf-8');
+      fs.writeFileSync(VECTORS_FILE, JSON.stringify(this.vectors, null, 2), 'utf-8');
     } catch (e) {
-      console.error('Failed to persist RAG knowledge to disk:', e);
+      console.error('Failed to commit knowledge data to disk:', e);
     }
+  }
+
+  public getDocuments(): StoredDocument[] {
+    return this.documents;
   }
 
   public getChunks(): KnowledgeChunk[] {
     return this.chunks;
   }
 
-  public getDocuments(): IngestedDocument[] {
-    return this.documents;
-  }
+  /**
+   * Ingest an authentic user-uploaded document:
+   * 1. Validate file
+   * 2. Retain original file on persistent disk
+   * 3. Extract text
+   * 4. Chunk document
+   * 5. Generate embeddings/vectors
+   * 6. Commit to persistent database
+   */
+  public async ingestDocumentFile(
+    filename: string,
+    fileBuffer: Buffer
+  ): Promise<{ success: boolean; document: StoredDocument; chunksIndexed: number; error?: string }> {
+    const docId = `doc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const cleanName = path.basename(filename);
+    const ext = path.extname(cleanName).toLowerCase();
+    const storedFileName = `${docId}_${cleanName}`;
+    const originalPath = path.join(FILES_DIR, storedFileName);
 
-  public getCollectionsSummary() {
-    const map = new Map<string, { docs: number; chunks: number; lastUpdated: string }>();
-
-    for (const chunk of this.chunks) {
-      const existing = map.get(chunk.collection) || { docs: 0, chunks: 0, lastUpdated: chunk.createdAt };
-      existing.chunks += 1;
-      map.set(chunk.collection, existing);
+    // Save original file to persistent disk
+    try {
+      fs.writeFileSync(originalPath, fileBuffer);
+    } catch (err: any) {
+      return {
+        success: false,
+        document: {
+          id: docId,
+          name: cleanName,
+          extension: ext,
+          sizeBytes: fileBuffer.length,
+          size: formatFileSize(fileBuffer.length),
+          originalPath: '',
+          uploadedAt: new Date().toISOString(),
+          status: 'failed',
+          extractedTextLength: 0,
+          chunkCount: 0,
+          error: `Failed to save file to disk: ${err.message}`
+        },
+        chunksIndexed: 0,
+        error: `Disk write failed: ${err.message}`
+      };
     }
 
-    for (const doc of this.documents) {
-      const existing = map.get(doc.collection);
-      if (existing) {
-        existing.docs += 1;
+    // Extract text
+    let extractedText = '';
+    try {
+      extractedText = await extractTextFromBuffer(cleanName, fileBuffer);
+    } catch (extractErr: any) {
+      const failedDoc: StoredDocument = {
+        id: docId,
+        name: cleanName,
+        extension: ext,
+        sizeBytes: fileBuffer.length,
+        size: formatFileSize(fileBuffer.length),
+        originalPath,
+        uploadedAt: new Date().toISOString(),
+        status: 'failed',
+        extractedTextLength: 0,
+        chunkCount: 0,
+        error: extractErr.message
+      };
+      this.documents.push(failedDoc);
+      this.saveToDisk();
+      return {
+        success: false,
+        document: failedDoc,
+        chunksIndexed: 0,
+        error: extractErr.message
+      };
+    }
+
+    if (!extractedText.trim()) {
+      const emptyDoc: StoredDocument = {
+        id: docId,
+        name: cleanName,
+        extension: ext,
+        sizeBytes: fileBuffer.length,
+        size: formatFileSize(fileBuffer.length),
+        originalPath,
+        uploadedAt: new Date().toISOString(),
+        status: 'failed',
+        extractedTextLength: 0,
+        chunkCount: 0,
+        error: 'Document contained no extractable text.'
+      };
+      this.documents.push(emptyDoc);
+      this.saveToDisk();
+      return {
+        success: false,
+        document: emptyDoc,
+        chunksIndexed: 0,
+        error: 'No text found in document.'
+      };
+    }
+
+    // Semantic Chunking
+    const paragraphs = extractedText
+      .split(/\n\s*\n/)
+      .map(p => p.trim())
+      .filter(p => p.length > 10);
+
+    const newChunks: KnowledgeChunk[] = [];
+    const newVectors: StoredVector[] = [];
+    let chunkSeq = 1;
+
+    for (const para of paragraphs) {
+      // If paragraph is long (> 800 chars), subdivide into sentences
+      const subSegments: string[] = [];
+      if (para.length > 800) {
+        const sentences = para.split(/(?<=[.!?])\s+/);
+        let curr = '';
+        for (const s of sentences) {
+          if ((curr + ' ' + s).length > 600) {
+            if (curr) subSegments.push(curr.trim());
+            curr = s;
+          } else {
+            curr = curr ? `${curr} ${s}` : s;
+          }
+        }
+        if (curr) subSegments.push(curr.trim());
+      } else {
+        subSegments.push(para);
+      }
+
+      for (const seg of subSegments) {
+        const chunkId = `k-${docId}-${chunkSeq++}`;
+        const terms = seg.toLowerCase().split(/\W+/).filter(t => t.length > 2);
+        const uniqueKeywords = Array.from(new Set(terms)).slice(0, 20);
+
+        // Term frequency map
+        const termFreq: Record<string, number> = {};
+        for (const t of terms) {
+          termFreq[t] = (termFreq[t] || 0) + 1;
+        }
+
+        newChunks.push({
+          id: chunkId,
+          docId,
+          file: cleanName,
+          section: `Section ${chunkSeq - 1}`,
+          text: seg,
+          keywords: uniqueKeywords,
+          createdAt: new Date().toISOString()
+        });
+
+        newVectors.push({
+          chunkId,
+          docId,
+          terms: termFreq
+        });
       }
     }
 
-    return Array.from(map.entries()).map(([name, data], idx) => ({
-      id: `col-${idx + 1}`,
-      name,
-      documentCount: Math.max(1, data.docs),
-      chunkCount: data.chunks,
-      size: `${(data.chunks * 0.4).toFixed(1)} KB`,
-      lastUpdated: 'Persisted on disk',
-      description: `Persistent knowledge store for ${name}. Indexed with local dense embeddings.`
-    }));
-  }
-
-  /**
-   * Ingest and index a new document into persistent storage
-   */
-  public ingestDocument(filename: string, content: string, collection: string = 'Organizational Knowledge'): { document: IngestedDocument; newChunksCount: number } {
-    const docId = `doc-${Date.now()}`;
-    const cleanName = path.basename(filename);
-    
-    // Split content into semantic paragraphs / sections
-    const rawParagraphs = content.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 20);
-    const newChunks: KnowledgeChunk[] = [];
-
-    let sectionIndex = 1;
-    for (const para of rawParagraphs) {
-      // Extract keywords
-      const terms = para.toLowerCase().split(/\W+/).filter(w => w.length > 3);
-      const uniqueKeywords = Array.from(new Set(terms)).slice(0, 15);
-
+    // If no chunks created, create one chunk for entire text
+    if (newChunks.length === 0) {
+      const chunkId = `k-${docId}-1`;
+      const terms = extractedText.toLowerCase().split(/\W+/).filter(t => t.length > 2);
       newChunks.push({
-        id: `k-${Date.now()}-${sectionIndex}`,
-        collection,
+        id: chunkId,
+        docId,
         file: cleanName,
-        section: `Section ${sectionIndex}: ${para.slice(0, 30).replace(/\n/g, ' ')}...`,
-        text: para,
-        keywords: uniqueKeywords,
+        section: 'General',
+        text: extractedText,
+        keywords: Array.from(new Set(terms)).slice(0, 20),
         createdAt: new Date().toISOString()
       });
-      sectionIndex++;
-    }
-
-    // If text was short, create at least one chunk
-    if (newChunks.length === 0 && content.trim().length > 0) {
-      const terms = content.toLowerCase().split(/\W+/).filter(w => w.length > 3);
-      newChunks.push({
-        id: `k-${Date.now()}-1`,
-        collection,
-        file: cleanName,
-        section: `General: ${cleanName}`,
-        text: content.trim(),
-        keywords: Array.from(new Set(terms)).slice(0, 15),
-        createdAt: new Date().toISOString()
+      newVectors.push({
+        chunkId,
+        docId,
+        terms: terms.reduce((acc, t) => { acc[t] = (acc[t] || 0) + 1; return acc; }, {} as Record<string, number>)
       });
     }
 
-    // Append to chunks
-    this.chunks.push(...newChunks);
-
-    const doc: IngestedDocument = {
+    // Commit to in-memory state
+    const completedDoc: StoredDocument = {
       id: docId,
       name: cleanName,
-      collection,
-      sizeBytes: Buffer.byteLength(content, 'utf-8'),
-      chunkCount: newChunks.length,
-      uploadedAt: new Date().toISOString()
+      extension: ext,
+      sizeBytes: fileBuffer.length,
+      size: formatFileSize(fileBuffer.length),
+      originalPath,
+      uploadedAt: new Date().toISOString(),
+      status: 'indexed',
+      extractedTextLength: extractedText.length,
+      chunkCount: newChunks.length
     };
-    this.documents.push(doc);
 
-    // Save to disk immediately
+    this.documents.push(completedDoc);
+    this.chunks.push(...newChunks);
+    this.vectors.push(...newVectors);
+
+    // Commit synchronously to disk
     this.saveToDisk();
 
-    return { document: doc, newChunksCount: newChunks.length };
+    return {
+      success: true,
+      document: completedDoc,
+      chunksIndexed: newChunks.length
+    };
   }
 
   /**
-   * Semantic Retrieval against all persistent chunks
+   * Delete an authentic user-uploaded document and purge all associated files,
+   * chunks, and vectors from persistent storage.
+   */
+  public deleteDocument(docId: string): boolean {
+    const docIndex = this.documents.findIndex(d => d.id === docId);
+    if (docIndex === -1) return false;
+
+    const doc = this.documents[docIndex];
+
+    // 1. Delete original physical file
+    try {
+      if (doc.originalPath && fs.existsSync(doc.originalPath)) {
+        fs.unlinkSync(doc.originalPath);
+      }
+    } catch (e) {
+      console.error(`Failed to delete physical file ${doc.originalPath}:`, e);
+    }
+
+    // 2. Remove document from registry
+    this.documents.splice(docIndex, 1);
+
+    // 3. Remove chunks
+    this.chunks = this.chunks.filter(c => c.docId !== docId);
+
+    // 4. Remove vectors
+    this.vectors = this.vectors.filter(v => v.docId !== docId);
+
+    // 5. Commit to disk
+    this.saveToDisk();
+
+    return true;
+  }
+
+  /**
+   * Semantic Retrieval against user-uploaded persistent chunks
    */
   public search(query: string, topK: number = 3): Array<{ chunk: KnowledgeChunk; score: number }> {
     const queryTerms = query.toLowerCase().split(/\W+/).filter(t => t.length > 2);
-    if (queryTerms.length === 0) return [];
+    if (queryTerms.length === 0 || this.chunks.length === 0) return [];
 
     const scored = this.chunks.map(chunk => {
       let score = 0;
       const lowerText = chunk.text.toLowerCase();
       const lowerFile = chunk.file.toLowerCase();
-      const lowerSection = chunk.section.toLowerCase();
 
       for (const term of queryTerms) {
         if (chunk.keywords.some(k => k.includes(term))) score += 0.45;
-        if (lowerText.includes(term)) score += 0.35;
-        if (lowerFile.includes(term)) score += 0.40;
-        if (lowerSection.includes(term)) score += 0.25;
+        if (lowerText.includes(term)) score += 0.40;
+        if (lowerFile.includes(term)) score += 0.35;
       }
 
-      const confidence = Math.min(0.99, Math.max(0.40, +(score / (queryTerms.length * 0.7)).toFixed(3)));
+      const vector = this.vectors.find(v => v.chunkId === chunk.id);
+      if (vector) {
+        for (const term of queryTerms) {
+          if (vector.terms[term]) {
+            score += Math.min(0.5, vector.terms[term] * 0.15);
+          }
+        }
+      }
+
+      const confidence = Math.min(0.99, Math.max(0.35, +(score / (queryTerms.length * 0.75)).toFixed(3)));
       return {
         chunk,
         score: confidence
@@ -256,49 +482,32 @@ class RagKnowledgeEngine {
     });
 
     return scored
-      .filter(s => s.score >= 0.55)
+      .filter(s => s.score >= 0.50)
       .sort((a, b) => b.score - a.score)
       .slice(0, topK);
   }
 
   /**
    * Automatic Organizational Guidelines Lookup
-   * Checks if user's prompt matches any organizational rules or formatting SOPs
+   * Checks if user's prompt matches any organizational rules in uploaded documents
    */
   public getRelevantGuidelines(taskPrompt: string): { guidelinesText: string; citations: KnowledgeChunk[] } {
-    const lower = taskPrompt.toLowerCase();
-    const searchQueries: string[] = [];
-
-    if (/presentation|powerpoint|ppt|slides/i.test(lower)) {
-      searchQueries.push('presentation guidelines corporate rules formatting branding slides');
-    }
-    if (/report|proposal|document|docx|pdf/i.test(lower)) {
-      searchQueries.push('report guidelines formatting templates writing style');
-    }
-    if (/excel|spreadsheet|budget|expense|xlsx|csv/i.test(lower)) {
-      searchQueries.push('spreadsheet guidelines financial standards columns formatting');
-    }
-
-    if (searchQueries.length === 0) {
-      searchQueries.push(taskPrompt);
-    }
-
-    const matches: KnowledgeChunk[] = [];
-    for (const q of searchQueries) {
-      const res = this.search(q, 2);
-      for (const r of res) {
-        if (r.score > 0.65 && !matches.some(m => m.id === r.chunk.id)) {
-          matches.push(r.chunk);
-        }
-      }
-    }
-
-    if (matches.length === 0) {
+    if (this.chunks.length === 0) {
       return { guidelinesText: '', citations: [] };
     }
 
-    const guidelinesText = matches.map(m => `[From ${m.file} - ${m.section}]:\n${m.text}`).join('\n\n');
-    return { guidelinesText, citations: matches };
+    const matches = this.search(taskPrompt, 3);
+    const valid = matches.filter(m => m.score >= 0.60).map(m => m.chunk);
+
+    if (valid.length === 0) {
+      return { guidelinesText: '', citations: [] };
+    }
+
+    const guidelinesText = valid
+      .map(m => `[From ${m.file} - ${m.section}]:\n${m.text}`)
+      .join('\n\n');
+
+    return { guidelinesText, citations: valid };
   }
 }
 
