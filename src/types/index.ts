@@ -166,6 +166,9 @@ export interface SystemMetrics {
   ramUsed: number;
   ramTotal: number;
   tokensPerSec: number;
+  gpuName?: string;
+  cpuName?: string;
+  hardwareTier?: string;
 }
 
 // Chat First Types

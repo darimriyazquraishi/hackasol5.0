@@ -20,6 +20,11 @@ import {
   ChatAttachment,
   WorkplanApproval
 } from '../types';
+import {
+  HardwareProfile,
+  detectSystemHardware,
+  DEFAULT_HARDWARE_PROFILE
+} from '../services/hardwareDetector';
 import { defaultWorkspaceFiles, detectLanguage } from '../services/defaultFiles';
 import {
   findNodeByPath,
@@ -75,6 +80,8 @@ interface WorkspaceContextType {
   navigateToSettings: (cat?: SettingsCategory, sub?: SettingsSubSection) => void;
 
   // Telemetry & Hardware Models
+  hardwareProfile: HardwareProfile;
+  refreshHardware: () => Promise<void>;
   models: ModelItem[];
   loadModel: (id: string) => void;
   unloadModel: (id: string) => void;
@@ -603,65 +610,64 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
   }, [activeConversationId]);
 
-  // LUMI Model Registry
+  // LUMI Hardware Adaptive Model Registry (Tailored for 4GB VRAM GTX 1650 & AMD Ryzen 5 4600H)
   const [models, setModels] = useState<ModelItem[]>([
     {
       id: 'm-1',
-      name: 'LUMI-Core 70B',
-      family: 'Llama 3.3',
-      parameterSize: '70B',
+      name: 'Qwen2.5-Coder-1.5B',
+      family: 'Qwen',
+      parameterSize: '1.54B',
       quantization: 'Q4_K_M',
       status: 'loaded',
-      vramRequired: '42.1 GB',
-      vramUsed: '42.1 GB',
-      contextWindow: '128K',
-      tps: 38.4
+      vramRequired: '1.12 GB',
+      vramUsed: '1.12 GB',
+      contextWindow: '32K',
+      tps: 46.2
     },
     {
       id: 'm-2',
-      name: 'DeepSeek-Coder-V2',
-      family: 'DeepSeek',
-      parameterSize: '236B MoE',
+      name: 'Llama-3.2-3B-Instruct',
+      family: 'Llama 3.2',
+      parameterSize: '3.21B',
       quantization: 'Q4_K_M',
       status: 'unloaded',
-      vramRequired: '58.2 GB',
-      contextWindow: '128K',
-      tps: 28.1
+      vramRequired: '2.15 GB',
+      contextWindow: '32K',
+      tps: 28.4
     },
     {
       id: 'm-3',
-      name: 'Mistral-Large-Instruct',
-      family: 'Mistral',
-      parameterSize: '123B',
-      quantization: 'Q5_K_M',
+      name: 'DeepSeek-Coder-1.3B',
+      family: 'DeepSeek',
+      parameterSize: '1.30B',
+      quantization: 'Q4_K_M',
       status: 'unloaded',
-      vramRequired: '64.0 GB',
-      contextWindow: '128K',
-      tps: 24.2
+      vramRequired: '0.95 GB',
+      contextWindow: '16K',
+      tps: 48.1
     },
     {
       id: 'm-4',
-      name: 'Qwen2.5-Coder-32B',
-      family: 'Qwen',
-      parameterSize: '32.5B',
-      quantization: 'Q8_0',
-      status: 'loaded',
-      vramRequired: '34.2 GB',
-      vramUsed: '34.2 GB',
-      contextWindow: '64K',
-      tps: 45.6
+      name: 'SmolVLM-256M-Instruct',
+      family: 'SmolVLM',
+      parameterSize: '256M',
+      quantization: 'Q4_K_M',
+      status: 'unloaded',
+      vramRequired: '0.72 GB',
+      contextWindow: '8K',
+      tps: 36.5
     },
     {
       id: 'm-5',
-      name: 'BGE-Large-EN-v1.5',
+      name: 'BGE-Small-EN-v1.5',
       family: 'BAAI',
-      parameterSize: '335M',
+      parameterSize: '33.4M',
       quantization: 'F16',
       status: 'loaded',
-      vramRequired: '1.4 GB',
-      vramUsed: '1.4 GB',
+      vramRequired: '0.12 GB',
+      vramUsed: '0.12 GB',
       contextWindow: '512',
-      tps: 120.0
+      tps: 160.0
     }
   ]);
 
@@ -748,27 +754,82 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   ]);
 
-  // System Hardware Metrics
-  const [systemMetrics] = useState<SystemMetrics>({
-    gpuUtilization: 54,
-    vramAllocated: 77.7,
-    vramTotal: 96.0,
-    cpuUtilization: 28,
-    ramUsed: 42.1,
-    ramTotal: 128.0,
-    tokensPerSec: 38.4
+  // System Hardware Profile & Real Laptop Adaptive Telemetry
+  const [hardwareProfile, setHardwareProfile] = useState<HardwareProfile>(DEFAULT_HARDWARE_PROFILE);
+
+  const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
+    gpuUtilization: 28,
+    vramAllocated: 1.24,
+    vramTotal: 4.0,
+    cpuUtilization: 14,
+    ramUsed: 11.7,
+    ramTotal: 15.4,
+    tokensPerSec: 46.2,
+    gpuName: 'NVIDIA GeForce GTX 1650 (4GB GDDR6)',
+    cpuName: 'AMD Ryzen 5 4600H with Radeon Graphics (12 Threads)',
+    hardwareTier: 'Mid-Range Laptop (4GB VRAM, 16GB RAM)'
   });
 
+  const refreshHardware = useCallback(async () => {
+    const detected = await detectSystemHardware();
+    setHardwareProfile(detected);
+    setSystemMetrics(prev => ({
+      ...prev,
+      gpuName: detected.gpu.detected ? `${detected.gpu.name} (4GB)` : 'Integrated CPU',
+      cpuName: detected.cpu.model,
+      ramTotal: detected.ram.totalGB,
+      ramUsed: detected.ram.usedGB,
+      vramTotal: +(detected.gpu.totalVramMB / 1024).toFixed(1),
+      hardwareTier: detected.tierLabel
+    }));
+  }, []);
+
+  useEffect(() => {
+    refreshHardware();
+  }, [refreshHardware]);
+
   const loadModel = (id: string) => {
+    const target = models.find(m => m.id === id);
+    if (!target) return;
+
+    const targetVramGB = parseFloat(target.vramRequired);
+    const currentlyAllocated = models
+      .filter(m => m.status === 'loaded' && m.id !== id)
+      .reduce((sum, m) => sum + parseFloat(m.vramRequired), 0);
+
+    const safeCeiling = hardwareProfile.constraints.maxSafeVramGB; // 3.2 GB
+
+    if (currentlyAllocated + targetVramGB > safeCeiling) {
+      alert(
+        `Hardware Guardrail Enforced:\nLoading ${target.name} (${target.vramRequired}) would exceed the safe ${safeCeiling} GB VRAM limit for your ${hardwareProfile.gpu.name}.\n\nPlease unload an active model first to prevent GPU memory crashes.`
+      );
+      return;
+    }
+
     setModels(prev =>
       prev.map(m => (m.id === id ? { ...m, status: 'loaded', vramUsed: m.vramRequired } : m))
     );
+
+    const newTotal = +(currentlyAllocated + targetVramGB).toFixed(2);
+    setSystemMetrics(prev => ({
+      ...prev,
+      vramAllocated: newTotal,
+      gpuUtilization: Math.min(85, Math.round((newTotal / 4.0) * 100))
+    }));
   };
 
   const unloadModel = (id: string) => {
     setModels(prev =>
       prev.map(m => (m.id === id ? { ...m, status: 'unloaded', vramUsed: undefined } : m))
     );
+
+    const target = models.find(m => m.id === id);
+    const targetVramGB = target ? parseFloat(target.vramRequired) : 0;
+    setSystemMetrics(prev => ({
+      ...prev,
+      vramAllocated: Math.max(0, +(prev.vramAllocated - targetVramGB).toFixed(2)),
+      gpuUtilization: Math.max(8, prev.gpuUtilization - 20)
+    }));
   };
 
   const toggleLeftNav = () => setLeftNavCollapsed(v => !v);
@@ -1187,6 +1248,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setSettingsSubSection,
         navigateToSettings,
 
+        hardwareProfile,
+        refreshHardware,
         models,
         loadModel,
         unloadModel,

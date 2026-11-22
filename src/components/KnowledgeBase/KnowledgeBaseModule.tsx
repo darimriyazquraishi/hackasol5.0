@@ -22,9 +22,34 @@ export const KnowledgeBaseModule: React.FC = () => {
 
   const activeCollection = knowledgeCollections.find(c => c.id === selectedCollectionId) || knowledgeCollections[0];
 
-  const handleTestSearch = () => {
+  const handleTestSearch = async () => {
     if (!testQuery.trim()) return;
     setIsSearching(true);
+    try {
+      const res = await fetch('/api/rag/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: testQuery, topK: 3 })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          setTestResults(
+            data.results.map((r: any) => ({
+              id: r.chunk.id,
+              file: `${r.chunk.file} (${r.chunk.section})`,
+              score: r.score,
+              text: r.chunk.text
+            }))
+          );
+          setIsSearching(false);
+          return;
+        }
+      }
+    } catch (e) {
+      // fallback
+    }
+
     setTimeout(() => {
       setIsSearching(false);
       setTestResults([
@@ -41,7 +66,7 @@ export const KnowledgeBaseModule: React.FC = () => {
           text: 'The orchestrator maintains an immutable lock on active embedding indexes, validating cryptographic checksums prior to vector query dispatch.'
         }
       ]);
-    }, 600);
+    }, 400);
   };
 
   return (

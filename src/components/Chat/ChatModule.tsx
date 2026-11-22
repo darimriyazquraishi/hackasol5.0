@@ -50,7 +50,7 @@ export const ChatModule: React.FC = () => {
     createFile
   } = useWorkspace();
 
-  const [selectedModel, setSelectedModel] = useState('LUMI-Core 70B');
+  const [selectedModel, setSelectedModel] = useState('Qwen2.5-Coder-1.5B');
   const [selectedAgent, setSelectedAgent] = useState('Autonomous Orchestrator');
   const [modelDropdown, setModelDropdown] = useState(false);
   const [agentDropdown, setAgentDropdown] = useState(false);
