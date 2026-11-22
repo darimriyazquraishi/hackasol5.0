@@ -1,0 +1,80 @@
+/* Hallmark · theme: modern-minimal · posture: restrained · shape: app screen · hero: none · nav: none · footer: none · copy: verbatim */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --lumi-taupe: #987654;
+  --lumi-taupe-dark: #765b43;
+  --lumi-concrete: #9c9c9c;
+  --lumi-black: #080808;
+  --lumi-offwhite: #f5f4f1;
+  --lumi-mutedwhite: #d5d2cc;
+  --lumi-charcoal: #191919;
+  --lumi-border: #303030;
+
+  --color-bg-base: var(--lumi-black);
+  --color-surface: var(--lumi-charcoal);
+  --color-sidebar: var(--lumi-black);
+  --color-text: var(--lumi-offwhite);
+  --color-text-muted: var(--lumi-mutedwhite);
+  --color-accent: var(--lumi-taupe);
+  --color-accent-hover: var(--lumi-taupe-dark);
+  --color-border: var(--lumi-border);
+
+  --color-selection: var(--lumi-taupe);
+  --color-selection-text: var(--lumi-offwhite);
+
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+  --font-body: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: clip;
+  width: 100%;
+  height: 100%;
+  background-color: var(--lumi-black);
+  color: var(--lumi-offwhite);
+  font-family: var(--font-body);
+}
+
+::selection {
+  background-color: var(--color-selection);
+  color: var(--color-selection-text);
+}
+
+/* LUMI Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--lumi-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--lumi-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--lumi-concrete);
+}
+
+/* Focus state consistency */
+:focus-visible {
+  outline: 1px solid var(--lumi-taupe);
+  outline-offset: 1px;
+}
+
+/* Hide scrollbar for tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -1,0 +1,1249 @@
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import {
+  FileNode,
+  Tab,
+  ActivityBarTab,
+  BottomPanelTab,
+  EditorTheme,
+  GitState,
+  ExtensionItem,
+  ProblemItem,
+  LumiModule,
+  SettingsCategory,
+  SettingsSubSection,
+  ModelItem,
+  KnowledgeCollection,
+  WorkflowNode,
+  SystemMetrics,
+  ChatMessage,
+  ConversationThread,
+  ChatAttachment,
+  WorkplanApproval
+} from '../types';
+import { defaultWorkspaceFiles, detectLanguage } from '../services/defaultFiles';
+import {
+  findNodeByPath,
+  addNode,
+  renameNode as renameNodeHelper,
+  deleteNode as deleteNodeHelper,
+  updateFileContent as updateContentHelper,
+  toggleFolder as toggleFolderHelper,
+  openNativeDirectory,
+  saveNativeFile,
+  exportWorkspaceAsZip,
+  downloadFile
+} from '../services/fileSystem';
+
+interface WorkspaceContextType {
+  files: FileNode[];
+  workspaceName: string;
+  isNative: boolean;
+  tabs: Tab[];
+  activeTabId: string | null;
+  activeFile: FileNode | null;
+  activeBarTab: ActivityBarTab;
+  setActiveBarTab: (tab: ActivityBarTab) => void;
+  sidebarVisible: boolean;
+  setSidebarVisible: (v: boolean) => void;
+  toggleSidebar: () => void;
+  panelVisible: boolean;
+  setPanelVisible: (v: boolean) => void;
+  togglePanel: () => void;
+  panelTab: BottomPanelTab;
+  setPanelTab: (tab: BottomPanelTab) => void;
+  assistantVisible: boolean;
+  setAssistantVisible: (v: boolean) => void;
+  toggleAssistant: () => void;
+  theme: EditorTheme;
+  setTheme: (theme: EditorTheme) => void;
+
+  // LUMI Navigation & Modules
+  activeModule: LumiModule;
+  setActiveModule: (module: LumiModule) => void;
+  leftNavCollapsed: boolean;
+  setLeftNavCollapsed: (v: boolean) => void;
+  toggleLeftNav: () => void;
+  rightContextOpen: boolean;
+  setRightContextOpen: (v: boolean) => void;
+  toggleRightContext: () => void;
+
+  // Settings Sub-routing
+  settingsCategory: SettingsCategory;
+  setSettingsCategory: (cat: SettingsCategory) => void;
+  settingsSubSection: SettingsSubSection;
+  setSettingsSubSection: (sub: SettingsSubSection) => void;
+  navigateToSettings: (cat?: SettingsCategory, sub?: SettingsSubSection) => void;
+
+  // Telemetry & Hardware Models
+  models: ModelItem[];
+  loadModel: (id: string) => void;
+  unloadModel: (id: string) => void;
+  knowledgeCollections: KnowledgeCollection[];
+  workflowNodes: WorkflowNode[];
+  systemMetrics: SystemMetrics;
+
+  // Conversation Threads & Chat-First Orchestration
+  conversations: ConversationThread[];
+  activeConversationId: string;
+  activeConversation: ConversationThread | undefined;
+  createConversation: () => void;
+  selectConversation: (id: string) => void;
+  deleteConversation: (id: string) => void;
+  renameConversation: (id: string, newTitle: string) => void;
+  addMessageToActiveConversation: (msg: ChatMessage) => void;
+  updateWorkplanStatus: (stepId: string, status: 'approved' | 'rejected' | 'modified') => void;
+
+  commandPaletteOpen: boolean;
+  setCommandPaletteOpen: (open: boolean) => void;
+  commandPaletteMode: 'command' | 'file';
+  setCommandPaletteMode: (mode: 'command' | 'file') => void;
+  cursorPos: { line: number; col: number };
+  setCursorPos: (pos: { line: number; col: number }) => void;
+  gitState: GitState;
+  extensions: ExtensionItem[];
+  problems: ProblemItem[];
+
+  // File Operations
+  openFile: (path: string) => void;
+  closeTab: (id: string) => void;
+  closeAllTabs: () => void;
+  saveCurrentFile: () => Promise<void>;
+  updateFileContent: (path: string, content: string) => void;
+  createFile: (parentPath: string | null, name: string, content?: string) => void;
+  createFolder: (parentPath: string | null, name: string) => void;
+  renameItem: (path: string, newName: string) => void;
+  deleteItem: (path: string) => void;
+  toggleFolder: (path: string) => void;
+  openFolderFromDisk: () => Promise<void>;
+  exportProjectZip: () => Promise<void>;
+  downloadFileItem: (path: string) => void;
+
+  // Git Operations
+  stageFile: (path: string) => void;
+  unstageFile: (path: string) => void;
+  commitChanges: (message: string) => void;
+
+  // Extension Operations
+  toggleExtension: (id: string) => void;
+}
+
+const WorkspaceContext = createContext<WorkspaceContextType | null>(null);
+
+const DEFAULT_EXTENSIONS: ExtensionItem[] = [
+  {
+    id: 'esbenp.prettier-vscode',
+    name: 'prettier-vscode',
+    displayName: 'Prettier - Code formatter',
+    publisher: 'Prettier',
+    description: 'Code formatter using prettier for JS, TS, CSS, HTML, and more.',
+    version: '10.4.1',
+    downloads: '45.2M',
+    rating: 4.8,
+    icon: '✨',
+    installed: true,
+    category: 'Formatters'
+  },
+  {
+    id: 'dbaeumer.vscode-eslint',
+    name: 'vscode-eslint',
+    displayName: 'ESLint',
+    publisher: 'Microsoft',
+    description: 'Integrates ESLint JavaScript into VS Code.',
+    version: '3.0.10',
+    downloads: '38.1M',
+    rating: 4.7,
+    icon: '🔍',
+    installed: true,
+    category: 'Linters'
+  },
+  {
+    id: 'github.copilot',
+    name: 'copilot',
+    displayName: 'GitHub Copilot',
+    publisher: 'GitHub',
+    description: 'Your AI pair programmer directly in your editor.',
+    version: '1.240.0',
+    downloads: '21.5M',
+    rating: 4.9,
+    icon: '🤖',
+    installed: true,
+    category: 'AI'
+  },
+  {
+    id: 'bradlc.vscode-tailwindcss',
+    name: 'vscode-tailwindcss',
+    displayName: 'Tailwind CSS IntelliSense',
+    publisher: 'Tailwind Labs',
+    description: 'Intelligent Tailwind CSS tooling for VS Code.',
+    version: '0.12.7',
+    downloads: '18.9M',
+    rating: 4.9,
+    icon: '🎨',
+    installed: false,
+    category: 'Other'
+  },
+  {
+    id: 'ms-python.python',
+    name: 'python',
+    displayName: 'Python',
+    publisher: 'Microsoft',
+    description: 'IntelliSense, linting, debugging for Python.',
+    version: '2024.18.0',
+    downloads: '125M',
+    rating: 4.6,
+    icon: '🐍',
+    installed: false,
+    category: 'Programming Languages'
+  },
+  {
+    id: 'eamodio.gitlens',
+    name: 'gitlens',
+    displayName: 'GitLens — Git supercharged',
+    publisher: 'GitKraken',
+    description: 'Supercharge Git within VS Code — Visualize code authorship at a glance.',
+    version: '15.7.0',
+    downloads: '34.2M',
+    rating: 4.8,
+    icon: '🔍',
+    installed: true,
+    category: 'SCM Providers'
+  }
+];
+
+const INITIAL_PROBLEMS: ProblemItem[] = [
+  {
+    id: 'p-1',
+    file: '/src/App.tsx',
+    line: 14,
+    col: 7,
+    message: 'Fast Refresh had to perform a full reload due to state re-initialization.',
+    severity: 'info',
+    source: 'eslint'
+  },
+  {
+    id: 'p-2',
+    file: '/src/utils/math.ts',
+    line: 19,
+    col: 1,
+    message: 'Unexpected console statement. (no-console)',
+    severity: 'warning',
+    source: 'eslint'
+  }
+];
+
+// Initial preloaded conversation with enterprise RAG, workplan approval, and file generation previews
+const INITIAL_CONVERSATIONS: ConversationThread[] = [
+  {
+    id: 'conv-1',
+    title: 'VRAM Isolation & Core Architecture Audit',
+    lastUpdated: '10 mins ago',
+    messages: [
+      {
+        id: 'msg-1',
+        sender: 'user',
+        timestamp: '22:45',
+        content: 'Audit our file system routing and evaluate memory isolation between the IDE workspace and inference workers.'
+      },
+      {
+        id: 'msg-2',
+        sender: 'assistant',
+        timestamp: '22:46',
+        model: 'LUMI-Core 70B',
+        agent: 'Security Evaluator',
+        tokens: 412,
+        executionStages: [
+          { id: 'st-1', name: 'Query intent parsing & security boundaries verification', status: 'completed', duration: '142ms' },
+          { id: 'st-2', name: 'Vector retrieval across Core System Architecture collections', status: 'completed', duration: '280ms' },
+          { id: 'st-3', name: 'Memory model inference on dedicated GPU compute slot', status: 'completed', duration: '890ms' },
+          { id: 'st-4', name: 'Static assertion gate & sandbox validation', status: 'completed', duration: '95ms' }
+        ],
+        citations: [
+          {
+            id: 'cit-1',
+            collection: 'Core System Architecture',
+            file: 'system_architecture_spec.md',
+            section: 'Section 3.2: Memory Residency',
+            score: 0.94,
+            snippet: 'Memory residency constraints mandate that local model weights allocate exclusively within contiguous GPU memory pages, avoiding paging swaps across system PCIe lanes.'
+          },
+          {
+            id: 'cit-2',
+            collection: 'Security & Sandbox Bounds',
+            file: 'runtime_topology.md',
+            section: 'Section 8.1: Socket Isolation',
+            score: 0.89,
+            snippet: 'The orchestrator maintains an immutable lock on active embedding indexes, validating cryptographic checksums prior to vector query dispatch.'
+          }
+        ],
+        content: `The evaluation confirms clear boundaries between the frontend file system layer and the backend model runtime:
+
+1. **Storage Isolation**: Web File System Access API handles user disk mounts within the browser thread, preventing raw access to host NVMe model weight directories.
+2. **Buffer Management**: Monaco editor models stream through in-memory arrays without writing temporary plain-text cache files to the disk.
+3. **Hardware Boundaries**: Inference processes bind strictly to designated GPU compute slots, isolating host RAM allocations from VRAM residency.`,
+        codeBlock: {
+          language: 'typescript',
+          code: `// Verified memory isolation boundary
+export const verifyComputeIsolation = (slotId: number): boolean => {
+  const vramBound = process.env.LUMI_ISOLATED_SLOT ?? '0';
+  return String(slotId) === vramBound;
+};`
+        },
+        workplan: {
+          id: 'wp-1',
+          title: 'Proposed Action Plan: Hardened IPC Boundary',
+          description: 'Apply strict Unix domain socket permission checks before dispatching code execution requests.',
+          status: 'pending',
+          steps: [
+            { id: 'wps-1', description: 'Bind Unix socket strictly to 0600 file mode', status: 'completed' },
+            { id: 'wps-2', description: 'Enforce seccomp-bpf filter for worker processes', status: 'in_progress' },
+            { id: 'wps-3', description: 'Inject deterministic hash validator in Monaco editor save hook', status: 'pending' }
+          ]
+        },
+        generatedFiles: [
+          {
+            id: 'gen-1',
+            name: 'memory-isolation-spec.md',
+            size: '14.8 KB',
+            type: 'markdown',
+            description: 'Comprehensive technical specification of memory and VRAM residency bounds.',
+            content: `# LUMI Memory Isolation Specification\n\nVersion: 13.5\nIsolation Level: Strict Ring-0 Hardware Guard\n\n## 1. Storage Boundaries\nAll editor workspaces execute within sandboxed browser memory without disk leakage.`
+          },
+          {
+            id: 'gen-2',
+            name: 'ipc_sandbox_policy.json',
+            size: '3.4 KB',
+            type: 'json',
+            description: 'Sandbox firewall rules restricting process communication to local loopback.',
+            content: `{\n  "version": "1.0",\n  "egress": "blocked",\n  "telemetry": false,\n  "allowedSockets": ["/tmp/lumi-ipc.sock"]\n}`
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'conv-2',
+    title: 'FastAPI Backend Synthesis & Vector Indexing',
+    lastUpdated: '1 hour ago',
+    messages: [
+      {
+        id: 'msg-201',
+        sender: 'user',
+        timestamp: '21:30',
+        content: 'Help me scaffold a secure local vector search endpoint using FastAPI and sqlite-vec.'
+      },
+      {
+        id: 'msg-202',
+        sender: 'assistant',
+        timestamp: '21:31',
+        model: 'Qwen2.5-Coder-32B',
+        agent: 'Code Synthesizer',
+        tokens: 350,
+        content: 'I have structured the FastAPI endpoint with connection pooling and parameter validation. The implementation uses local sqlite-vec without any remote API requirements.',
+        codeBlock: {
+          language: 'python',
+          code: `from fastapi import FastAPI, HTTPException
+import sqlite3
+
+app = FastAPI(title="LUMI Vector Search Engine")
+
+@app.post("/api/v1/retrieve")
+async def retrieve_embeddings(query_vector: list[float], top_k: int = 5):
+    conn = sqlite3.connect("file:lumi_vectors.db?mode=ro", uri=True)
+    cursor = conn.cursor()
+    # Fast HNSW cosine query
+    res = cursor.execute("SELECT doc_id, distance FROM vector_index WHERE query(?) LIMIT ?", (bytes(query_vector), top_k)).fetchall()
+    return {"results": [{"id": r[0], "distance": r[1]} for r in res]}`
+        }
+      }
+    ]
+  }
+];
+
+export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Try to load persisted files from localStorage if available
+  const [files, setFiles] = useState<FileNode[]>(() => {
+    try {
+      const saved = localStorage.getItem('vscode_clone_files');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.warn('Could not load files from localStorage', e);
+    }
+    return defaultWorkspaceFiles;
+  });
+
+  const [workspaceName, setWorkspaceName] = useState<string>('vscode-web-workspace');
+  const [isNative, setIsNative] = useState<boolean>(false);
+  const [rootNativeHandle, setRootNativeHandle] = useState<any>(null);
+
+  // Tabs for IDE
+  const [tabs, setTabs] = useState<Tab[]>([
+    {
+      id: 'file-app',
+      name: 'App.tsx',
+      path: '/src/App.tsx',
+      language: 'typescript',
+      isDirty: false
+    },
+    {
+      id: 'file-readme',
+      name: 'README.md',
+      path: '/README.md',
+      language: 'markdown',
+      isDirty: false
+    }
+  ]);
+  const [activeTabId, setActiveTabId] = useState<string | null>('file-app');
+
+  // URL Hash Synchronisation for Refresh Resilience (Requirement 12)
+  const parseHash = (): { module: LumiModule; cat: SettingsCategory; sub: SettingsSubSection } => {
+    try {
+      const hash = window.location.hash.replace(/^#/, '');
+      if (hash === 'ide') {
+        return { module: 'ide', cat: 'workbench', sub: 'model-manager' };
+      }
+      if (hash.startsWith('settings')) {
+        const parts = hash.split('/');
+        const cat = (parts[1] as SettingsCategory) || 'workbench';
+        const sub = (parts[2] as SettingsSubSection) || 'model-manager';
+        return { module: 'settings', cat, sub };
+      }
+    } catch (e) {
+      // fallback
+    }
+    return { module: 'chat', cat: 'workbench', sub: 'model-manager' };
+  };
+
+  const initialHash = parseHash();
+
+  // Primary Landing Page is explicitly 'chat' (Requirement 1)
+  const [activeModule, setActiveModuleState] = useState<LumiModule>(initialHash.module || 'chat');
+  const [settingsCategory, setSettingsCategoryState] = useState<SettingsCategory>(initialHash.cat || 'workbench');
+  const [settingsSubSection, setSettingsSubSectionState] = useState<SettingsSubSection>(initialHash.sub || 'model-manager');
+
+  // Listen to hashchange events for browser history and direct navigation
+  useEffect(() => {
+    const handleHashChange = () => {
+      const parsed = parseHash();
+      setActiveModuleState(parsed.module);
+      setSettingsCategoryState(parsed.cat);
+      setSettingsSubSectionState(parsed.sub);
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const [leftNavCollapsed, setLeftNavCollapsed] = useState<boolean>(false);
+  const [rightContextOpen, setRightContextOpen] = useState<boolean>(false);
+  const [activeBarTab, setActiveBarTab] = useState<ActivityBarTab>('explorer');
+  const [sidebarVisible, setSidebarVisible] = useState<boolean>(true);
+  const [panelVisible, setPanelVisible] = useState<boolean>(false);
+  const [panelTab, setPanelTab] = useState<BottomPanelTab>('terminal');
+  const [assistantVisible, setAssistantVisible] = useState<boolean>(true);
+  const [theme, setTheme] = useState<EditorTheme>('dark-modern');
+
+  // Synchronize hash on module / settings change
+  const setActiveModule = useCallback((mod: LumiModule) => {
+    setActiveModuleState(mod);
+    if (mod === 'chat') {
+      window.location.hash = 'chat';
+    } else if (mod === 'ide') {
+      window.location.hash = 'ide';
+    } else if (mod === 'settings') {
+      window.location.hash = `settings/${settingsCategory}/${settingsSubSection}`;
+    }
+  }, [settingsCategory, settingsSubSection]);
+
+  const setSettingsCategory = useCallback((cat: SettingsCategory) => {
+    setSettingsCategoryState(cat);
+    // select first subsection of this category
+    const defaultSub: Record<SettingsCategory, SettingsSubSection> = {
+      workbench: 'model-manager',
+      hardware: 'hardware-detection',
+      security: 'local-mode',
+      system: 'system-health'
+    };
+    const sub = defaultSub[cat];
+    setSettingsSubSectionState(sub);
+    window.location.hash = `settings/${cat}/${sub}`;
+  }, []);
+
+  const setSettingsSubSection = useCallback((sub: SettingsSubSection) => {
+    setSettingsSubSectionState(sub);
+    window.location.hash = `settings/${settingsCategory}/${sub}`;
+  }, [settingsCategory]);
+
+  const navigateToSettings = useCallback((cat?: SettingsCategory, sub?: SettingsSubSection) => {
+    const targetCat = cat || 'workbench';
+    const targetSub = sub || 'model-manager';
+    setSettingsCategoryState(targetCat);
+    setSettingsSubSectionState(targetSub);
+    setActiveModuleState('settings');
+    window.location.hash = `settings/${targetCat}/${targetSub}`;
+  }, []);
+
+  // Conversations State
+  const [conversations, setConversations] = useState<ConversationThread[]>(() => {
+    try {
+      const saved = localStorage.getItem('lumi_conversations');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      // fallback
+    }
+    return INITIAL_CONVERSATIONS;
+  });
+
+  const [activeConversationId, setActiveConversationId] = useState<string>(
+    INITIAL_CONVERSATIONS[0].id
+  );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('lumi_conversations', JSON.stringify(conversations));
+    } catch (e) {
+      // ignore
+    }
+  }, [conversations]);
+
+  const activeConversation = conversations.find(c => c.id === activeConversationId);
+
+  const createConversation = useCallback(() => {
+    const newId = `conv-${Date.now()}`;
+    const newConv: ConversationThread = {
+      id: newId,
+      title: 'New Conversation',
+      lastUpdated: 'Just now',
+      messages: []
+    };
+    setConversations(prev => [newConv, ...prev]);
+    setActiveConversationId(newId);
+    setActiveModule('chat');
+  }, [setActiveModule]);
+
+  const selectConversation = useCallback((id: string) => {
+    setActiveConversationId(id);
+    setActiveModule('chat');
+  }, [setActiveModule]);
+
+  const deleteConversation = useCallback((id: string) => {
+    setConversations(prev => {
+      const remaining = prev.filter(c => c.id !== id);
+      if (activeConversationId === id) {
+        if (remaining.length > 0) {
+          setActiveConversationId(remaining[0].id);
+        } else {
+          const freshId = `conv-${Date.now()}`;
+          setActiveConversationId(freshId);
+          return [
+            {
+              id: freshId,
+              title: 'New Conversation',
+              lastUpdated: 'Just now',
+              messages: []
+            }
+          ];
+        }
+      }
+      return remaining;
+    });
+  }, [activeConversationId]);
+
+  const renameConversation = useCallback((id: string, newTitle: string) => {
+    const clean = newTitle.trim();
+    if (!clean) return;
+    setConversations(prev =>
+      prev.map(c => (c.id === id ? { ...c, title: clean } : c))
+    );
+  }, []);
+
+  const addMessageToActiveConversation = useCallback((msg: ChatMessage) => {
+    setConversations(prev =>
+      prev.map(c => {
+        if (c.id === activeConversationId) {
+          const isFirstUserMessage = c.messages.length === 0 && msg.sender === 'user';
+          const newTitle = isFirstUserMessage
+            ? msg.content.slice(0, 36) + (msg.content.length > 36 ? '...' : '')
+            : c.title;
+
+          return {
+            ...c,
+            title: newTitle,
+            lastUpdated: 'Just now',
+            messages: [...c.messages, msg]
+          };
+        }
+        return c;
+      })
+    );
+  }, [activeConversationId]);
+
+  const updateWorkplanStatus = useCallback((stepId: string, status: 'approved' | 'rejected' | 'modified') => {
+    setConversations(prev =>
+      prev.map(c => {
+        if (c.id === activeConversationId) {
+          return {
+            ...c,
+            messages: c.messages.map(m => {
+              if (m.workplan) {
+                return {
+                  ...m,
+                  workplan: {
+                    ...m.workplan,
+                    status
+                  }
+                };
+              }
+              return m;
+            })
+          };
+        }
+        return c;
+      })
+    );
+  }, [activeConversationId]);
+
+  // LUMI Model Registry
+  const [models, setModels] = useState<ModelItem[]>([
+    {
+      id: 'm-1',
+      name: 'LUMI-Core 70B',
+      family: 'Llama 3.3',
+      parameterSize: '70B',
+      quantization: 'Q4_K_M',
+      status: 'loaded',
+      vramRequired: '42.1 GB',
+      vramUsed: '42.1 GB',
+      contextWindow: '128K',
+      tps: 38.4
+    },
+    {
+      id: 'm-2',
+      name: 'DeepSeek-Coder-V2',
+      family: 'DeepSeek',
+      parameterSize: '236B MoE',
+      quantization: 'Q4_K_M',
+      status: 'unloaded',
+      vramRequired: '58.2 GB',
+      contextWindow: '128K',
+      tps: 28.1
+    },
+    {
+      id: 'm-3',
+      name: 'Mistral-Large-Instruct',
+      family: 'Mistral',
+      parameterSize: '123B',
+      quantization: 'Q5_K_M',
+      status: 'unloaded',
+      vramRequired: '64.0 GB',
+      contextWindow: '128K',
+      tps: 24.2
+    },
+    {
+      id: 'm-4',
+      name: 'Qwen2.5-Coder-32B',
+      family: 'Qwen',
+      parameterSize: '32.5B',
+      quantization: 'Q8_0',
+      status: 'loaded',
+      vramRequired: '34.2 GB',
+      vramUsed: '34.2 GB',
+      contextWindow: '64K',
+      tps: 45.6
+    },
+    {
+      id: 'm-5',
+      name: 'BGE-Large-EN-v1.5',
+      family: 'BAAI',
+      parameterSize: '335M',
+      quantization: 'F16',
+      status: 'loaded',
+      vramRequired: '1.4 GB',
+      vramUsed: '1.4 GB',
+      contextWindow: '512',
+      tps: 120.0
+    }
+  ]);
+
+  // LUMI Knowledge Collections
+  const [knowledgeCollections, setKnowledgeCollections] = useState<KnowledgeCollection[]>([
+    {
+      id: 'kc-1',
+      name: 'Core System Architecture',
+      description: 'LUMI technical specifications, internal RPC contracts, and runtime topology.',
+      documentCount: 38,
+      chunkCount: 2140,
+      embeddingModel: 'BGE-Large-EN-v1.5',
+      lastUpdated: '14 mins ago',
+      size: '24.5 MB'
+    },
+    {
+      id: 'kc-2',
+      name: 'Security & Sandbox Bounds',
+      description: 'Zero-trust isolation specifications, local socket access, and memory constraints.',
+      documentCount: 19,
+      chunkCount: 890,
+      embeddingModel: 'BGE-Large-EN-v1.5',
+      lastUpdated: '2 hours ago',
+      size: '11.2 MB'
+    },
+    {
+      id: 'kc-3',
+      name: 'Private Dataset Repositories',
+      description: 'Proprietary enterprise documents, codebases, and domain-specific knowledge corpus.',
+      documentCount: 142,
+      chunkCount: 9450,
+      embeddingModel: 'BGE-Large-EN-v1.5',
+      lastUpdated: 'Yesterday',
+      size: '142.8 MB'
+    }
+  ]);
+
+  // LUMI Multi-Agent Workflow Nodes
+  const [workflowNodes, setWorkflowNodes] = useState<WorkflowNode[]>([
+    {
+      id: 'node-1',
+      name: 'Ingress Parser',
+      type: 'agent',
+      status: 'completed',
+      inputs: ['Raw Prompt', 'Attached Context'],
+      outputs: ['Structured Intent', 'Scope Bounds'],
+      description: 'Tokenizes user requirements and identifies required tools and datasets.'
+    },
+    {
+      id: 'node-2',
+      name: 'RAG Retriever',
+      type: 'retrieval',
+      status: 'completed',
+      inputs: ['Structured Intent'],
+      outputs: ['Retrieved Chunks', 'Confidence Scores'],
+      description: 'Dense vector search over local knowledge collections with cross-encoder reranking.'
+    },
+    {
+      id: 'node-3',
+      name: 'Reasoning Engine',
+      type: 'llm',
+      status: 'running',
+      inputs: ['Retrieved Chunks', 'Active Codebase State'],
+      outputs: ['Execution Plan', 'Proposed Diffs'],
+      description: 'Performs multi-step symbolic and neural planning on local GPU clusters.'
+    },
+    {
+      id: 'node-4',
+      name: 'Sandboxed Synthesizer',
+      type: 'tool',
+      status: 'idle',
+      inputs: ['Execution Plan'],
+      outputs: ['Verified Output', 'Test Logs'],
+      description: 'Applies edits inside an isolated process and executes compilation checks.'
+    },
+    {
+      id: 'node-5',
+      name: 'Verification Gate',
+      type: 'evaluator',
+      status: 'idle',
+      inputs: ['Verified Output'],
+      outputs: ['Final Audit', 'Approval Token'],
+      description: 'Automated linter and security gate verifying zero regressions.'
+    }
+  ]);
+
+  // System Hardware Metrics
+  const [systemMetrics] = useState<SystemMetrics>({
+    gpuUtilization: 54,
+    vramAllocated: 77.7,
+    vramTotal: 96.0,
+    cpuUtilization: 28,
+    ramUsed: 42.1,
+    ramTotal: 128.0,
+    tokensPerSec: 38.4
+  });
+
+  const loadModel = (id: string) => {
+    setModels(prev =>
+      prev.map(m => (m.id === id ? { ...m, status: 'loaded', vramUsed: m.vramRequired } : m))
+    );
+  };
+
+  const unloadModel = (id: string) => {
+    setModels(prev =>
+      prev.map(m => (m.id === id ? { ...m, status: 'unloaded', vramUsed: undefined } : m))
+    );
+  };
+
+  const toggleLeftNav = () => setLeftNavCollapsed(v => !v);
+  const toggleRightContext = () => setRightContextOpen(v => !v);
+
+  // Command Palette
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState<boolean>(false);
+  const [commandPaletteMode, setCommandPaletteMode] = useState<'command' | 'file'>('command');
+
+  // Editor cursor & status
+  const [cursorPos, setCursorPos] = useState<{ line: number; col: number }>({ line: 1, col: 1 });
+
+  // Git State
+  const [gitState, setGitState] = useState<GitState>({
+    branch: 'main',
+    modifiedFiles: [],
+    stagedFiles: [],
+    commits: [
+      {
+        id: '9f3b12a',
+        message: 'Initial project setup with Monaco Editor and workspace clone',
+        date: '2 hours ago',
+        author: 'developer <dev@vscode-web.io>',
+        files: ['package.json', 'src/App.tsx', 'README.md']
+      }
+    ]
+  });
+
+  // Extensions & Problems
+  const [extensions, setExtensions] = useState<ExtensionItem[]>(DEFAULT_EXTENSIONS);
+  const [problems, setProblems] = useState<ProblemItem[]>(INITIAL_PROBLEMS);
+
+  // Persist files changes to localStorage if not a native filesystem handle
+  useEffect(() => {
+    if (!isNative) {
+      try {
+        localStorage.setItem('vscode_clone_files', JSON.stringify(files));
+      } catch (e) {
+        // quota exceeded or circular structure
+      }
+    }
+  }, [files, isNative]);
+
+  // Derive active file node from activeTabId
+  const activeTab = tabs.find(t => t.id === activeTabId);
+  const activeFile = activeTab ? findNodeByPath(files, activeTab.path) : null;
+
+  // Toggle helpers
+  const toggleSidebar = () => setSidebarVisible(v => !v);
+  const togglePanel = () => setPanelVisible(v => !v);
+  const toggleAssistant = () => setAssistantVisible(v => !v);
+
+  // Open File
+  const openFile = useCallback((path: string) => {
+    const node = findNodeByPath(files, path);
+    if (!node || node.type !== 'file') return;
+
+    setTabs(currentTabs => {
+      const existing = currentTabs.find(t => t.path === path);
+      if (existing) {
+        setActiveTabId(existing.id);
+        return currentTabs;
+      }
+      const newTab: Tab = {
+        id: node.id,
+        name: node.name,
+        path: node.path,
+        language: node.language || detectLanguage(node.name),
+        isDirty: false
+      };
+      setActiveTabId(newTab.id);
+      return [...currentTabs, newTab];
+    });
+  }, [files]);
+
+  // Close Tab
+  const closeTab = useCallback((id: string) => {
+    setTabs(currentTabs => {
+      const index = currentTabs.findIndex(t => t.id === id);
+      if (index === -1) return currentTabs;
+
+      const nextTabs = currentTabs.filter(t => t.id !== id);
+
+      if (activeTabId === id) {
+        if (nextTabs.length > 0) {
+          const nextIndex = Math.min(index, nextTabs.length - 1);
+          setActiveTabId(nextTabs[nextIndex].id);
+        } else {
+          setActiveTabId(null);
+        }
+      }
+      return nextTabs;
+    });
+  }, [activeTabId]);
+
+  const closeAllTabs = useCallback(() => {
+    setTabs([]);
+    setActiveTabId(null);
+  }, []);
+
+  // Update File Content (called as user types)
+  const updateFileContent = useCallback((path: string, content: string) => {
+    setFiles(prev => updateContentHelper(prev, path, content));
+
+    // Mark tab dirty
+    setTabs(prev =>
+      prev.map(tab => (tab.path === path ? { ...tab, isDirty: true } : tab))
+    );
+
+    // Track in git
+    setGitState(prev => {
+      if (!prev.modifiedFiles.includes(path)) {
+        return {
+          ...prev,
+          modifiedFiles: [...prev.modifiedFiles, path]
+        };
+      }
+      return prev;
+    });
+  }, []);
+
+  // Save current active file
+  const saveCurrentFile = useCallback(async () => {
+    if (!activeTab || !activeFile) return;
+
+    // Clear dirty flag in tab
+    setTabs(prev =>
+      prev.map(t => (t.id === activeTab.id ? { ...t, isDirty: false } : t))
+    );
+
+    // If native file on disk, write to disk!
+    if (activeFile.isNative && activeFile.handle) {
+      await saveNativeFile(activeFile.handle, activeFile.content || '');
+    }
+  }, [activeTab, activeFile]);
+
+  // Create File
+  const createFile = useCallback((parentPath: string | null, name: string, content: string = '') => {
+    const cleanName = name.trim();
+    if (!cleanName) return;
+
+    const basePath = parentPath && parentPath !== '/' ? parentPath : '';
+    const fullPath = `${basePath}/${cleanName}`;
+
+    // Verify duplicate doesn't exist
+    if (findNodeByPath(files, fullPath)) {
+      alert(`A file or folder with the name "${cleanName}" already exists.`);
+      return;
+    }
+
+    const newNode: FileNode = {
+      id: `file-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      name: cleanName,
+      path: fullPath,
+      type: 'file',
+      content,
+      language: detectLanguage(cleanName),
+      isDirty: false
+    };
+
+    setFiles(prev => addNode(prev, parentPath, newNode));
+    // Immediately open newly created file
+    openFile(fullPath);
+  }, [files, openFile]);
+
+  // Create Folder
+  const createFolder = useCallback((parentPath: string | null, name: string) => {
+    const cleanName = name.trim();
+    if (!cleanName) return;
+
+    const basePath = parentPath && parentPath !== '/' ? parentPath : '';
+    const fullPath = `${basePath}/${cleanName}`;
+
+    if (findNodeByPath(files, fullPath)) {
+      alert(`A file or folder with the name "${cleanName}" already exists.`);
+      return;
+    }
+
+    const newFolder: FileNode = {
+      id: `folder-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      name: cleanName,
+      path: fullPath,
+      type: 'folder',
+      isOpen: true,
+      children: []
+    };
+
+    setFiles(prev => addNode(prev, parentPath, newFolder));
+  }, [files]);
+
+  // Rename File or Folder
+  const renameItem = useCallback((path: string, newName: string) => {
+    const cleanName = newName.trim();
+    if (!cleanName) return;
+
+    const { updatedNodes, newPath } = renameNodeHelper(files, path, cleanName);
+    setFiles(updatedNodes);
+
+    // Update active tab path if open
+    setTabs(prev =>
+      prev.map(tab => {
+        if (tab.path === path) {
+          return {
+            ...tab,
+            name: cleanName,
+            path: newPath,
+            language: detectLanguage(cleanName)
+          };
+        }
+        if (tab.path.startsWith(path + '/')) {
+          const childSub = tab.path.substring(path.length);
+          return {
+            ...tab,
+            path: `${newPath}${childSub}`
+          };
+        }
+        return tab;
+      })
+    );
+  }, [files]);
+
+  // Delete File or Folder
+  const deleteItem = useCallback((path: string) => {
+    const target = findNodeByPath(files, path);
+    if (!target) return;
+
+    setFiles(prev => deleteNodeHelper(prev, path));
+
+    // Close any tabs associated with the deleted item
+    setTabs(prev => {
+      const remaining = prev.filter(tab => tab.path !== path && !tab.path.startsWith(path + '/'));
+      if (activeTabId && !remaining.find(t => t.id === activeTabId)) {
+        setActiveTabId(remaining.length > 0 ? remaining[0].id : null);
+      }
+      return remaining;
+    });
+  }, [files, activeTabId]);
+
+  // Toggle Folder open/closed
+  const toggleFolder = useCallback((path: string) => {
+    setFiles(prev => toggleFolderHelper(prev, path));
+  }, []);
+
+  // Open real directory from hard drive using File System Access API
+  const openFolderFromDisk = useCallback(async () => {
+    const res = await openNativeDirectory();
+    if (res) {
+      setFiles(res.files);
+      setWorkspaceName(res.rootName);
+      setIsNative(true);
+      setRootNativeHandle(res.rootHandle);
+      // Close tabs from previous workspace
+      setTabs([]);
+      setActiveTabId(null);
+    }
+  }, []);
+
+  // Export workspace as ZIP
+  const exportProjectZip = useCallback(async () => {
+    await exportWorkspaceAsZip(files, workspaceName);
+  }, [files, workspaceName]);
+
+  // Download single file
+  const downloadFileItem = useCallback((path: string) => {
+    const node = findNodeByPath(files, path);
+    if (node && node.type === 'file') {
+      downloadFile(node.name, node.content || '');
+    }
+  }, [files]);
+
+  // Git staging & commit
+  const stageFile = useCallback((path: string) => {
+    setGitState(prev => ({
+      ...prev,
+      modifiedFiles: prev.modifiedFiles.filter(p => p !== path),
+      stagedFiles: [...new Set([...prev.stagedFiles, path])]
+    }));
+  }, []);
+
+  const unstageFile = useCallback((path: string) => {
+    setGitState(prev => ({
+      ...prev,
+      stagedFiles: prev.stagedFiles.filter(p => p !== path),
+      modifiedFiles: [...new Set([...prev.modifiedFiles, path])]
+    }));
+  }, []);
+
+  const commitChanges = useCallback((message: string) => {
+    const trimmed = message.trim();
+    if (!trimmed) return;
+
+    setGitState(prev => ({
+      ...prev,
+      commits: [
+        {
+          id: Math.random().toString(16).substr(2, 7),
+          message: trimmed,
+          date: 'Just now',
+          author: 'developer <dev@vscode-web.io>',
+          files: [...prev.stagedFiles, ...prev.modifiedFiles]
+        },
+        ...prev.commits
+      ],
+      stagedFiles: [],
+      modifiedFiles: []
+    }));
+  }, []);
+
+  // Toggle Extension
+  const toggleExtension = useCallback((id: string) => {
+    setExtensions(prev =>
+      prev.map(ext => (ext.id === id ? { ...ext, installed: !ext.installed } : ext))
+    );
+  }, []);
+
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+S or Cmd+S: Save
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveCurrentFile();
+      }
+
+      // Ctrl+P or Cmd+P: Quick Open File
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p' && !e.shiftKey) {
+        e.preventDefault();
+        setCommandPaletteMode('file');
+        setCommandPaletteOpen(true);
+      }
+
+      // Ctrl+Shift+P or Cmd+Shift+P or F1: Command Palette
+      if (
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'p') ||
+        e.key === 'F1'
+      ) {
+        e.preventDefault();
+        setCommandPaletteMode('command');
+        setCommandPaletteOpen(true);
+      }
+
+      // Ctrl+` or Cmd+`: Toggle Terminal Panel
+      if ((e.ctrlKey || e.metaKey) && e.key === '`') {
+        e.preventDefault();
+        setPanelVisible(v => !v);
+        setPanelTab('terminal');
+      }
+
+      // Ctrl+B or Cmd+B: Toggle Sidebar
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        setSidebarVisible(v => !v);
+      }
+
+      // Ctrl+L or Cmd+L: Toggle Antigravity Assistant
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        setAssistantVisible(v => !v);
+      }
+
+      // Ctrl+W: Close active tab
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'w') {
+        e.preventDefault();
+        if (activeTabId) {
+          closeTab(activeTabId);
+        }
+      }
+
+      // Escape: close command palette
+      if (e.key === 'Escape') {
+        setCommandPaletteOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [saveCurrentFile, activeTabId, closeTab]);
+
+  return (
+    <WorkspaceContext.Provider
+      value={{
+        files,
+        workspaceName,
+        isNative,
+        tabs,
+        activeTabId,
+        activeFile,
+        activeBarTab,
+        setActiveBarTab,
+        sidebarVisible,
+        setSidebarVisible,
+        toggleSidebar,
+        panelVisible,
+        setPanelVisible,
+        togglePanel,
+        panelTab,
+        setPanelTab,
+        assistantVisible,
+        setAssistantVisible,
+        toggleAssistant,
+        theme,
+        setTheme,
+
+        activeModule,
+        setActiveModule,
+        leftNavCollapsed,
+        setLeftNavCollapsed,
+        toggleLeftNav,
+        rightContextOpen,
+        setRightContextOpen,
+        toggleRightContext,
+
+        settingsCategory,
+        setSettingsCategory,
+        settingsSubSection,
+        setSettingsSubSection,
+        navigateToSettings,
+
+        models,
+        loadModel,
+        unloadModel,
+        knowledgeCollections,
+        workflowNodes,
+        systemMetrics,
+
+        conversations,
+        activeConversationId,
+        activeConversation,
+        createConversation,
+        selectConversation,
+        deleteConversation,
+        renameConversation,
+        addMessageToActiveConversation,
+        updateWorkplanStatus,
+
+        commandPaletteOpen,
+        setCommandPaletteOpen,
+        commandPaletteMode,
+        setCommandPaletteMode,
+        cursorPos,
+        setCursorPos,
+        gitState,
+        extensions,
+        problems,
+
+        openFile,
+        closeTab,
+        closeAllTabs,
+        saveCurrentFile,
+        updateFileContent,
+        createFile,
+        createFolder,
+        renameItem,
+        deleteItem,
+        toggleFolder,
+        openFolderFromDisk,
+        exportProjectZip,
+        downloadFileItem,
+
+        stageFile,
+        unstageFile,
+        commitChanges,
+
+        toggleExtension
+      }}
+    >
+      {children}
+    </WorkspaceContext.Provider>
+  );
+};
+
+export const useWorkspace = () => {
+  const context = useContext(WorkspaceContext);
+  if (!context) {
+    throw new Error('useWorkspace must be used within a WorkspaceProvider');
+  }
+  return context;
+};
