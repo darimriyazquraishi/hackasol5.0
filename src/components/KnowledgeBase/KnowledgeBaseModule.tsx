@@ -52,31 +52,17 @@ export const KnowledgeBaseModule: React.FC = () => {
               text: r.chunk.text
             }))
           );
-          setIsSearching(false);
-          return;
+        } else {
+          setTestResults([]);
         }
+      } else {
+        setTestResults([]);
       }
-    } catch (e) {
-      // fallback
-    }
-
-    setTimeout(() => {
+    } catch {
+      setTestResults([]);
+    } finally {
       setIsSearching(false);
-      setTestResults([
-        {
-          id: 'chunk-1',
-          file: 'system_architecture_spec.md#L45-L68',
-          score: 0.942,
-          text: 'Memory residency constraints mandate that local model weights allocate exclusively within contiguous GPU memory pages, avoiding paging swaps across system PCIe lanes.'
-        },
-        {
-          id: 'chunk-2',
-          file: 'runtime_topology.md#L12-L30',
-          score: 0.887,
-          text: 'The orchestrator maintains an immutable lock on active embedding indexes, validating cryptographic checksums prior to vector query dispatch.'
-        }
-      ]);
-    }, 400);
+    }
   };
 
   return (

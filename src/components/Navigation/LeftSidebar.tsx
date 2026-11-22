@@ -43,23 +43,23 @@ export const LeftSidebar: React.FC = () => {
   return (
     <aside
       className={`h-full bg-[#080808] border-r border-[#303030] flex flex-col justify-between select-none z-30 transition-[width] duration-150 shrink-0 ${
-        leftNavCollapsed ? 'w-14' : 'w-64'
+        leftNavCollapsed ? 'w-16' : 'w-64'
       }`}
     >
       {/* Top Header & Branding */}
       <div className="flex flex-col h-full overflow-hidden">
         {/* Logo and Collapse Toggle */}
-        <div className="h-12 px-3.5 border-b border-[#303030] flex items-center justify-between shrink-0">
-          <LumiLogo collapsed={leftNavCollapsed} />
+        <div className="h-16 px-3.5 border-b border-[#303030] flex items-center justify-between shrink-0">
+          <LumiLogo collapsed={leftNavCollapsed} size={leftNavCollapsed ? 'sm' : 'md'} />
           <button
             onClick={toggleLeftNav}
             title={leftNavCollapsed ? 'Expand navigation' : 'Collapse navigation'}
-            className="p-1 rounded text-[#9C9C9C] hover:text-[#F5F4F1] hover:bg-[#191919] transition-colors"
+            className="p-1.5 rounded text-[#9C9C9C] hover:text-[#F5F4F1] hover:bg-[#191919] transition-colors"
           >
             {leftNavCollapsed ? (
-              <ChevronRight className="w-3.5 h-3.5" />
+              <ChevronRight className="w-4 h-4" />
             ) : (
-              <ChevronLeft className="w-3.5 h-3.5" />
+              <ChevronLeft className="w-4 h-4" />
             )}
           </button>
         </div>

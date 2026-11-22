@@ -73,12 +73,12 @@ export const DEFAULT_HARDWARE_PROFILE: HardwareProfile = {
     cudaSupported: true
   },
   storage: {
-    freeGB: 142,
-    modelStoragePath: 'D:\\IIIT(2)\\models'
+    freeGB: 120,
+    modelStoragePath: 'local/models'
   },
   os: {
     platform: 'win32',
-    release: '10.0.26200',
+    release: '10.0',
     arch: 'x64'
   },
   tier: 'mid-range-laptop',
@@ -91,47 +91,46 @@ export const DEFAULT_HARDWARE_PROFILE: HardwareProfile = {
   },
   recommendedModels: [
     {
-      id: 'm-qwen-1.5b',
-      name: 'Qwen2.5-Coder-1.5B',
-      role: 'code',
-      parameterSize: '1.5B',
-      quantization: 'Q4_K_M',
-      vramRequiredMB: 1120,
-      vramUsedMB: 1120,
-      contextWindow: '32K',
-      runMode: 'GPU (CUDA)',
-      status: 'loaded'
-    },
-    {
-      id: 'm-llama-3b',
-      name: 'Llama-3.2-3B',
+      id: 'qwen3:8b',
+      name: 'Qwen3 8B',
       role: 'chat',
-      parameterSize: '3.2B',
+      parameterSize: '8B',
       quantization: 'Q4_K_M',
-      vramRequiredMB: 2150,
+      vramRequiredMB: 2800,
       contextWindow: '32K',
       runMode: 'GPU (CUDA)',
       status: 'unloaded'
     },
     {
-      id: 'm-bge-small',
-      name: 'BGE-Small-EN-v1.5',
+      id: 'qwen2.5-coder:7b',
+      name: 'Qwen2.5-Coder 7B',
+      role: 'code',
+      parameterSize: '7B',
+      quantization: 'Q4_K_M',
+      vramRequiredMB: 2600,
+      contextWindow: '32K',
+      runMode: 'GPU (CUDA)',
+      status: 'unloaded'
+    },
+    {
+      id: 'nomic-embed-text',
+      name: 'Nomic Embed Text',
       role: 'embedding',
-      parameterSize: '33M',
+      parameterSize: '137M',
       quantization: 'F16',
-      vramRequiredMB: 120,
-      vramUsedMB: 120,
-      contextWindow: '512',
+      vramRequiredMB: 280,
+      vramUsedMB: 280,
+      contextWindow: '8K',
       runMode: 'GPU (CUDA)',
       status: 'loaded'
     },
     {
-      id: 'm-smolvlm-256m',
-      name: 'SmolVLM-256M',
+      id: 'qwen2.5vl:7b',
+      name: 'Qwen2.5-VL 7B',
       role: 'vision',
-      parameterSize: '256M',
+      parameterSize: '7B',
       quantization: 'Q4_K_M',
-      vramRequiredMB: 720,
+      vramRequiredMB: 2900,
       contextWindow: '8K',
       runMode: 'GPU (CUDA)',
       status: 'unloaded'
@@ -217,7 +216,7 @@ export function calculateOptimalHardwareProfile(raw: Partial<HardwareProfile>): 
     },
     storage: {
       freeGB: raw.storage?.freeGB ?? 142,
-      modelStoragePath: raw.storage?.modelStoragePath || 'D:\\IIIT(2)\\models'
+      modelStoragePath: raw.storage?.modelStoragePath || 'local/models'
     },
     os: {
       platform: raw.os?.platform || 'win32',

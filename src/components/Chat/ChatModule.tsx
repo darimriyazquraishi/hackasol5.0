@@ -4,8 +4,6 @@ import {
   Paperclip,
   Copy,
   Check,
-  Cpu,
-  ChevronDown,
   FileText,
   ArrowUp,
   Square,
@@ -24,6 +22,9 @@ import {
   Edit3
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
+import { APP_CONFIG } from '../../config';
+import { LumiLogo } from '../Branding/LumiLogo';
+import { MarkdownContent } from './MarkdownContent';
 import {
   ChatMessage,
   ChatAttachment,
@@ -41,8 +42,7 @@ export const ChatModule: React.FC = () => {
   } = useWorkspace();
 
   const [inputVal, setInputVal] = useState('');
-  const [selectedReasoningModel, setSelectedReasoningModel] = useState('qwen3:8b');
-  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const [selectedReasoningModel] = useState('qwen3:8b');
   const [isGenerating, setIsGenerating] = useState(false);
   const [executingPlanId, setExecutingPlanId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -119,7 +119,7 @@ export const ChatModule: React.FC = () => {
 
     try {
       // Call Stage 2: Capability Analysis & Workplan Generation
-      const res = await fetch('/api/orchestrate/plan', {
+      const res = await fetch(APP_CONFIG.endpoints.orchestratePlan, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -174,7 +174,7 @@ export const ChatModule: React.FC = () => {
     abortControllerRef.current = controller;
 
     try {
-      const res = await fetch('/api/orchestrate/execute', {
+      const res = await fetch(APP_CONFIG.endpoints.orchestrateExecute, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -244,7 +244,7 @@ export const ChatModule: React.FC = () => {
 
   const handleRunCodeInSandbox = async (code: string, language: string = 'javascript') => {
     try {
-      const res = await fetch('/api/code/execute', {
+      const res = await fetch(APP_CONFIG.endpoints.codeExecute, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, language })
@@ -309,72 +309,33 @@ export const ChatModule: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#080808] text-[#F5F4F1] font-sans overflow-hidden select-none">
-      {/* 1. Header Bar: Model Selector Dropdown (Qwen3 Variants) */}
+      {/* 1. Conversational Header Bar (Clean, Minimal, No Internal Diagnostic Indicators) */}
       <div className="h-12 px-4 border-b border-[#303030] flex items-center justify-between bg-[#080808] shrink-0 z-20">
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <button
-              onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
-              className="px-2.5 py-1 rounded bg-[#191919] hover:bg-[#202020] border border-[#303030] text-xs font-mono text-[#F5F4F1] flex items-center space-x-2 transition-colors"
-            >
-              <Cpu className="w-3.5 h-3.5 text-[#987654]" />
-              <span>Reasoning: {selectedReasoningModel}</span>
-              <ChevronDown className="w-3 h-3 text-[#9C9C9C]" />
-            </button>
-
-            {modelDropdownOpen && (
-              <div className="absolute left-0 top-full mt-1 w-64 bg-[#191919] border border-[#303030] rounded shadow-2xl py-1 text-xs z-50">
-                <div className="px-3 py-1 text-[10px] font-mono uppercase text-[#9C9C9C] border-b border-[#262626]">
-                  Configured Reasoning Models
-                </div>
-                {[
-                  { id: 'qwen3:8b', label: 'Qwen3 8B (Default)' },
-                  { id: 'qwen3:14b', label: 'Qwen3 14B (Mid-Tier)' },
-                  { id: 'qwen3:32b', label: 'Qwen3 32B (High-Capacity)' }
-                ].map(m => (
-                  <button
-                    key={m.id}
-                    onClick={() => {
-                      setSelectedReasoningModel(m.id);
-                      setModelDropdownOpen(false);
-                    }}
-                    className={`w-full px-3 py-1.5 text-left flex items-center justify-between hover:bg-[#202020] transition-colors ${
-                      selectedReasoningModel === m.id ? 'text-[#987654] font-medium' : 'text-[#D5D2CC]'
-                    }`}
-                  >
-                    <span>{m.label}</span>
-                    {selectedReasoningModel === m.id && <Check className="w-3.5 h-3.5 text-[#987654]" />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Status Indicator */}
-        <div className="flex items-center space-x-2 font-mono text-[11px] text-[#9C9C9C]">
-          <span>Orchestrator</span>
-          <span>•</span>
-          <span className="text-[#987654]">127.0.0.1:3000</span>
+        <div className="flex items-center space-x-2.5 min-w-0">
+          <div className="w-2 h-2 rounded-full bg-[#987654] shrink-0" />
+          <h1 className="text-xs font-mono font-semibold tracking-wide text-[#F5F4F1] truncate">
+            {activeConversation?.title || 'Intelligence Chat'}
+          </h1>
         </div>
       </div>
 
       {/* 2. Message Stream */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6 select-text">
         <div className="max-w-3xl mx-auto space-y-6">
-          {/* Minimal Empty State with Exact Supplied Logo */}
+          {/* Prominent Empty State with Exact Supplied Logo (Significantly Bigger) */}
           {messages.length === 0 && (
-            <div className="py-24 text-center space-y-4">
+            <div className="py-20 text-center space-y-6">
               <div className="flex justify-center">
-                <img
-                  src="/lumi-logo.jpg"
-                  alt="LUMI"
-                  className="h-14 object-contain"
-                />
+                <LumiLogo size="hero" />
               </div>
-              <p className="text-xs text-[#9C9C9C] max-w-sm mx-auto">
-                Submit a task with text, code, or document attachments. LUMI will analyze capabilities and generate a workplan for your approval.
-              </p>
+              <div className="space-y-1.5 max-w-md mx-auto">
+                <h2 className="text-sm font-semibold font-mono tracking-tight text-[#F5F4F1]">
+                  LOCAL UNIFIED MULTIMODAL INTELLIGENCE
+                </h2>
+                <p className="text-xs text-[#9C9C9C] leading-relaxed">
+                  Submit a task with text, code, or document attachments. LUMI coordinates local models and sandboxed execution on your machine.
+                </p>
+              </div>
             </div>
           )}
 
@@ -413,8 +374,8 @@ export const ChatModule: React.FC = () => {
                   </div>
                 )}
 
-                {/* Direct content */}
-                <div className="whitespace-pre-wrap">{msg.content}</div>
+                {/* Professional Markdown Answer Rendering */}
+                <MarkdownContent content={msg.content} onExecuteCode={handleRunCodeInSandbox} />
 
                 {/* Stage 3: Human Approval of Workplan Interface */}
                 {msg.lumiWorkplan && msg.isApprovalPrompt && (

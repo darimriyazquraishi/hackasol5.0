@@ -75,7 +75,7 @@ export const ModelManagerModule: React.FC = () => {
   const handlePullModel = () => {
     if (!pullInput.trim()) return;
     if (!auditData?.runtimeOnline) {
-      setPullStatus('Cannot pull: Local inference runtime is offline (http://127.0.0.1:11434 unreachable).');
+      setPullStatus(`Cannot pull: Local inference runtime is offline (${auditData?.endpoint || 'unreachable'}).`);
       return;
     }
     setPullStatus(`Pulling ${pullInput.trim()}... (connecting to local runtime)`);
@@ -130,14 +130,14 @@ export const ModelManagerModule: React.FC = () => {
               <span className={`w-2 h-2 rounded-full ${auditData?.runtimeOnline ? 'bg-emerald-400' : 'bg-amber-500'}`} />
             </div>
             <div className="text-[11px] text-[#9C9C9C] mt-0.5">
-              Endpoint: {auditData?.endpoint || 'http://127.0.0.1:11434'} • Tested: {auditData?.testedAt ? new Date(auditData.testedAt).toLocaleTimeString() : 'N/A'}
+              Endpoint: {auditData?.endpoint || 'Local Runtime'} • Tested: {auditData?.testedAt ? new Date(auditData.testedAt).toLocaleTimeString() : 'N/A'}
             </div>
           </div>
         </div>
 
         {!auditData?.runtimeOnline && (
           <div className="text-[11px] text-[#9C9C9C] max-w-sm">
-            Local service at port 11434 is not responding. Connect Ollama or local engine to run LLM/VLM models. Deterministic analyzers remain operational.
+            Local inference service is not responding. Connect Ollama or local engine to run LLM/VLM models. Deterministic analyzers remain operational.
           </div>
         )}
       </div>
@@ -287,7 +287,7 @@ export const ModelManagerModule: React.FC = () => {
             <p>
               {auditData?.runtimeOnline
                 ? 'No models currently downloaded into local runtime.'
-                : 'Local inference service is not responding. Start Ollama at http://127.0.0.1:11434 to discover downloaded models.'}
+                : 'Local inference service is not responding. Start Ollama or local runtime to discover downloaded models.'}
             </p>
           </div>
         )}

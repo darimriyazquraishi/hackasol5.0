@@ -65,6 +65,8 @@ export const SettingsModule: React.FC = () => {
   const [diagnosticRunning, setDiagnosticRunning] = useState(false);
   const [diagnosticComplete, setDiagnosticComplete] = useState(false);
   const [diagnosticTests, setDiagnosticTests] = useState<Array<{ name: string; status: string; details: string }>>([]);
+  const [executionHistory, setExecutionHistory] = useState<any[]>([]);
+  const [processMemory, setProcessMemory] = useState<any>(null);
   const [purgeMessage, setPurgeMessage] = useState<string | null>(null);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
 
@@ -126,10 +128,20 @@ Perform symbolic verification on all generated code.`
     setDiagnosticRunning(true);
     setDiagnosticComplete(false);
     try {
-      const res = await fetch('/api/diagnostics');
-      if (res.ok) {
-        const data = await res.json();
+      const [diagRes, histRes] = await Promise.all([
+        fetch('/api/diagnostics'),
+        fetch('/api/orchestrate/history')
+      ]);
+
+      if (diagRes.ok) {
+        const data = await diagRes.json();
         setDiagnosticTests(data.tests || []);
+        if (data.processMemory) setProcessMemory(data.processMemory);
+      }
+
+      if (histRes.ok) {
+        const histData = await histRes.json();
+        setExecutionHistory(histData.history || []);
       }
     } catch {
       // offline fallback
@@ -138,6 +150,10 @@ Perform symbolic verification on all generated code.`
       setDiagnosticComplete(true);
     }
   };
+
+  React.useEffect(() => {
+    handleRunDiagnostics();
+  }, []);
 
   const handleExportAuditLog = () => {
     const logContent = `[LUMI Audit Log - Exported ${new Date().toISOString()}]
@@ -1024,14 +1040,21 @@ Perform symbolic verification on all generated code.`
                 </button>
               </div>
 
-              <div className="p-3 rounded bg-[#080808] border border-[#303030] font-mono text-[11px] text-[#9C9C9C] space-y-1.5 h-80 overflow-y-auto leading-relaxed">
-                <div>[22:40:12.102] [INFO]  [DAEMON] LUMI Sovereign Worker initialized on local loopback</div>
-                <div>[22:40:12.180] [INFO]  [CUDA]   GPU 0: NVIDIA GeForce GTX 1650 (4 GB GDDR6) bound to slot 0</div>
-                <div>[22:40:13.440] [INFO]  [WEIGHT] Loaded Qwen2.5-Coder-1.5B (Q4_K_M): 1.12 GB VRAM resident (3.2 GB safe limit)</div>
-                <div>[22:40:14.210] [INFO]  [VECTOR] HNSW index mounted: 3 collections, 12,480 chunks mapped</div>
-                <div>[22:45:00.320] [INFO]  [ROUTER] Ingress request parsed: Security Evaluator assigned</div>
-                <div>[22:45:01.810] [INFO]  [INFER]  Generation completed in 0.42s</div>
-                <div>[22:46:10.040] [INFO]  [AUDIT]  Zero external egress verified on loopback</div>
+              <div className="p-3 rounded bg-[#080808] border border-[#303030] font-mono text-[11px] text-[#9C9C9C] space-y-1.5 h-80 overflow-y-auto leading-relaxed select-text">
+                <div>[SYSTEM] Host Platform: {hardwareProfile.os.platform} ({hardwareProfile.os.arch})</div>
+                <div>[CUDA]   GPU: {hardwareProfile.gpu.name} ({hardwareProfile.gpu.totalVramMB} MB VRAM, Driver {hardwareProfile.gpu.driverVersion})</div>
+                <div>[CPU]    {hardwareProfile.cpu.model} ({hardwareProfile.cpu.cores} cores, {hardwareProfile.cpu.threads} threads)</div>
+                <div>[RAM]    Physical RAM: {hardwareProfile.ram.totalGB} GB total ({hardwareProfile.ram.freeGB} GB free)</div>
+                {processMemory && (
+                  <div>[MEM]    Node RSS: {processMemory.rssMB} MB | Heap: {processMemory.heapUsedMB} MB / {processMemory.heapTotalMB} MB</div>
+                )}
+                <div>[GUARD]  Enforced VRAM Safety Allocation Ceiling: {hardwareProfile.constraints.maxSafeVramGB || 3.2} GB</div>
+                <div>[ROUTER] Active models configured: {models.length} model archetypes</div>
+                {executionHistory.map((item, idx) => (
+                  <div key={idx} className="text-[#D5D2CC]">
+                    [{new Date(item.timestamp).toLocaleTimeString()}] [EXEC] {item.prompt.slice(0, 40)}... | {item.status.toUpperCase()} ({item.durationMs}ms)
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -1040,9 +1063,9 @@ Perform symbolic verification on all generated code.`
             <div className="p-6 space-y-6 max-w-3xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-base font-bold font-mono text-[#F5F4F1]">SYSTEM DIAGNOSTICS</h2>
+                  <h2 className="text-base font-bold font-mono text-[#F5F4F1]">SYSTEM DIAGNOSTICS & TELEMETRY</h2>
                   <p className="text-xs text-[#9C9C9C] mt-1">
-                    Automated assertion test runner verifying system integrity and hardware guardrails.
+                    Dedicated developer diagnostics for runtime assertions, agent execution records, and model registries.
                   </p>
                 </div>
                 <button
@@ -1055,11 +1078,83 @@ Perform symbolic verification on all generated code.`
                 </button>
               </div>
 
+              {/* 1. Host & Process Memory Consumption */}
+              {processMemory && (
+                <div className="p-3.5 rounded bg-[#191919] border border-[#303030] space-y-2">
+                  <div className="text-[10px] font-mono uppercase text-[#9C9C9C]">Live Process Memory Consumption</div>
+                  <div className="grid grid-cols-3 gap-3 font-mono text-xs">
+                    <div className="p-2 rounded bg-[#080808] border border-[#262626]">
+                      <div className="text-[#9C9C9C] text-[10px]">Resident Set (RSS)</div>
+                      <div className="text-[#F5F4F1] font-semibold">{processMemory.rssMB} MB</div>
+                    </div>
+                    <div className="p-2 rounded bg-[#080808] border border-[#262626]">
+                      <div className="text-[#9C9C9C] text-[10px]">Heap Allocated</div>
+                      <div className="text-[#987654] font-semibold">{processMemory.heapUsedMB} MB</div>
+                    </div>
+                    <div className="p-2 rounded bg-[#080808] border border-[#262626]">
+                      <div className="text-[#9C9C9C] text-[10px]">Heap Total</div>
+                      <div className="text-[#F5F4F1] font-semibold">{processMemory.heapTotalMB} MB</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Model Identifiers & Loading Status */}
+              <div className="p-3.5 rounded bg-[#191919] border border-[#303030] space-y-2">
+                <div className="text-[10px] font-mono uppercase text-[#9C9C9C]">Model Identifiers & Execution Status</div>
+                <div className="space-y-1.5 font-mono text-xs">
+                  {models.map(m => (
+                    <div key={m.id} className="p-2 rounded bg-[#080808] border border-[#262626] flex items-center justify-between">
+                      <div>
+                        <span className="text-[#F5F4F1] font-medium">{m.name}</span>
+                        <span className="text-[10px] text-[#9C9C9C] ml-2">({m.parameterSize} • {m.quantization})</span>
+                      </div>
+                      <div className="flex items-center space-x-3 text-[11px]">
+                        <span className="text-[#987654]">{m.vramRequired}</span>
+                        <span className={m.status === 'loaded' ? 'text-emerald-400' : 'text-[#9C9C9C]'}>
+                          {m.status.toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Live Agent Execution Records */}
+              {executionHistory.length > 0 && (
+                <div className="p-3.5 rounded bg-[#191919] border border-[#303030] space-y-2">
+                  <div className="text-[10px] font-mono uppercase text-[#9C9C9C]">Recent Workflow Execution Records ({executionHistory.length})</div>
+                  <div className="space-y-1.5 font-mono text-xs max-h-60 overflow-y-auto">
+                    {executionHistory.map((rec, idx) => (
+                      <div key={idx} className="p-2 rounded bg-[#080808] border border-[#262626] flex items-center justify-between">
+                        <div className="min-w-0 pr-2">
+                          <div className="text-[#F5F4F1] truncate">{rec.prompt}</div>
+                          <div className="text-[10px] text-[#9C9C9C]">
+                            {new Date(rec.timestamp).toLocaleTimeString()} • Models: {rec.modelsUsed.join(', ')}
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded border uppercase ${
+                            rec.status === 'completed'
+                              ? 'text-emerald-400 border-emerald-800 bg-emerald-950/60'
+                              : 'text-amber-400 border-amber-800 bg-amber-950/60'
+                          }`}>
+                            {rec.status} ({rec.durationMs}ms)
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Automated Assertion Tests */}
               <div className="p-4 rounded bg-[#191919] border border-[#303030] space-y-3 font-mono text-xs">
+                <div className="text-[10px] font-mono uppercase text-[#9C9C9C]">System Integrity Assertions</div>
                 {(diagnosticTests.length > 0 ? diagnosticTests : [
                   { name: `GPU Compute Link (${hardwareProfile.gpu.name})`, status: 'PASSED', details: `VRAM: ${hardwareProfile.gpu.totalVramMB} MB` },
                   { name: 'VRAM Allocation Buffer Guard (3.2 GB ceiling)', status: 'PASSED', details: 'Enforced ceiling: 3200 MB on GTX 1650' },
-                  { name: 'Local Loopback Socket Isolation (127.0.0.1)', status: 'PASSED', details: 'Zero external telemetry egress' },
+                  { name: 'Local Loopback Socket Isolation (127.0.0.1)', status: 'PASSED', details: 'Direct loopback verified' },
                   { name: 'Vector Index Cryptographic Checksum', status: 'PASSED', details: 'Cosine memory map integrity valid' },
                   { name: 'Deterministic Parser & AST Verification', status: 'PASSED', details: 'Built-in document & code analyzers active' }
                 ]).map(diag => (

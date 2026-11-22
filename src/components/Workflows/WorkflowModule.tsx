@@ -64,7 +64,7 @@ export const WorkflowModule: React.FC = () => {
       <div className="p-6 rounded bg-[#121212] border border-[#303030] space-y-4">
         <div className="text-xs font-mono uppercase text-[#9C9C9C] flex items-center justify-between">
           <span>Pipeline Nodes</span>
-          <span className="text-[#987654]">Pipeline Status: {isRunning ? 'Active Step 3/5' : 'Suspended'}</span>
+          <span className="text-[#987654]">Pipeline Status: {isRunning ? 'Pipeline Ready (5 Nodes)' : 'Suspended'}</span>
         </div>
 
         {/* Nodes flow */}

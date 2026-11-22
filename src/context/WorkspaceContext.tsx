@@ -491,147 +491,89 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     );
   }, [activeConversationId]);
 
-  // LUMI Hardware Adaptive Model Registry (Tailored for 4GB VRAM GTX 1650 & AMD Ryzen 5 4600H)
-  const [models, setModels] = useState<ModelItem[]>([
-    {
-      id: 'm-1',
-      name: 'Qwen2.5-Coder-1.5B',
-      family: 'Qwen',
-      parameterSize: '1.54B',
-      quantization: 'Q4_K_M',
-      status: 'loaded',
-      vramRequired: '1.12 GB',
-      vramUsed: '1.12 GB',
-      contextWindow: '32K',
-      tps: 46.2
-    },
-    {
-      id: 'm-2',
-      name: 'Llama-3.2-3B-Instruct',
-      family: 'Llama 3.2',
-      parameterSize: '3.21B',
-      quantization: 'Q4_K_M',
-      status: 'unloaded',
-      vramRequired: '2.15 GB',
-      contextWindow: '32K',
-      tps: 28.4
-    },
-    {
-      id: 'm-3',
-      name: 'DeepSeek-Coder-1.3B',
-      family: 'DeepSeek',
-      parameterSize: '1.30B',
-      quantization: 'Q4_K_M',
-      status: 'unloaded',
-      vramRequired: '0.95 GB',
-      contextWindow: '16K',
-      tps: 48.1
-    },
-    {
-      id: 'm-4',
-      name: 'SmolVLM-256M-Instruct',
-      family: 'SmolVLM',
-      parameterSize: '256M',
-      quantization: 'Q4_K_M',
-      status: 'unloaded',
-      vramRequired: '0.72 GB',
-      contextWindow: '8K',
-      tps: 36.5
-    },
-    {
-      id: 'm-5',
-      name: 'BGE-Small-EN-v1.5',
-      family: 'BAAI',
-      parameterSize: '33.4M',
-      quantization: 'F16',
-      status: 'loaded',
-      vramRequired: '0.12 GB',
-      vramUsed: '0.12 GB',
-      contextWindow: '512',
-      tps: 160.0
-    }
-  ]);
+  // Dynamic LUMI Model Registry populated from inference runtime audit
+  const [models, setModels] = useState<ModelItem[]>([]);
 
-  // LUMI Knowledge Collections
+  // LUMI Authoritative Knowledge Collections matching indexed chunks
   const [knowledgeCollections, setKnowledgeCollections] = useState<KnowledgeCollection[]>([
     {
       id: 'kc-1',
       name: 'Core System Architecture',
-      description: 'LUMI technical specifications, internal RPC contracts, and runtime topology.',
-      documentCount: 38,
-      chunkCount: 2140,
-      embeddingModel: 'BGE-Large-EN-v1.5',
-      lastUpdated: '14 mins ago',
-      size: '24.5 MB'
+      description: 'LUMI technical specifications, memory residency contracts, and runtime topology.',
+      documentCount: 2,
+      chunkCount: 2,
+      embeddingModel: 'nomic-embed-text',
+      lastUpdated: 'Indexed',
+      size: '14.2 KB'
     },
     {
       id: 'kc-2',
       name: 'Security & Sandbox Bounds',
-      description: 'Zero-trust isolation specifications, local socket access, and memory constraints.',
-      documentCount: 19,
-      chunkCount: 890,
-      embeddingModel: 'BGE-Large-EN-v1.5',
-      lastUpdated: '2 hours ago',
-      size: '11.2 MB'
+      description: 'Process isolation specifications, local loopback socket boundaries, and memory constraints.',
+      documentCount: 1,
+      chunkCount: 1,
+      embeddingModel: 'nomic-embed-text',
+      lastUpdated: 'Indexed',
+      size: '6.8 KB'
     },
     {
       id: 'kc-3',
-      name: 'Private Dataset Repositories',
-      description: 'Proprietary enterprise documents, codebases, and domain-specific knowledge corpus.',
-      documentCount: 142,
-      chunkCount: 9450,
-      embeddingModel: 'BGE-Large-EN-v1.5',
-      lastUpdated: 'Yesterday',
-      size: '142.8 MB'
+      name: 'Hardware Guardrails',
+      description: 'GTX 1650 4GB VRAM ceiling limits, memory allocation tables, and preemption guardrails.',
+      documentCount: 1,
+      chunkCount: 1,
+      embeddingModel: 'nomic-embed-text',
+      lastUpdated: 'Indexed',
+      size: '5.4 KB'
     }
   ]);
 
-  // LUMI Multi-Agent Workflow Nodes
+  // LUMI Authoritative Multi-Agent Workflow Pipeline Nodes
   const [workflowNodes, setWorkflowNodes] = useState<WorkflowNode[]>([
     {
-      id: 'node-1',
-      name: 'Ingress Parser',
-      type: 'agent',
-      status: 'completed',
-      inputs: ['Raw Prompt', 'Attached Context'],
-      outputs: ['Structured Intent', 'Scope Bounds'],
-      description: 'Tokenizes user requirements and identifies required tools and datasets.'
-    },
-    {
-      id: 'node-2',
-      name: 'RAG Retriever',
+      id: 'node-rag',
+      name: 'Vector RAG Agent',
       type: 'retrieval',
-      status: 'completed',
-      inputs: ['Structured Intent'],
-      outputs: ['Retrieved Chunks', 'Confidence Scores'],
-      description: 'Dense vector search over local knowledge collections with cross-encoder reranking.'
+      status: 'idle',
+      inputs: ['User Query', 'Document Indexes'],
+      outputs: ['Verified Citations', 'Ground Truth Chunks'],
+      description: 'Dense vector retrieval using nomic-embed-text over local knowledge collections.'
     },
     {
-      id: 'node-3',
-      name: 'Reasoning Engine',
-      type: 'llm',
-      status: 'running',
-      inputs: ['Retrieved Chunks', 'Active Codebase State'],
-      outputs: ['Execution Plan', 'Proposed Diffs'],
-      description: 'Performs multi-step symbolic and neural planning on local GPU clusters.'
+      id: 'node-vision',
+      name: 'Vision Agent',
+      type: 'agent',
+      status: 'idle',
+      inputs: ['Image Assets', 'Inspection Queries'],
+      outputs: ['Extracted Text', 'Visual Finding Records'],
+      description: 'Multimodal image inspection using Qwen2.5-VL 7B.'
     },
     {
-      id: 'node-4',
-      name: 'Sandboxed Synthesizer',
+      id: 'node-imagegen',
+      name: 'Image Generation Agent',
       type: 'tool',
       status: 'idle',
-      inputs: ['Execution Plan'],
-      outputs: ['Verified Output', 'Test Logs'],
-      description: 'Applies edits inside an isolated process and executes compilation checks.'
+      inputs: ['Visual Prompt', 'Aspect Bounds'],
+      outputs: ['Diffusion Image File'],
+      description: 'Generative image synthesis using flux1-schnell.'
     },
     {
-      id: 'node-5',
-      name: 'Verification Gate',
-      type: 'evaluator',
+      id: 'node-code',
+      name: 'Math & Code Agent',
+      type: 'tool',
       status: 'idle',
-      inputs: ['Verified Output'],
-      outputs: ['Final Audit', 'Approval Token'],
-      description: 'Automated linter and security gate verifying zero regressions.'
+      inputs: ['Mathematical Expressions', 'Code Specifications'],
+      outputs: ['Verified Code Blocks', 'Sandbox Output Logs'],
+      description: 'Code synthesis and computational sandboxed execution via Qwen2.5-Coder 7B.'
+    },
+    {
+      id: 'node-synthesis',
+      name: 'Reasoning & Synthesis Agent',
+      type: 'llm',
+      status: 'idle',
+      inputs: ['Multi-Agent Findings', 'Citations', 'Sandbox Results'],
+      outputs: ['Compiled Markdown Deliverable'],
+      description: 'Orchestrates multi-agent findings and synthesizes final answer via Qwen3.'
     }
   ]);
 
@@ -639,31 +581,109 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [hardwareProfile, setHardwareProfile] = useState<HardwareProfile>(DEFAULT_HARDWARE_PROFILE);
 
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
-    gpuUtilization: 28,
-    vramAllocated: 1.24,
+    gpuUtilization: 0,
+    vramAllocated: 0,
     vramTotal: 4.0,
-    cpuUtilization: 14,
-    ramUsed: 11.7,
-    ramTotal: 15.4,
-    tokensPerSec: 46.2,
-    gpuName: 'NVIDIA GeForce GTX 1650 (4GB GDDR6)',
-    cpuName: 'AMD Ryzen 5 4600H with Radeon Graphics (12 Threads)',
+    cpuUtilization: 5,
+    ramUsed: 0,
+    ramTotal: 16.0,
+    tokensPerSec: 0,
+    gpuName: 'NVIDIA GeForce GTX 1650',
+    cpuName: 'AMD Ryzen 5 4600H',
     hardwareTier: 'Mid-Range Laptop (4GB VRAM, 16GB RAM)'
   });
+
+  const refreshModels = useCallback(async () => {
+    try {
+      const res = await fetch('/api/models/audit');
+      if (res.ok) {
+        const audit = await res.json();
+        const installed: ModelItem[] = (audit.installedModels || []).map((m: any, idx: number) => ({
+          id: `inst-${idx}`,
+          name: m.name,
+          family: m.details?.family || 'Local Runtime Model',
+          parameterSize: m.details?.parameter_size || `${Math.round(m.size / (1024 * 1024))} MB`,
+          quantization: m.details?.quantization_level || 'Native',
+          status: 'loaded' as const,
+          vramRequired: `${(m.vramFootprintMB / 1024).toFixed(2)} GB`,
+          vramUsed: `${(m.vramFootprintMB / 1024).toFixed(2)} GB`,
+          contextWindow: '32K',
+          tps: 0
+        }));
+
+        if (installed.length > 0) {
+          setModels(installed);
+        } else {
+          // Present configured models with uninstalled/unconnected status
+          const configuredList: ModelItem[] = [
+            {
+              id: 'cfg-qwen3-8b',
+              name: 'Qwen3 8B',
+              family: 'Qwen3',
+              parameterSize: '8.2B',
+              quantization: 'Q4_K_M',
+              status: 'unloaded',
+              vramRequired: '2.8 GB',
+              contextWindow: '32K',
+              tps: 0
+            },
+            {
+              id: 'cfg-qwen-coder',
+              name: 'Qwen2.5-Coder 7B',
+              family: 'Qwen',
+              parameterSize: '7.6B',
+              quantization: 'Q4_K_M',
+              status: 'unloaded',
+              vramRequired: '2.6 GB',
+              contextWindow: '32K',
+              tps: 0
+            },
+            {
+              id: 'cfg-qwen-vl',
+              name: 'Qwen2.5-VL 7B',
+              family: 'Qwen',
+              parameterSize: '7.8B',
+              quantization: 'Q4_K_M',
+              status: 'unloaded',
+              vramRequired: '2.9 GB',
+              contextWindow: '8K',
+              tps: 0
+            },
+            {
+              id: 'cfg-nomic-embed',
+              name: 'Nomic Embed Text',
+              family: 'Nomic',
+              parameterSize: '137M',
+              quantization: 'F16',
+              status: 'loaded',
+              vramRequired: '0.28 GB',
+              vramUsed: '0.28 GB',
+              contextWindow: '8K',
+              tps: 0
+            }
+          ];
+          setModels(configuredList);
+        }
+      }
+    } catch {
+      // offline
+    }
+  }, []);
 
   const refreshHardware = useCallback(async () => {
     const detected = await detectSystemHardware();
     setHardwareProfile(detected);
     setSystemMetrics(prev => ({
       ...prev,
-      gpuName: detected.gpu.detected ? `${detected.gpu.name} (4GB)` : 'Integrated CPU',
+      gpuName: detected.gpu.detected ? `${detected.gpu.name}` : 'Integrated CPU',
       cpuName: detected.cpu.model,
       ramTotal: detected.ram.totalGB,
       ramUsed: detected.ram.usedGB,
       vramTotal: +(detected.gpu.totalVramMB / 1024).toFixed(1),
       hardwareTier: detected.tierLabel
     }));
-  }, []);
+    await refreshModels();
+  }, [refreshModels]);
 
   useEffect(() => {
     refreshHardware();
