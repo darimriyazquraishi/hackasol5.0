@@ -270,8 +270,8 @@ export async function auditLocalRuntime(): Promise<RuntimeAuditResult> {
       details: !runtimeOnline
         ? 'Local inference runtime (127.0.0.1:11434) is offline.'
         : hasChat
-        ? 'Verified model present in local runtime.'
-        : 'Model not installed in local runtime.'
+          ? 'Verified model present in local runtime.'
+          : 'Model not installed in local runtime.'
     },
     {
       category: '2. Coding & Generation',
@@ -284,8 +284,8 @@ export async function auditLocalRuntime(): Promise<RuntimeAuditResult> {
       details: !runtimeOnline
         ? 'Local inference runtime (127.0.0.1:11434) is offline.'
         : hasCoder
-        ? 'Verified coding model present in local runtime.'
-        : 'Model not installed in local runtime.'
+          ? 'Verified coding model present in local runtime.'
+          : 'Model not installed in local runtime.'
     },
     {
       category: '3. Image & Vision',
@@ -298,8 +298,8 @@ export async function auditLocalRuntime(): Promise<RuntimeAuditResult> {
       details: !runtimeOnline
         ? 'Local inference runtime (127.0.0.1:11434) is offline.'
         : hasVision
-        ? 'Verified vision model present in local runtime.'
-        : 'Model not installed in local runtime.'
+          ? 'Verified vision model present in local runtime.'
+          : 'Model not installed in local runtime.'
     },
     {
       category: '4. Document Understanding',
