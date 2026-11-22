@@ -371,20 +371,47 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     window.location.hash = `settings/${targetCat}/${targetSub}`;
   }, []);
 
-  // Conversations State
+  // Conversations State: Ensure initial launch opens to a fresh clean conversation (Requirement 1 & 3)
   const [conversations, setConversations] = useState<ConversationThread[]>(() => {
     try {
       const saved = localStorage.getItem('lumi_conversations');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed: ConversationThread[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Check if there is already a clean empty conversation at the start
+          if (parsed[0].messages.length === 0) {
+            return parsed;
+          }
+          // Otherwise prepend a fresh empty conversation so initial screen is clean Image 1
+          const freshConv: ConversationThread = {
+            id: `conv-${Date.now()}`,
+            title: 'New Conversation',
+            lastUpdated: 'Just now',
+            messages: []
+          };
+          return [freshConv, ...parsed];
+        }
+      }
     } catch (e) {
       // fallback
     }
     return INITIAL_CONVERSATIONS;
   });
 
-  const [activeConversationId, setActiveConversationId] = useState<string>(
-    INITIAL_CONVERSATIONS[0].id
-  );
+  const [activeConversationId, setActiveConversationId] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('lumi_conversations');
+      if (saved) {
+        const parsed: ConversationThread[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].messages.length === 0) {
+          return parsed[0].id;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+    return INITIAL_CONVERSATIONS[0].id;
+  });
 
   useEffect(() => {
     try {

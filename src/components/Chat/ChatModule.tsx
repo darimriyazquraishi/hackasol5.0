@@ -18,12 +18,12 @@ import {
   Play,
   CheckCircle2,
   Layers,
-  ShieldCheck,
-  Edit3
+  Edit3,
+  PanelLeft,
+  Plus
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { APP_CONFIG } from '../../config';
-import { LumiLogo } from '../Branding/LumiLogo';
 import { MarkdownContent } from './MarkdownContent';
 import {
   ChatMessage,
@@ -33,12 +33,46 @@ import {
   CompilationResult
 } from '../../types';
 
-export const ChatModule: React.FC = () => {
+interface ChatModuleProps {
+  isLandingView?: boolean;
+}
+
+/**
+ * Heuristic to classify whether a prompt is a simple conversational query
+ * or requires multi-agent orchestration and workplan approval (Requirement 4).
+ */
+function isComplexOrchestrationTask(prompt: string, attachments: ChatAttachment[]): boolean {
+  // If user attached assets, it inherently requires multimodal parsing/vision
+  if (attachments && attachments.length > 0) return true;
+
+  const p = prompt.toLowerCase().trim();
+
+  // Simple greetings and identity queries
+  const isGreetingOrIdentity = /^(hi|hello|hey|greetings|who are you|what is lumi|introduce yourself|help)(\s+.*|\?|!)?$/i.test(p);
+  if (isGreetingOrIdentity) return false;
+
+  // General questions, explanations, factual queries, and hardware lookups
+  const isFactualOrExplain = /^(what is|explain|define|tell me about|how does|why is|what are my hardware specs|check gpu|system specs)/i.test(p);
+  if (isFactualOrExplain && !/refactor|develop a|build an? (app|system)|sandbox|synthesize|multi-agent|generate an? image/i.test(p)) {
+    return false;
+  }
+
+  // Explicit complex multi-step tasks
+  const asksForRefactorOrBuild = /refactor|scaffold|full-stack|multi-step|develop a (full|complete)|architecture design|build an? (app|application|system)|unit tests? for/i.test(p);
+  const asksForSandboxVerification = /run (in|inside) sandbox|execute (in|with) sandbox|validate execution/i.test(p);
+  const asksForImageGen = /generate (an? )?image|create (an? )?(picture|image|graphic)|diffusion|flux|draw/i.test(p);
+  const asksForMultiAgent = /multi-agent|orchestrate|compile (a )?deliverable|workplan|synthesize documents/i.test(p);
+
+  return Boolean(asksForRefactorOrBuild || asksForSandboxVerification || asksForImageGen || asksForMultiAgent);
+}
+
+export const ChatModule: React.FC<ChatModuleProps> = ({ isLandingView }) => {
   const {
     activeConversation,
     addMessageToActiveConversation,
     createFile,
-    navigateToSettings
+    createConversation,
+    toggleLeftNav
   } = useWorkspace();
 
   const [inputVal, setInputVal] = useState('');
@@ -53,11 +87,17 @@ export const ChatModule: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const landingInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  const messages = activeConversation?.messages || [];
+  const showLanding = isLandingView !== undefined ? isLandingView : (messages.length === 0);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeConversation?.messages, isGenerating]);
+    if (!showLanding) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages.length, isGenerating, showLanding]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -97,74 +137,124 @@ export const ChatModule: React.FC = () => {
   };
 
   /**
-   * Stage 1 -> Stage 2: Submit task and generate Workplan
+   * Handle user message submission.
+   * Simple queries route directly to /api/chat without workplans.
+   * Complex tasks route to /api/orchestrate/plan for structured approval.
    */
   const handleSend = async () => {
     const text = inputVal.trim();
     if ((!text && attachments.length === 0) || isGenerating) return;
 
+    const currentAttachments = [...attachments];
     const userMessage: ChatMessage = {
       id: `usr-${Date.now()}`,
       sender: 'user',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       content: text,
-      attachments: attachments.length > 0 ? [...attachments] : undefined
+      attachments: currentAttachments.length > 0 ? currentAttachments : undefined
     };
 
     addMessageToActiveConversation(userMessage);
     setInputVal('');
-    const currentAttachments = [...attachments];
     setAttachments([]);
     setIsGenerating(true);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    const isComplex = isComplexOrchestrationTask(text, currentAttachments);
+
     try {
-      // Call Stage 2: Capability Analysis & Workplan Generation
-      const res = await fetch(APP_CONFIG.endpoints.orchestratePlan, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: text,
-          attachments: currentAttachments,
-          preferredReasoningModel: selectedReasoningModel
-        })
-      });
+      if (!isComplex) {
+        // Simple conversational route -> direct natural response
+        const res = await fetch(APP_CONFIG.endpoints.chat, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: text,
+            model: selectedReasoningModel
+          }),
+          signal: controller.signal
+        });
 
-      if (res.ok) {
-        const data = await res.json();
-        const plan: LumiWorkplan = data.workplan;
+        if (res.ok) {
+          const data = await res.json();
+          addMessageToActiveConversation({
+            id: `asst-${Date.now()}`,
+            sender: 'assistant',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            content: data.content || data.response || 'No response returned from model.',
+            citations: data.citations
+          });
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          addMessageToActiveConversation({
+            id: `asst-${Date.now()}`,
+            sender: 'assistant',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            content: errData.content || errData.error || 'Failed to process message.'
+          });
+        }
+      } else {
+        // Complex multi-step task -> Stage 2 Workplan requiring approval
+        const res = await fetch(APP_CONFIG.endpoints.orchestratePlan, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: text,
+            attachments: currentAttachments,
+            preferredReasoningModel: selectedReasoningModel
+          }),
+          signal: controller.signal
+        });
 
-        const planMessage: ChatMessage = {
-          id: `plan-msg-${Date.now()}`,
+        if (res.ok) {
+          const data = await res.json();
+          const plan: LumiWorkplan = data.workplan;
+
+          const planMessage: ChatMessage = {
+            id: `plan-msg-${Date.now()}`,
+            sender: 'assistant',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            content: 'LUMI has analyzed the capabilities required for this task and prepared a structured workplan for review.',
+            lumiWorkplan: plan,
+            isApprovalPrompt: true
+          };
+          addMessageToActiveConversation(planMessage);
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          addMessageToActiveConversation({
+            id: `asst-${Date.now()}`,
+            sender: 'assistant',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            content: errData.error || 'Failed to analyze task capabilities.'
+          });
+        }
+      }
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        addMessageToActiveConversation({
+          id: `abort-${Date.now()}`,
           sender: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          content: 'LUMI has analyzed the capabilities required for this task and prepared a structured workplan for review.',
-          lumiWorkplan: plan,
-          isApprovalPrompt: true
-        };
-        addMessageToActiveConversation(planMessage);
+          content: 'Response generation cancelled.'
+        });
       } else {
-        const errData = await res.json().catch(() => ({}));
         addMessageToActiveConversation({
           id: `asst-${Date.now()}`,
           sender: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          content: errData.error || 'Failed to analyze task capabilities.'
+          content: 'Unable to communicate with LUMI service. Please ensure the backend is running.'
         });
       }
-    } catch {
-      addMessageToActiveConversation({
-        id: `asst-${Date.now()}`,
-        sender: 'assistant',
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        content: 'Unable to communicate with orchestration engine. Please ensure the backend server is running.'
-      });
     } finally {
       setIsGenerating(false);
+      abortControllerRef.current = null;
     }
   };
 
   /**
-   * Stage 3: Human Approval -> Stage 5, 6, 7, 8: Execute Workplan
+   * Stage 3: Human Approval -> Stage 5, 6, 7: Execute Workplan
    */
   const handleApproveWorkplan = async (plan: LumiWorkplan) => {
     setIsGenerating(true);
@@ -305,40 +395,88 @@ export const ChatModule: React.FC = () => {
     }
   };
 
-  const messages = activeConversation?.messages || [];
+  // ==========================================
+  // 1. EXACT IMAGE 1 LANDING PAGE IMPLEMENTATION
+  // ==========================================
+  if (showLanding) {
+    return (
+      <div className="h-screen w-screen bg-black flex flex-col items-center justify-center relative overflow-hidden select-none">
+        {/* Prominently centered LUMI Logo + L U M I wordmark matching Image 1 */}
+        <div className="flex flex-col items-center justify-center -mt-10 sm:-mt-14 w-full max-w-4xl px-4">
+          <img
+            src="/lumi-logo.jpg"
+            alt="LUMI"
+            className="h-64 sm:h-72 md:h-80 lg:h-[300px] w-auto object-contain pointer-events-none select-none transition-transform"
+          />
 
+          {/* Centered Single Prompt Input Box matching Image 1 exactly */}
+          <div className="w-[704px] max-w-[92vw] mt-10 sm:mt-12">
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                handleSend();
+              }}
+              className="relative w-full flex items-center h-[56px] bg-[#141414]/90 border border-[#2e2e2e] focus-within:border-[#3d3d3d] rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.6)] px-5 transition-colors"
+            >
+              <input
+                ref={landingInputRef}
+                type="text"
+                value={inputVal}
+                onChange={e => setInputVal(e.target.value)}
+                placeholder="Ask Lumi anything..."
+                className="w-full bg-transparent border-0 outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 text-[#F5F4F1] placeholder-[#737373] text-[15px] font-sans pr-14 caret-[#F5F4F1]"
+                autoFocus
+              />
+
+              <button
+                type="submit"
+                disabled={isGenerating}
+                className="absolute right-3 w-10 h-10 rounded-xl bg-[#c4a47c] hover:bg-[#b89569] active:scale-95 flex items-center justify-center text-[#141414] transition-all cursor-pointer shadow-sm shrink-0"
+                title="Send message"
+              >
+                <Send className="w-4 h-4 text-[#141414]" />
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // 2. CONVERSATION INTERFACE
+  // ==========================================
   return (
     <div className="flex-1 flex flex-col h-full bg-[#080808] text-[#F5F4F1] font-sans overflow-hidden select-none">
-      {/* 1. Conversational Header Bar (Clean, Minimal, No Internal Diagnostic Indicators) */}
+      {/* Conversational Header Bar */}
       <div className="h-12 px-4 border-b border-[#303030] flex items-center justify-between bg-[#080808] shrink-0 z-20">
         <div className="flex items-center space-x-2.5 min-w-0">
+          <button
+            onClick={toggleLeftNav}
+            title="Toggle Sidebar"
+            className="p-1 rounded text-[#9C9C9C] hover:text-[#F5F4F1] hover:bg-[#191919] transition-colors"
+          >
+            <PanelLeft className="w-4 h-4" />
+          </button>
           <div className="w-2 h-2 rounded-full bg-[#987654] shrink-0" />
           <h1 className="text-xs font-mono font-semibold tracking-wide text-[#F5F4F1] truncate">
             {activeConversation?.title || 'Intelligence Chat'}
           </h1>
         </div>
+
+        <button
+          onClick={createConversation}
+          title="New Conversation (Reset to landing screen)"
+          className="px-2.5 py-1 rounded bg-[#191919] hover:bg-[#222222] text-[#D5D2CC] hover:text-[#F5F4F1] border border-[#303030] text-xs font-mono flex items-center space-x-1.5 transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5 text-[#987654]" />
+          <span>New Chat</span>
+        </button>
       </div>
 
-      {/* 2. Message Stream */}
+      {/* Message Stream */}
       <div className="flex-1 overflow-y-auto p-6 space-y-6 select-text">
         <div className="max-w-3xl mx-auto space-y-6">
-          {/* Prominent Empty State with Exact Supplied Logo (Significantly Bigger) */}
-          {messages.length === 0 && (
-            <div className="py-20 text-center space-y-6">
-              <div className="flex justify-center">
-                <LumiLogo size="hero" />
-              </div>
-              <div className="space-y-1.5 max-w-md mx-auto">
-                <h2 className="text-sm font-semibold font-mono tracking-tight text-[#F5F4F1]">
-                  LOCAL UNIFIED MULTIMODAL INTELLIGENCE
-                </h2>
-                <p className="text-xs text-[#9C9C9C] leading-relaxed">
-                  Submit a task with text, code, or document attachments. LUMI coordinates local models and sandboxed execution on your machine.
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Render All Messages */}
           {messages.map(msg => (
             <div
@@ -352,7 +490,7 @@ export const ChatModule: React.FC = () => {
               </div>
 
               <div
-                className={`p-4 rounded text-xs leading-relaxed max-w-2xl space-y-3 ${
+                className={`p-4 rounded-xl text-xs leading-relaxed max-w-2xl space-y-3 ${
                   msg.sender === 'user'
                     ? 'bg-[#191919] text-[#F5F4F1] border border-[#303030]'
                     : 'bg-[#121212] text-[#D5D2CC] border border-[#262626] w-full'
@@ -374,12 +512,24 @@ export const ChatModule: React.FC = () => {
                   </div>
                 )}
 
-                {/* Professional Markdown Answer Rendering */}
+                {/* Markdown Answer Rendering */}
                 <MarkdownContent content={msg.content} onExecuteCode={handleRunCodeInSandbox} />
+
+                {/* Citations if available */}
+                {msg.citations && msg.citations.length > 0 && (
+                  <div className="pt-2 border-t border-[#262626] space-y-1 font-mono text-[11px]">
+                    <div className="text-[10px] uppercase text-[#987654] font-semibold">Source Citations</div>
+                    {msg.citations.map(c => (
+                      <div key={c.id} className="p-2 rounded bg-[#080808] border border-[#262626] text-[#9C9C9C]">
+                        <span className="text-[#F5F4F1] font-medium">{c.file}</span> ({c.section}) — {c.snippet}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Stage 3: Human Approval of Workplan Interface */}
                 {msg.lumiWorkplan && msg.isApprovalPrompt && (
-                  <div className="mt-3 p-4 rounded bg-[#080808] border border-[#987654]/60 space-y-4 font-sans">
+                  <div className="mt-3 p-4 rounded-xl bg-[#080808] border border-[#987654]/60 space-y-4 font-sans">
                     <div className="flex items-center justify-between border-b border-[#262626] pb-2.5">
                       <div className="flex items-center space-x-2">
                         <Layers className="w-4 h-4 text-[#987654]" />
@@ -487,7 +637,7 @@ export const ChatModule: React.FC = () => {
                 {msg.compiledResult && (
                   <div className="mt-4 space-y-4">
                     {/* Validation Report Banner */}
-                    <div className="p-3.5 rounded bg-[#080808] border border-[#303030] space-y-2 font-mono text-xs">
+                    <div className="p-3.5 rounded-xl bg-[#080808] border border-[#303030] space-y-2 font-mono text-xs">
                       <div className="flex items-center justify-between border-b border-[#262626] pb-2">
                         <div className="flex items-center space-x-2">
                           <CheckCircle2 className={`w-4 h-4 ${msg.compiledResult.validation.passed ? 'text-emerald-400' : 'text-amber-400'}`} />
@@ -527,7 +677,7 @@ export const ChatModule: React.FC = () => {
                       <div className="space-y-2">
                         <div className="text-[10px] font-mono uppercase text-[#9C9C9C]">Verified Code Snippets</div>
                         {msg.compiledResult.codeSnippets.map((cs, idx) => (
-                          <div key={idx} className="rounded bg-[#080808] border border-[#303030] overflow-hidden">
+                          <div key={idx} className="rounded-lg bg-[#080808] border border-[#303030] overflow-hidden">
                             <div className="px-3 py-1.5 bg-[#141414] border-b border-[#303030] flex items-center justify-between font-mono text-[11px]">
                               <span className="text-[#987654]">{cs.language}</span>
                               <div className="flex items-center space-x-2">
@@ -567,7 +717,7 @@ export const ChatModule: React.FC = () => {
                         {msg.compiledResult.files.map(gen => (
                           <div
                             key={gen.id}
-                            className="p-3 rounded bg-[#080808] border border-[#303030] flex items-center justify-between"
+                            className="p-3 rounded-xl bg-[#080808] border border-[#303030] flex items-center justify-between"
                           >
                             <div className="flex items-center space-x-2.5 min-w-0 pr-2">
                               {getFileIcon(gen.type)}
@@ -605,10 +755,10 @@ export const ChatModule: React.FC = () => {
 
           {/* Real-time Generating Indicator with Stop Button */}
           {isGenerating && (
-            <div className="flex items-center justify-between p-3 rounded bg-[#141414] border border-[#303030] text-xs font-mono text-[#987654] max-w-sm">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-[#141414] border border-[#303030] text-xs font-mono text-[#987654] max-w-sm">
               <div className="flex items-center space-x-2.5">
                 <div className="w-3.5 h-3.5 rounded-full border border-[#987654] border-t-transparent animate-spin" />
-                <span>Orchestrating agents...</span>
+                <span>Processing with LUMI...</span>
               </div>
               <button
                 onClick={handleStopGeneration}
@@ -624,7 +774,7 @@ export const ChatModule: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Stage 1 Interactive Composer Section */}
+      {/* Stage 1 Interactive Composer Section (In Conversation View) */}
       <div className="p-4 border-t border-[#303030] bg-[#080808] shrink-0">
         <div className="max-w-3xl mx-auto">
           {attachments.length > 0 && (
@@ -657,7 +807,7 @@ export const ChatModule: React.FC = () => {
             className="hidden"
           />
 
-          <div className="bg-[#191919] border border-[#303030] focus-within:border-[#987654] rounded p-2.5 transition-colors">
+          <div className="bg-[#141414]/90 border border-[#2a2a2a] focus-within:border-[#3d3d3d] rounded-2xl p-3 shadow-lg transition-colors">
             <textarea
               ref={textareaRef}
               rows={2}
@@ -669,11 +819,11 @@ export const ChatModule: React.FC = () => {
                   handleSend();
                 }
               }}
-              placeholder="Submit task or upload images/code (Stage 1 Interactive Layer)..."
-              className="w-full bg-transparent border-none outline-none text-xs text-[#F5F4F1] placeholder-[#9C9C9C] resize-none font-sans leading-relaxed"
+              placeholder="Ask Lumi anything..."
+              className="w-full bg-transparent border-none outline-none text-xs text-[#F5F4F1] placeholder-[#6e6e6e] resize-none font-sans leading-relaxed"
             />
 
-            <div className="flex items-center justify-between pt-2 border-t border-[#262626] text-xs">
+            <div className="flex items-center justify-between pt-2 border-t border-[#222222] text-xs">
               <button
                 onClick={() => fileInputRef.current?.click()}
                 title="Attach Document or Image"
@@ -696,14 +846,14 @@ export const ChatModule: React.FC = () => {
                   <button
                     onClick={handleSend}
                     disabled={!inputVal.trim() && attachments.length === 0}
-                    className={`px-3 py-1 rounded text-xs font-medium font-mono flex items-center space-x-1 transition-colors ${
+                    className={`px-3 py-1 rounded-xl text-xs font-medium font-sans flex items-center space-x-1.5 transition-colors ${
                       inputVal.trim() || attachments.length > 0
-                        ? 'bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1]'
-                        : 'bg-[#262626] text-[#9C9C9C] cursor-not-allowed'
+                        ? 'bg-[#c4a47c] hover:bg-[#b89569] text-[#141414]'
+                        : 'bg-[#222222] text-[#6e6e6e] cursor-not-allowed'
                     }`}
                   >
-                    <span>Analyze & Plan</span>
-                    <ArrowUp className="w-3 h-3" />
+                    <span>Send</span>
+                    <Send className="w-3 h-3 text-[#141414]" />
                   </button>
                 )}
               </div>

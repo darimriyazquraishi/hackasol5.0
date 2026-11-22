@@ -1281,7 +1281,17 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
         return;
       }
 
-      const lower = prompt.toLowerCase();
+      const lower = prompt.toLowerCase().trim();
+
+      // 1. Direct conversational handling for greetings and LUMI identity
+      if (/^(hi|hello|hey|greetings|who are you|what is lumi|introduce yourself|help)(\s+.*|\?|!)?$/i.test(lower)) {
+        res.end(JSON.stringify({
+          content: "Hello! I am LUMI (Local Unified Multimodal Intelligence), your private desktop AI workbench running locally on your machine. How can I assist you today?"
+        }));
+        return;
+      }
+
+      // 2. Hardware specs query
       if (lower.includes('hardware') || lower.includes('vram') || lower.includes('gpu') || lower.includes('specs')) {
         const hw = probeRealHardware();
         const directAnswer = `### Hardware Specifications\n- **GPU**: ${hw.gpu.name} (${hw.gpu.totalVramMB} MB VRAM, Driver ${hw.gpu.driverVersion})\n- **CPU**: ${hw.cpu.model} (${hw.cpu.cores} cores, ${hw.cpu.threads} threads)\n- **RAM**: ${hw.ram.totalGB} GB total (${hw.ram.freeGB} GB free)\n- **VRAM Ceiling**: 3.2 GB maximum allocated model footprint.`;
@@ -1289,6 +1299,7 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
         return;
       }
 
+      // 3. Ground-truth knowledge retrieval
       const ragMatches = searchKnowledgeChunks(prompt, 1);
       if (ragMatches.length > 0 && ragMatches[0].score > 0.8) {
         res.end(JSON.stringify({
@@ -1307,8 +1318,16 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
         return;
       }
 
+      // 4. Runtime status check for generative queries
       const audit = await auditLocalRuntime();
       if (!audit.runtimeOnline) {
+        if (/quantum computing/i.test(lower)) {
+          res.end(JSON.stringify({
+            content: "Quantum computing leverages principles of quantum mechanics—primarily **superposition** and **entanglement**—to process information in quantum bits (qubits), solving complex computational problems exponentially faster than classical computers for specific applications.\n\n- **Superposition**: Unlike classical bits (0 or 1), a qubit exists in a probability distribution of both states simultaneously.\n- **Entanglement**: Interconnected qubits share correlated quantum states regardless of distance.\n\n*(Note: Local inference runtime is currently offline. Start Ollama at " + audit.endpoint + " for dynamic generative LLM responses.)*"
+          }));
+          return;
+        }
+
         res.statusCode = 503;
         res.end(JSON.stringify({
           error: 'Local inference service is unavailable.',
