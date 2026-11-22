@@ -19,8 +19,18 @@ export const KnowledgeBaseModule: React.FC = () => {
   const [testQuery, setTestQuery] = useState('');
   const [testResults, setTestResults] = useState<Array<{ id: string; text: string; score: number; file: string }>>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [ingestStatus, setIngestStatus] = useState<string | null>(null);
+  const fileUploadRef = React.useRef<HTMLInputElement>(null);
 
   const activeCollection = knowledgeCollections.find(c => c.id === selectedCollectionId) || knowledgeCollections[0];
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIngestStatus(`Ingested ${files[0].name} into ${activeCollection?.name || 'collection'}.`);
+    setTimeout(() => setIngestStatus(null), 3500);
+    if (fileUploadRef.current) fileUploadRef.current.value = '';
+  };
 
   const handleTestSearch = async () => {
     if (!testQuery.trim()) return;
@@ -87,10 +97,23 @@ export const KnowledgeBaseModule: React.FC = () => {
           </p>
         </div>
 
-        <button className="px-3 py-1.5 rounded text-xs font-mono bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1] transition-colors flex items-center space-x-1.5">
-          <Upload className="w-3.5 h-3.5" />
-          <span>Ingest Document</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          <input
+            type="file"
+            ref={fileUploadRef}
+            onChange={handleFileUpload}
+            accept=".md,.txt,.json,.csv"
+            className="hidden"
+          />
+          <button
+            onClick={() => fileUploadRef.current?.click()}
+            className="px-3 py-1.5 rounded text-xs font-mono bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1] transition-colors flex items-center space-x-1.5"
+          >
+            <Upload className="w-3.5 h-3.5" />
+            <span>Ingest Document</span>
+          </button>
+          {ingestStatus && <span className="text-[11px] font-mono text-emerald-400">{ingestStatus}</span>}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

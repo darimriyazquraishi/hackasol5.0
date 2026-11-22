@@ -193,11 +193,6 @@ export const LeftSidebar: React.FC = () => {
               />
               {!leftNavCollapsed && <span>IDE Workspace</span>}
             </div>
-            {!leftNavCollapsed && (
-              <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-[#080808] text-[#987654] border border-[#303030]">
-                PRO
-              </span>
-            )}
           </button>
 
           {/* Settings & AI Workbench */}
