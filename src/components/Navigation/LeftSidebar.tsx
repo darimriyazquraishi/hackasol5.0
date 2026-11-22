@@ -218,19 +218,16 @@ export const LeftSidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Bottom Sovereignty Badge */}
-      <div className="p-2 border-t border-[#303030] text-[10px] font-mono text-[#9C9C9C] bg-[#080808] shrink-0">
+      {/* Bottom Footer */}
+      <div className="p-2.5 border-t border-[#303030] text-[10px] font-mono text-[#9C9C9C] bg-[#080808] shrink-0">
         {!leftNavCollapsed ? (
-          <div className="flex items-center justify-between px-1 py-1 text-[9px] text-[#9C9C9C]">
-            <span className="flex items-center space-x-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#987654]" />
-              <span>Zero Telemetry</span>
-            </span>
-            <span className="text-emerald-500 font-bold">100% LOCAL</span>
+          <div className="flex items-center justify-between px-1 text-[10px] text-[#9C9C9C]">
+            <span>LUMI Platform</span>
+            <span className="text-[#987654]">v1.0</span>
           </div>
         ) : (
-          <div className="flex flex-col items-center py-1 text-center" title="Zero Telemetry Local Mode">
-            <ShieldCheck className="w-4 h-4 text-[#987654]" />
+          <div className="flex justify-center text-[10px] text-[#987654]">
+            v1.0
           </div>
         )}
       </div>

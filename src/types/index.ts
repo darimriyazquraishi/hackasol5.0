@@ -111,7 +111,7 @@ export type SettingsSubSection =
   | 'optimization'
   // Security & Privacy
   | 'local-mode'
-  | 'air-gapped'
+  | 'security-policies'
   | 'network-policies'
   | 'metadata-sanitization'
   | 'sandbox'
@@ -219,6 +219,60 @@ export interface ChatSourceCitation {
   snippet: string;
 }
 
+export type AgentArchetype =
+  | 'image_generation'
+  | 'vision'
+  | 'reasoning_synthesis'
+  | 'math_code'
+  | 'vector_rag';
+
+export interface LumiWorkflowStep {
+  id: string;
+  agent: AgentArchetype;
+  model: string;
+  name: string;
+  description: string;
+  dependencies: string[]; // ids of prerequisite steps
+  expectedOutput: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  durationMs?: number;
+  outputData?: any;
+  error?: string;
+}
+
+export interface LumiWorkplan {
+  id: string;
+  taskInterpretation: string;
+  requiredCapabilities: string[];
+  selectedAgents: AgentArchetype[];
+  selectedModels: Record<string, string>;
+  executionSequence: LumiWorkflowStep[];
+  expectedDeliverables: string[];
+  status: 'pending_approval' | 'approved' | 'in_progress' | 'completed' | 'cancelled';
+  createdAt: string;
+}
+
+export interface ValidationResult {
+  passed: boolean;
+  checks: Array<{
+    name: string;
+    passed: boolean;
+    details: string;
+  }>;
+  errors: string[];
+}
+
+export interface CompilationResult {
+  type: 'text' | 'markdown' | 'code' | 'image' | 'report' | 'document' | 'structured';
+  title: string;
+  content: string;
+  citations?: ChatSourceCitation[];
+  files?: GeneratedFilePreview[];
+  codeSnippets?: Array<{ language: string; code: string; executionResult?: string }>;
+  agentContributions: Record<string, string>;
+  validation: ValidationResult;
+}
+
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
@@ -230,6 +284,9 @@ export interface ChatMessage {
   attachments?: ChatAttachment[];
   executionStages?: AgentExecutionStage[];
   workplan?: WorkplanApproval;
+  lumiWorkplan?: LumiWorkplan;
+  compiledResult?: CompilationResult;
+  isApprovalPrompt?: boolean;
   generatedFiles?: GeneratedFilePreview[];
   citations?: ChatSourceCitation[];
   codeBlock?: {

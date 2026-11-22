@@ -19,8 +19,8 @@ interface TaskAuditEntry {
   name: string;
   dependencyType: 'llm' | 'vlm' | 'embedding_model' | 'deterministic';
   targetModelOrTool: string;
-  installationStatus: 'installed' | 'not_installed' | 'offline_runtime' | 'built_in';
-  verificationStatus: 'verified' | 'unverified' | 'offline' | 'n_a';
+  installationStatus: 'installed' | 'not_installed' | 'unconnected' | 'built_in';
+  verificationStatus: 'verified' | 'unverified' | 'unconnected' | 'n_a';
   availability: 'available' | 'unavailable';
   details: string;
 }
@@ -125,7 +125,7 @@ export const ModelManagerModule: React.FC = () => {
               <span className="text-sm font-bold text-[#F5F4F1]">
                 {auditData?.runtimeOnline
                   ? `Runtime Active (${auditData.runtimeType.toUpperCase()})`
-                  : 'Local Inference Runtime Offline'}
+                  : 'Local Service Unconnected'}
               </span>
               <span className={`w-2 h-2 rounded-full ${auditData?.runtimeOnline ? 'bg-emerald-400' : 'bg-amber-500'}`} />
             </div>
@@ -137,7 +137,7 @@ export const ModelManagerModule: React.FC = () => {
 
         {!auditData?.runtimeOnline && (
           <div className="text-[11px] text-[#9C9C9C] max-w-sm">
-            Ollama is not running. Start Ollama at port 11434 to enable local LLM and VLM inference. Deterministic engines remain fully operational.
+            Local service at port 11434 is not responding. Connect Ollama or local engine to run LLM/VLM models. Deterministic analyzers remain operational.
           </div>
         )}
       </div>
@@ -213,8 +213,8 @@ export const ModelManagerModule: React.FC = () => {
                       <span className="text-[#987654]">Built-in</span>
                     ) : t.installationStatus === 'installed' ? (
                       <span className="text-emerald-400">Installed</span>
-                    ) : t.installationStatus === 'offline_runtime' ? (
-                      <span className="text-[#9C9C9C]">Runtime Offline</span>
+                    ) : t.installationStatus === 'unconnected' ? (
+                      <span className="text-[#9C9C9C]">Unconnected</span>
                     ) : (
                       <span className="text-amber-400">Not Installed</span>
                     )}
@@ -225,8 +225,8 @@ export const ModelManagerModule: React.FC = () => {
                         <CheckCircle2 className="w-3 h-3" />
                         <span>Verified</span>
                       </span>
-                    ) : t.verificationStatus === 'offline' ? (
-                      <span className="text-[#9C9C9C]">Offline</span>
+                    ) : t.verificationStatus === 'unconnected' ? (
+                      <span className="text-[#9C9C9C]">Unconnected</span>
                     ) : (
                       <span className="text-amber-400">Unverified</span>
                     )}
@@ -287,7 +287,7 @@ export const ModelManagerModule: React.FC = () => {
             <p>
               {auditData?.runtimeOnline
                 ? 'No models currently downloaded into local runtime.'
-                : 'Local runtime is offline. Start Ollama at http://127.0.0.1:11434 to inspect downloaded models.'}
+                : 'Local inference service is not responding. Start Ollama at http://127.0.0.1:11434 to discover downloaded models.'}
             </p>
           </div>
         )}
@@ -297,10 +297,10 @@ export const ModelManagerModule: React.FC = () => {
       <div className="p-4 rounded bg-[#191919] border border-[#303030] space-y-3 font-mono text-xs">
         <div className="flex items-center space-x-2 text-[#F5F4F1] font-semibold">
           <Download className="w-4 h-4 text-[#987654]" />
-          <span>Install Local Model</span>
+          <span>Configured Model Registry</span>
         </div>
         <p className="text-[11px] text-[#9C9C9C]">
-          Recommended laptop-compatible models: <span className="text-[#987654]">qwen2.5-coder:1.5b</span> (1.1 GB), <span className="text-[#987654]">llama3.2:3b</span> (2.1 GB), or <span className="text-[#987654]">smolvlm:256m</span> (400 MB).
+          Authoritative models: <span className="text-[#987654]">qwen3:8b</span> (Reasoning), <span className="text-[#987654]">qwen2.5-coder:7b</span> (Math & Code), <span className="text-[#987654]">qwen2.5vl:7b</span> (Vision), <span className="text-[#987654]">nomic-embed-text</span> (RAG), and <span className="text-[#987654]">flux1-schnell</span> (Image Gen).
         </p>
         <div className="flex space-x-2">
           <input

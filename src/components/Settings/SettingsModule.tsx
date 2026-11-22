@@ -55,7 +55,7 @@ export const SettingsModule: React.FC = () => {
   const [flashAttention, setFlashAttention] = useState(true);
 
   // Security State
-  const [airGappedEnforced, setAirGappedEnforced] = useState(true);
+  const [securityPolicyEnforced, setSecurityPolicyEnforced] = useState(true);
   const [localSocketOnly, setLocalSocketOnly] = useState(true);
   const [metadataSanitization, setMetadataSanitization] = useState(true);
   const [ephemeralSessions, setEphemeralSessions] = useState(false);
@@ -70,7 +70,7 @@ export const SettingsModule: React.FC = () => {
 
   // System Prompt State
   const [systemPrompt, setSystemPrompt] = useState(
-    `You are LUMI, an air-gapped sovereign AI assistant running on dedicated private hardware.
+    `You are LUMI, an intelligent multi-agent AI workbench running on dedicated private hardware.
 Adhere strictly to technical specifications. Never invent unsupported APIs.
 Perform symbolic verification on all generated code.`
   );
@@ -106,7 +106,7 @@ Perform symbolic verification on all generated code.`
     ],
     security: [
       { id: 'local-mode', label: 'Local-only Mode' },
-      { id: 'air-gapped', label: 'Air-gapped Configuration' },
+      { id: 'security-policies', label: 'Security Policies' },
       { id: 'network-policies', label: 'Network Policies' },
       { id: 'metadata-sanitization', label: 'Metadata Sanitization' },
       { id: 'sandbox', label: 'Sandbox Security' },
@@ -145,7 +145,7 @@ Perform symbolic verification on all generated code.`
 [CUDA]   GPU: ${hardwareProfile.gpu.name} (Driver ${hardwareProfile.gpu.driverVersion})
 [CPU]    ${hardwareProfile.cpu.model} (${hardwareProfile.cpu.cores} cores, ${hardwareProfile.cpu.threads} threads)
 [RAM]    ${hardwareProfile.ram.totalGB} GB Total
-[AIRGAP] Telemetry egress: 0 bytes outbound`;
+[AUDIT]  Network egress check: 0 bytes outbound`;
     const blob = new Blob([logContent], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -234,8 +234,8 @@ Perform symbolic verification on all generated code.`
         {/* Bottom Status */}
         <div className="p-3 border-t border-[#303030] text-[10px] font-mono text-[#9C9C9C] bg-[#080808]">
           <div className="flex items-center justify-between">
-            <span>Air-gap Status</span>
-            <span className="text-emerald-400 font-bold">LOCKED</span>
+            <span>Security Status</span>
+            <span className="text-[#987654] font-semibold">Active</span>
           </div>
         </div>
       </div>
@@ -776,35 +776,35 @@ Perform symbolic verification on all generated code.`
             </div>
           )}
 
-          {settingsSubSection === 'air-gapped' && (
+          {settingsSubSection === 'security-policies' && (
             <div className="p-6 space-y-6 max-w-3xl">
               <div>
-                <h2 className="text-base font-bold font-mono text-[#F5F4F1]">AIR-GAPPED CONFIGURATION</h2>
+                <h2 className="text-base font-bold font-mono text-[#F5F4F1]">SECURITY POLICIES</h2>
                 <p className="text-xs text-[#9C9C9C] mt-1">
-                  Network interface dropping and offline cryptographic verification parameters.
+                  Local socket loopback bounds and process execution containment.
                 </p>
               </div>
 
               <div className="p-4 rounded bg-[#191919] border border-[#303030] space-y-3 text-xs">
                 <div className="flex items-center justify-between py-2 border-b border-[#262626]">
                   <div>
-                    <div className="font-medium text-[#F5F4F1]">Interface Egress Firewall</div>
-                    <div className="text-[11px] text-[#9C9C9C]">Kernel packet drop rule for any outbound socket requests.</div>
+                    <div className="font-medium text-[#F5F4F1]">Loopback Socket Isolation</div>
+                    <div className="text-[11px] text-[#9C9C9C]">Strict binding to local 127.0.0.1 interface.</div>
                   </div>
                   <input
                     type="checkbox"
-                    checked={airGappedEnforced}
-                    onChange={e => setAirGappedEnforced(e.target.checked)}
+                    checked={securityPolicyEnforced}
+                    onChange={e => setSecurityPolicyEnforced(e.target.checked)}
                     className="w-4 h-4 accent-[#987654] cursor-pointer"
                   />
                 </div>
 
                 <div className="flex items-center justify-between py-2">
                   <div>
-                    <div className="font-medium text-[#F5F4F1]">DNS Query Blackhole</div>
-                    <div className="text-[11px] text-[#9C9C9C]">Rejects DNS requests immediately with empty records.</div>
+                    <div className="font-medium text-[#F5F4F1]">Sandboxed Process Containment</div>
+                    <div className="text-[11px] text-[#9C9C9C]">Child process timeouts and stdout/stderr capture.</div>
                   </div>
-                  <span className="text-emerald-400 font-mono text-[10px]">BLACKHOLED</span>
+                  <span className="text-emerald-400 font-mono text-[10px]">ENFORCED</span>
                 </div>
               </div>
             </div>
@@ -1030,8 +1030,8 @@ Perform symbolic verification on all generated code.`
                 <div>[22:40:13.440] [INFO]  [WEIGHT] Loaded Qwen2.5-Coder-1.5B (Q4_K_M): 1.12 GB VRAM resident (3.2 GB safe limit)</div>
                 <div>[22:40:14.210] [INFO]  [VECTOR] HNSW index mounted: 3 collections, 12,480 chunks mapped</div>
                 <div>[22:45:00.320] [INFO]  [ROUTER] Ingress request parsed: Security Evaluator assigned</div>
-                <div>[22:45:01.810] [INFO]  [INFER]  Generation completed in 0.42s (46.2 tps)</div>
-                <div>[22:46:10.040] [INFO]  [AIRGAP] Zero telemetry assertion verified: 0 outbound bytes</div>
+                <div>[22:45:01.810] [INFO]  [INFER]  Generation completed in 0.42s</div>
+                <div>[22:46:10.040] [INFO]  [AUDIT]  Zero external egress verified on loopback</div>
               </div>
             </div>
           )}
@@ -1125,7 +1125,7 @@ Perform symbolic verification on all generated code.`
               <div>
                 <h2 className="text-base font-bold font-mono text-[#F5F4F1]">APPLICATION UPDATES</h2>
                 <p className="text-xs text-[#9C9C9C] mt-1">
-                  Air-gapped offline package installer and version integrity checker.
+                  Local package updates and version integrity checker.
                 </p>
               </div>
 
@@ -1142,7 +1142,7 @@ Perform symbolic verification on all generated code.`
 
                 <div className="pt-2 border-t border-[#262626]">
                   <p className="text-[11px] text-[#9C9C9C] leading-relaxed mb-3">
-                    In air-gapped deployments, updates must be installed via offline signed bundle archives.
+                    For standalone deployments, updates are verified through signed package archives.
                   </p>
                   <div className="flex items-center space-x-3">
                     <button
