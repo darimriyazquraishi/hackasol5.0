@@ -345,6 +345,124 @@ export function generateDynamicWorkplan(
 
     expectedDeliverables.push('Verified Code Artifact & Execution Log');
 
+  } else if (decomp.domain === 'data_analysis' && decomp.requestedOutputFormat === 'pptx') {
+    // -------------------------------------------------------------
+    // DOMAIN 3B: POWERPOINT PRESENTATION DELIVERABLE WORKPLAN (5 STAGES)
+    // -------------------------------------------------------------
+    requiredCapabilities.push(
+      'Slide Outline & Theme Architecture',
+      'Thematic Domain Content Synthesis',
+      'Native Presentation Compilation (PptxGenJS)',
+      'Visual Styling & Layout Consistency Gate',
+      'Deliverable Packaging & Presentation Audit'
+    );
+    selectedAgents.push('reasoning_synthesis');
+    selectedModels['reasoning_synthesis'] = models.reasoning;
+
+    const s1 = `step-${stepCounter++}`;
+    steps.push({
+      id: s1,
+      stageNumber: 1,
+      name: 'Slide Outline & Narrative Structuring',
+      agent: 'reasoning_synthesis',
+      model: models.reasoning,
+      description: 'Decompose topic into title, key dimensions, technical/domain facts, and structured slide flow.',
+      actions: [
+        'Identify target topic, domain concepts, and audience objectives.',
+        'Define slide sequence: Title Slide, Overview, Key Dimensions, Operational Significance, Strategic Outlook.',
+        'Establish bullet point constraints (3-5 concise, information-dense points per slide).'
+      ],
+      inputs: decomp.primaryObjective,
+      dependencies: [],
+      expectedOutput: 'Structured presentation agenda and slide outline matrix.',
+      validationCriteria: 'Clear multi-slide structure covering all core aspects of the topic.',
+      status: 'pending'
+    });
+
+    const s2 = `step-${stepCounter++}`;
+    steps.push({
+      id: s2,
+      stageNumber: 2,
+      name: 'Thematic Domain Content Synthesis',
+      agent: 'reasoning_synthesis',
+      model: models.reasoning,
+      description: 'Generate factual, high-density slide headings and bullet points for each slide section.',
+      actions: [
+        'Synthesize domain knowledge, definitions, and realistic empirical facts for the topic.',
+        'Eliminate repetitive generic boilerplate and focus on informative substantive points.',
+        'Format slide draft with strict heading and bullet hierarchy.'
+      ],
+      inputs: 'Slide outline from Stage 1.',
+      dependencies: [s1],
+      expectedOutput: 'Complete slide-by-slide copy ready for binary presentation generation.',
+      validationCriteria: 'High factual density across all slides without placeholder text.',
+      status: 'pending'
+    });
+
+    const s3 = `step-${stepCounter++}`;
+    steps.push({
+      id: s3,
+      stageNumber: 3,
+      name: 'Native Presentation Compilation (PptxGenJS)',
+      agent: 'reasoning_synthesis',
+      model: 'pptxgenjs-runtime',
+      description: 'Compile slide data into valid Microsoft PowerPoint (.pptx) binary container.',
+      actions: [
+        'Initialize 16:9 widescreen layout with LUMI dark charcoal background (#080808).',
+        'Inject master title slide with warm taupe accent line (#987654) and metadata.',
+        'Generate content slides with formatted headers, accent dividers, and styled bullet points.',
+        'Encode presentation to OpenXML PKZip buffer.'
+      ],
+      inputs: 'Slide content copy from Stage 2.',
+      dependencies: [s2],
+      expectedOutput: 'Native .pptx binary deliverable file.',
+      validationCriteria: 'Non-empty presentation buffer adhering to PPTX OpenXML standards.',
+      status: 'pending'
+    });
+
+    const s4 = `step-${stepCounter++}`;
+    steps.push({
+      id: s4,
+      stageNumber: 4,
+      name: 'Visual Layout & Typographic Styling Gate',
+      agent: 'reasoning_synthesis',
+      model: 'visual-quality-gate',
+      description: 'Audit presentation formatting, typography, line spacing, and slide readability.',
+      actions: [
+        'Verify high contrast between text (#F5F4F1) and slide background.',
+        'Check margins (x: 0.8", y: 0.8") and consistent header font sizes (24pt).',
+        'Confirm bullet point spacing and absence of overlapping elements.'
+      ],
+      inputs: 'Compiled PPTX buffer and layout geometry.',
+      dependencies: [s3],
+      expectedOutput: 'Styling audit certificate confirming slide design compliance.',
+      validationCriteria: 'Clean typographic layout with zero text clipping or overlapping elements.',
+      status: 'pending'
+    });
+
+    const s5 = `step-${stepCounter++}`;
+    steps.push({
+      id: s5,
+      stageNumber: 5,
+      name: 'Presentation Packaging & Deliverable Registration',
+      agent: 'reasoning_synthesis',
+      model: 'lumi-quality-gate',
+      description: 'Register deliverable in LUMI storage registry and generate direct download endpoint.',
+      actions: [
+        'Commit .pptx file to data/deliverables directory.',
+        'Register download URL and deliverable metadata in DELIVERABLE_REGISTRY.',
+        'Generate executive summary presentation card for chat interface.'
+      ],
+      inputs: 'Verified PPTX deliverable from Stage 4.',
+      dependencies: [s4],
+      expectedOutput: 'Downloadable PowerPoint presentation registered in LUMI deliverable registry.',
+      validationCriteria: 'Presentation file downloadable and confirmed non-corrupted.',
+      status: 'pending'
+    });
+
+    expectedDeliverables.push(decomp.suggestedDeliverableName);
+    expectedDeliverables.push('Executive Slide Deck (PPTX)');
+
   } else if (decomp.domain === 'data_analysis') {
     // -------------------------------------------------------------
     // DOMAIN 3: DATA ANALYSIS & SPREADSHEET WORKPLAN (5 STAGES)

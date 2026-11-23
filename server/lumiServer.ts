@@ -17,7 +17,7 @@ import {
   IMAGE_REGISTRY
 } from './imageEngine';
 import { ragEngine } from './ragEngine';
-import { decomposeUserTask } from './taskDecomposer';
+import { decomposeUserTask, hasContextualReference, resolveConversationContext } from './taskDecomposer';
 import { generateDynamicWorkplan } from './workplanEngine';
 import {
   listUserProjects,
@@ -647,9 +647,18 @@ export function callOllamaGenerate(model: string, prompt: string, systemPrompt?:
 export function generateLumiWorkplan(
   prompt: string,
   attachments: Array<{ id: string; name: string; type: string; data?: string }> = [],
-  preferredReasoningModel: string = 'qwen2.5:1.5b'
+  preferredReasoningModel: string = 'qwen2.5:1.5b',
+  conversationHistory: Array<any> = []
 ): LumiWorkplan {
-  const decomp = decomposeUserTask(prompt, attachments);
+  let history = conversationHistory;
+  if ((!history || history.length === 0) && EXECUTION_HISTORY.length > 0) {
+    history = EXECUTION_HISTORY.slice(0, 5).map(e => ({
+      sender: 'user',
+      content: e.prompt,
+      originalPrompt: e.prompt
+    }));
+  }
+  const decomp = decomposeUserTask(prompt, attachments, history);
   return generateDynamicWorkplan(decomp);
 }
 
@@ -717,10 +726,28 @@ export function executeSandboxedCode(
 export async function executeLumiWorkplan(
   workplan: LumiWorkplan,
   prompt: string,
-  attachments: Array<{ id: string; name: string; type: string; data?: string }> = []
+  attachments: Array<{ id: string; name: string; type: string; data?: string }> = [],
+  conversationHistory: Array<any> = []
 ): Promise<{ deliverable: CompilationResult; executedWorkplan: LumiWorkplan }> {
   const overallStart = Date.now();
-  const effectivePrompt = workplan.originalPrompt || prompt;
+  let effectivePrompt = workplan.originalPrompt || prompt;
+
+  // If effectivePrompt has contextual references, resolve it with conversationHistory
+  if (hasContextualReference(effectivePrompt)) {
+    let history = conversationHistory;
+    if ((!history || history.length === 0) && EXECUTION_HISTORY.length > 0) {
+      history = EXECUTION_HISTORY.slice(0, 5).map(e => ({
+        sender: 'user',
+        content: e.prompt,
+        originalPrompt: e.prompt
+      }));
+    }
+    const resolved = resolveConversationContext(effectivePrompt, history);
+    if (resolved.contextPreserved) {
+      effectivePrompt = resolved.resolvedPrompt;
+    }
+  }
+
   const executedWorkplan = JSON.parse(JSON.stringify(workplan)) as LumiWorkplan;
   executedWorkplan.status = 'in_progress';
 
@@ -1310,7 +1337,8 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
         const plan = generateLumiWorkplan(
           parsed.prompt || '',
           parsed.attachments || [],
-          parsed.preferredReasoningModel || 'qwen3:8b'
+          parsed.preferredReasoningModel || 'qwen2.5:1.5b',
+          parsed.conversationHistory || []
         );
         res.end(JSON.stringify({ workplan: plan }));
       } catch (err: any) {
@@ -1338,7 +1366,8 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
         const result = await executeLumiWorkplan(
           parsed.workplan,
           parsed.prompt || '',
-          parsed.attachments || []
+          parsed.attachments || [],
+          parsed.conversationHistory || []
         );
 
         res.end(JSON.stringify(result));

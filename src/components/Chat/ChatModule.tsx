@@ -141,12 +141,21 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
 
     try {
       // Stage 2: Capability Analysis & Workplan Generation
+      const historyItems = messages.slice(-10).map(m => ({
+        sender: m.sender,
+        content: m.content,
+        originalPrompt: m.lumiWorkplan?.originalPrompt || m.lumiWorkplan?.taskInterpretation || m.content,
+        generatedSubject: m.generatedImages?.[0]?.subject || (m.compiledResult?.files?.[0]?.name ? m.compiledResult.title : undefined),
+        deliverableFormat: m.lumiWorkplan?.decomposition?.requestedOutputFormat
+      }));
+
       const res = await fetch(APP_CONFIG.endpoints.orchestratePlan, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: text,
           attachments: currentAttachments,
+          conversationHistory: historyItems,
           preferredReasoningModel: selectedReasoningModel
         }),
         signal: controller.signal
@@ -207,13 +216,21 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
     abortControllerRef.current = controller;
 
     try {
+      const historyItems = messages.slice(-10).map(m => ({
+        sender: m.sender,
+        content: m.content,
+        originalPrompt: m.lumiWorkplan?.originalPrompt || m.lumiWorkplan?.taskInterpretation || m.content,
+        generatedSubject: m.generatedImages?.[0]?.subject
+      }));
+
       const res = await fetch(APP_CONFIG.endpoints.orchestrateExecute, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           workplan: plan,
           prompt: plan.originalPrompt || plan.taskInterpretation,
-          attachments
+          attachments,
+          conversationHistory: historyItems
         }),
         signal: controller.signal
       });

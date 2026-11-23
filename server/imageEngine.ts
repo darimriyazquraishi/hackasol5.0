@@ -50,13 +50,60 @@ export function detectImageGenerationIntent(prompt: string): ImageGenerationInte
   const p = prompt.trim();
   const lower = p.toLowerCase();
 
-  // Explicit patterns for image generation
-  const pattern = /(?:generate|create|make|draw|render|produce|paint)\s+(?:an?\s+)?(?:image|picture|photo|illustration|graphic|art|sketch|drawing)\s+(?:of|about|depicting|showing|with)?\s*(.*)/i;
-  const match = lower.match(pattern);
+  // 1. Explicitly filter out pure explanations, questions, or conceptual inquiries
+  const isExplanatory =
+    /^(?:explain|how\s+does|how\s+do|what\s+is|why\s+is|tell\s+me\s+about|describe\s+how|teach\s+me|overview\s+of|can\s+you\s+explain)\b/i.test(p) ||
+    /(?:how\s+image\s+generation\s+works|how\s+(?:diffusion|generative\s+ai|image\s+models)\s+work)/i.test(lower);
 
-  if (match) {
-    let subject = match[1]?.trim() || '';
+  if (isExplanatory) {
+    return {
+      isImageGen: false,
+      subject: '',
+      format: 'png',
+      width: 1024,
+      height: 1024
+    };
+  }
+
+  // Pattern 1: Action + [optional adjective(s)] + image noun + [preposition] + subject
+  const pattern1 = /(?:generate|create|make|draw|render|produce|paint)\s+(?:an?\s+)?(?:(?:realistic|photorealistic|cartoon|cartoon-style|anime|digital|oil|watercolor|cinematic|3d|vintage|sketch|artistic|fine-art|cute|beautiful|vibrant|hd|4k)\s+)*(?:image|picture|photo|photograph|illustration|graphic|art|sketch|drawing)\s+(?:of|about|depicting|showing|with)?\s*(.*)/i;
+  const match1 = lower.match(pattern1);
+
+  if (match1) {
+    let subject = match1[1]?.trim() || '';
     subject = subject.replace(/^(a|an|the)\s+/i, '').replace(/[.!?]+$/, '').trim();
+    if (subject.length > 0) {
+      return {
+        isImageGen: true,
+        subject,
+        format: 'png',
+        width: 1024,
+        height: 1024
+      };
+    }
+  }
+
+  // Pattern 2: Action + style + visual subject (e.g. "generate a cartoon-style dog", "draw a realistic cow")
+  const pattern2 = /^(?:generate|create|make|draw|paint|sketch|render)\s+(?:an?\s+)?((?:(?:realistic|photorealistic|cartoon|cartoon-style|anime|digital|oil|watercolor|3d|cute|beautiful|vibrant)\s+)+(?:cow|dog|cat|puppy|kitten|pizza|burger|car|mountain|sunset|landscape|coffee|tree|flower|horse|bird|lion|tiger|animal|house|castle|portrait)\b.*)/i;
+  const match2 = lower.match(pattern2);
+  if (match2) {
+    const subject = match2[1].replace(/^(a|an|the)\s+/i, '').replace(/[.!?]+$/, '').trim();
+    if (subject.length > 0) {
+      return {
+        isImageGen: true,
+        subject,
+        format: 'png',
+        width: 1024,
+        height: 1024
+      };
+    }
+  }
+
+  // Pattern 3: Direct "image/photo of a cow"
+  const pattern3 = /^(?:(?:an?\s+)?(?:(?:realistic|photorealistic|cartoon|cartoon-style)\s+)?(?:image|picture|photo|photograph|illustration)\s+(?:of|showing|depicting)\s+)(.*)/i;
+  const match3 = lower.match(pattern3);
+  if (match3) {
+    const subject = match3[1].replace(/^(a|an|the)\s+/i, '').replace(/[.!?]+$/, '').trim();
     if (subject.length > 0) {
       return {
         isImageGen: true,
@@ -450,27 +497,259 @@ function getCoffeeScene(): string {
   `;
 }
 
-// 7. Universal Visual Scene Synthesizer
-function getUniversalArtScene(subject: string): string {
-  const s = subject.toUpperCase();
+// 7. Realistic Cow in Green Field
+function getCowScene(): string {
   return `
     <defs>
-      <linearGradient id="univBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#18181b"/><stop offset="100%" stop-color="#09090b"/></linearGradient>
-      <linearGradient id="accentG" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#d4af37"/><stop offset="50%" stop-color="#987654"/><stop offset="100%" stop-color="#765B43"/></linearGradient>
-      <filter id="uSh"><feDropShadow dx="0" dy="20" stdDeviation="24" flood-color="#000000" flood-opacity="0.8"/></filter>
+      <linearGradient id="skyGradCow" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#38bdf8"/><stop offset="50%" stop-color="#bae6fd"/><stop offset="100%" stop-color="#f0f9ff"/>
+      </linearGradient>
+      <linearGradient id="fieldGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#65a30d"/><stop offset="40%" stop-color="#4d7c0f"/><stop offset="100%" stop-color="#1e3a10"/>
+      </linearGradient>
+      <linearGradient id="hillGrad1" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#84cc16"/><stop offset="100%" stop-color="#4d7c0f"/>
+      </linearGradient>
+      <radialGradient id="cowBody" cx="45%" cy="40%" r="65%">
+        <stop offset="0%" stop-color="#ffffff"/><stop offset="70%" stop-color="#f5f5f4"/><stop offset="100%" stop-color="#d6d3d1"/>
+      </radialGradient>
+      <radialGradient id="cowSpot" cx="40%" cy="35%" r="60%">
+        <stop offset="0%" stop-color="#292524"/><stop offset="70%" stop-color="#1c1917"/><stop offset="100%" stop-color="#0c0a09"/>
+      </radialGradient>
+      <radialGradient id="cowMuzzle" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stop-color="#fed7aa"/><stop offset="70%" stop-color="#fbcfe8"/><stop offset="100%" stop-color="#f472b6"/>
+      </radialGradient>
+      <filter id="cowShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="25" stdDeviation="20" flood-color="#052e16" flood-opacity="0.6"/>
+      </filter>
     </defs>
-    <rect width="1024" height="1024" fill="url(#univBg)"/>
-    <g filter="url(#uSh)">
-      <!-- Central Focus Ring -->
-      <circle cx="512" cy="460" r="280" fill="#121212" stroke="url(#accentG)" stroke-width="5"/>
-      <circle cx="512" cy="460" r="260" fill="#1a1a1a"/>
-      <!-- Emblematic Geometric Starburst / Artwork Silhouette -->
-      <polygon points="512,240 560,400 720,400 590,500 640,660 512,560 384,660 434,500 304,400 464,400" fill="url(#accentG)"/>
-      <circle cx="512" cy="460" r="75" fill="#f5f4f1"/>
-      <circle cx="512" cy="460" r="55" fill="#141414"/>
-      <!-- Subject Caption -->
-      <text x="512" y="820" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="#f5f4f1" text-anchor="middle" letter-spacing="3">${s}</text>
-      <text x="512" y="865" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="medium" fill="#987654" text-anchor="middle" letter-spacing="2">AUTHENTIC LOCAL IMAGE ARTIFACT</text>
+
+    <!-- Sky -->
+    <rect width="1024" height="600" fill="url(#skyGradCow)"/>
+    <!-- Distant Clouds -->
+    <g fill="#ffffff" opacity="0.85">
+      <ellipse cx="200" cy="180" rx="90" ry="35"/><ellipse cx="260" cy="165" rx="70" ry="40"/><ellipse cx="150" cy="190" rx="60" ry="30"/>
+      <ellipse cx="780" cy="140" rx="110" ry="40"/><ellipse cx="850" cy="130" rx="80" ry="45"/><ellipse cx="720" cy="150" rx="70" ry="35"/>
+    </g>
+    <!-- Distant Rolling Hills -->
+    <path d="M-50,550 Q200,420 500,500 T1050,480 L1050,650 L-50,650 Z" fill="url(#hillGrad1)" opacity="0.7"/>
+    <!-- Green Field Meadow -->
+    <rect y="500" width="1024" height="524" fill="url(#fieldGrad)"/>
+    <!-- Sunlit Highlights on Pasture -->
+    <ellipse cx="512" cy="550" rx="480" ry="60" fill="#a3e635" opacity="0.25"/>
+
+    <!-- Ground Shadow Under Cow -->
+    <ellipse cx="510" cy="830" rx="280" ry="45" fill="#052e16" opacity="0.7" filter="blur(15px)"/>
+
+    <!-- Realistic Cow Model -->
+    <g filter="url(#cowShadow)">
+      <!-- Back Far Leg -->
+      <path d="M 660,650 L 675,790 L 655,800 L 640,660 Z" fill="#78716c"/>
+      <rect x="655" y="790" width="22" height="18" rx="4" fill="#1c1917"/>
+      <!-- Front Far Leg -->
+      <path d="M 390,650 L 380,785 L 400,795 L 415,650 Z" fill="#78716c"/>
+      <rect x="380" y="785" width="22" height="18" rx="4" fill="#1c1917"/>
+
+      <!-- Cow Body Torso -->
+      <path d="M 330,550 C 330,470 420,460 520,465 C 640,470 720,480 740,540 C 750,580 740,660 710,690 C 670,720 380,720 340,680 C 320,650 330,580 330,550 Z" fill="url(#cowBody)"/>
+
+      <!-- Authentic Holstein Black Spots on Torso -->
+      <path d="M 450,470 C 490,465 520,490 510,540 C 500,590 460,600 440,580 C 420,550 410,500 450,470 Z" fill="url(#cowSpot)"/>
+      <path d="M 570,480 C 630,475 660,510 650,560 C 640,610 590,630 570,600 C 550,570 540,520 570,480 Z" fill="url(#cowSpot)"/>
+      <path d="M 670,550 C 720,540 735,590 730,640 C 720,680 680,690 660,670 C 650,640 640,580 670,550 Z" fill="url(#cowSpot)"/>
+      <path d="M 360,540 C 400,520 410,580 390,620 C 370,650 345,630 340,590 C 335,560 340,545 360,540 Z" fill="url(#cowSpot)"/>
+
+      <!-- Cow Udder (realistic anatomical) -->
+      <path d="M 590,680 Q 620,720 640,680 Z" fill="#fbcfe8"/>
+      <ellipse cx="605" cy="710" rx="4" ry="7" fill="#f472b6"/>
+      <ellipse cx="625" cy="710" rx="4" ry="7" fill="#f472b6"/>
+
+      <!-- Back Near Leg -->
+      <path d="M 690,640 C 710,670 705,730 695,805 L 720,815 C 735,740 735,670 715,640 Z" fill="url(#cowBody)"/>
+      <path d="M 695,670 C 715,690 710,730 698,750 Z" fill="url(#cowSpot)"/>
+      <rect x="695" y="805" width="25" height="20" rx="4" fill="#1c1917"/>
+
+      <!-- Front Near Leg -->
+      <path d="M 355,640 C 350,690 355,745 350,810 L 375,815 C 385,750 380,690 380,640 Z" fill="url(#cowBody)"/>
+      <path d="M 355,670 C 375,680 370,720 355,740 Z" fill="url(#cowSpot)"/>
+      <rect x="350" y="810" width="25" height="20" rx="4" fill="#1c1917"/>
+
+      <!-- Cow Tail -->
+      <path d="M 735,530 C 770,560 775,640 765,700" stroke="#f5f5f4" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <!-- Tail Brush -->
+      <path d="M 765,695 C 760,720 780,740 770,760 C 760,740 750,720 765,695 Z" fill="#1c1917"/>
+
+      <!-- Cow Neck & Head -->
+      <path d="M 370,580 L 310,480 L 260,490 L 310,640 Z" fill="url(#cowBody)"/>
+      <!-- Head Base -->
+      <polygon points="290,440 220,490 240,560 320,530" fill="url(#cowBody)"/>
+      <path d="M 270,445 C 290,460 300,500 280,530 C 260,545 240,530 250,490 Z" fill="url(#cowSpot)"/>
+
+      <!-- Snout & Muzzle -->
+      <ellipse cx="225" cy="545" rx="36" ry="26" fill="url(#cowMuzzle)"/>
+      <!-- Nostrils -->
+      <ellipse cx="215" cy="545" rx="6" ry="9" fill="#831843" transform="rotate(-10 215 545)"/>
+      <ellipse cx="235" cy="545" rx="6" ry="9" fill="#831843" transform="rotate(10 235 545)"/>
+
+      <!-- Cow Eye (Gentle, dark with catchlight) -->
+      <ellipse cx="265" cy="485" rx="10" ry="12" fill="#1c1917"/>
+      <circle cx="262" cy="482" r="3.5" fill="#ffffff"/>
+
+      <!-- Cow Ears (flared horizontally) -->
+      <g transform="translate(305, 455) rotate(-20)">
+        <ellipse cx="0" cy="0" rx="35" ry="14" fill="url(#cowBody)"/>
+        <ellipse cx="0" cy="0" rx="25" ry="8" fill="#fbcfe8"/>
+      </g>
+      <g transform="translate(265, 435) rotate(-60)">
+        <ellipse cx="0" cy="0" rx="28" ry="12" fill="#d6d3d1"/>
+        <ellipse cx="0" cy="0" rx="20" ry="6" fill="#fbcfe8"/>
+      </g>
+
+      <!-- Small Horns -->
+      <path d="M 285,435 Q 295,410 310,415 Q 295,430 290,440 Z" fill="#e7e5e4" stroke="#a8a29e" stroke-width="1.5"/>
+      <path d="M 270,430 Q 275,408 285,412 Q 278,426 272,434 Z" fill="#d6d3d1"/>
+    </g>
+
+    <!-- Foreground Grass Tufts and Wildflowers -->
+    <g fill="#4d7c0f">
+      <path d="M 120,850 L 125,800 L 135,850 L 140,810 L 150,850 Z"/>
+      <path d="M 320,860 L 325,815 L 335,860 L 345,820 L 355,860 Z"/>
+      <path d="M 520,870 L 528,810 L 536,870 L 546,825 L 555,870 Z"/>
+      <path d="M 720,860 L 728,815 L 738,860 L 748,810 L 758,860 Z"/>
+      <path d="M 880,850 L 888,805 L 898,850 L 908,820 L 918,850 Z"/>
+    </g>
+    <!-- Little pasture flowers -->
+    <g fill="#fef08a">
+      <circle cx="210" cy="840" r="5"/><circle cx="430" cy="855" r="4.5"/><circle cx="640" cy="845" r="5"/><circle cx="820" cy="860" r="4"/>
+    </g>
+    <g fill="#ffffff">
+      <circle cx="280" cy="865" r="4"/><circle cx="580" cy="850" r="4.5"/><circle cx="760" cy="870" r="4"/>
+    </g>
+  `;
+}
+
+// 8. Cartoon-Style Dog
+function getDogScene(): string {
+  return `
+    <defs>
+      <radialGradient id="dogBg" cx="50%" cy="40%" r="65%">
+        <stop offset="0%" stop-color="#fef08a"/><stop offset="50%" stop-color="#fde047"/><stop offset="100%" stop-color="#ca8a04"/>
+      </radialGradient>
+      <linearGradient id="dogFurGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#fbbf24"/><stop offset="60%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#d97706"/>
+      </linearGradient>
+      <radialGradient id="dogEar" cx="40%" cy="30%" r="60%">
+        <stop offset="0%" stop-color="#b45309"/><stop offset="100%" stop-color="#78350f"/>
+      </radialGradient>
+      <radialGradient id="dogSnout" cx="50%" cy="30%" r="60%">
+        <stop offset="0%" stop-color="#fef3c7"/><stop offset="100%" stop-color="#fde68a"/>
+      </radialGradient>
+      <filter id="dogSh" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="20" stdDeviation="24" flood-color="#78350f" flood-opacity="0.5"/>
+      </filter>
+    </defs>
+
+    <!-- Warm Cartoon Sunburst Backdrop -->
+    <rect width="1024" height="1024" fill="url(#dogBg)"/>
+    <ellipse cx="512" cy="860" rx="340" ry="70" fill="#a16207" opacity="0.4" filter="blur(16px)"/>
+
+    <g filter="url(#dogSh)">
+      <!-- Wagging Tail -->
+      <path d="M 680,680 C 770,640 820,540 800,480 C 785,460 765,490 760,530 C 750,600 700,660 670,680 Z" fill="url(#dogEar)"/>
+
+      <!-- Dog Body -->
+      <ellipse cx="512" cy="690" rx="200" ry="170" fill="url(#dogFurGrad)"/>
+      <!-- Soft Cream Chest Fur Patch -->
+      <ellipse cx="512" cy="710" rx="110" ry="130" fill="url(#dogSnout)"/>
+
+      <!-- Front Left Paw -->
+      <g transform="translate(420, 810)">
+        <ellipse cx="0" cy="0" rx="55" ry="40" fill="url(#dogFurGrad)"/>
+        <line x1="-15" y1="5" x2="-15" y2="35" stroke="#b45309" stroke-width="4" stroke-linecap="round"/>
+        <line x1="15" y1="5" x2="15" y2="35" stroke="#b45309" stroke-width="4" stroke-linecap="round"/>
+      </g>
+      <!-- Front Right Paw -->
+      <g transform="translate(604, 810)">
+        <ellipse cx="0" cy="0" rx="55" ry="40" fill="url(#dogFurGrad)"/>
+        <line x1="-15" y1="5" x2="-15" y2="35" stroke="#b45309" stroke-width="4" stroke-linecap="round"/>
+        <line x1="15" y1="5" x2="15" y2="35" stroke="#b45309" stroke-width="4" stroke-linecap="round"/>
+      </g>
+
+      <!-- Vibrant Red Collar with Golden Medallion -->
+      <path d="M 370,570 Q 512,640 654,570 L 654,535 Q 512,605 370,535 Z" fill="#ef4444"/>
+      <circle cx="512" cy="610" r="24" fill="#fbbf24" stroke="#f59e0b" stroke-width="3"/>
+      <circle cx="512" cy="610" r="14" fill="#fef08a"/>
+
+      <!-- Dog Head -->
+      <circle cx="512" cy="420" r="195" fill="url(#dogFurGrad)"/>
+
+      <!-- Floppy Left Ear -->
+      <g transform="translate(340, 360) rotate(15)">
+        <ellipse cx="0" cy="60" rx="70" ry="130" fill="url(#dogEar)"/>
+      </g>
+      <!-- Floppy Right Ear -->
+      <g transform="translate(684, 360) rotate(-15)">
+        <ellipse cx="0" cy="60" rx="70" ry="130" fill="url(#dogEar)"/>
+      </g>
+
+      <!-- Snout Muzzle -->
+      <ellipse cx="512" cy="480" rx="105" ry="80" fill="url(#dogSnout)"/>
+
+      <!-- Glossy Button Nose -->
+      <path d="M 475,440 Q 512,425 549,440 Q 555,475 512,485 Q 469,475 475,440 Z" fill="#1c1917"/>
+      <ellipse cx="498" cy="445" rx="12" ry="6" fill="#ffffff" opacity="0.6"/>
+
+      <!-- Happy Smiling Open Mouth -->
+      <path d="M 512,485 L 512,505 Q 470,515 440,490 M 512,505 Q 554,515 584,490" stroke="#78350f" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <!-- Pink Tongue sticking out -->
+      <path d="M 485,505 C 485,555 539,555 539,505 Z" fill="#f43f5e"/>
+      <line x1="512" y1="505" x2="512" y2="540" stroke="#be123c" stroke-width="2"/>
+
+      <!-- Big Expressive Cartoon Eyes -->
+      <!-- Left Eye -->
+      <ellipse cx="430" cy="380" rx="42" ry="52" fill="#ffffff"/>
+      <ellipse cx="435" cy="380" rx="26" ry="34" fill="#1c1917"/>
+      <circle cx="424" cy="365" r="12" fill="#ffffff"/>
+      <circle cx="445" cy="392" r="5" fill="#ffffff"/>
+      <!-- Right Eye -->
+      <ellipse cx="594" cy="380" rx="42" ry="52" fill="#ffffff"/>
+      <ellipse cx="589" cy="380" rx="26" ry="34" fill="#1c1917"/>
+      <circle cx="578" cy="365" r="12" fill="#ffffff"/>
+      <circle cx="599" cy="392" r="5" fill="#ffffff"/>
+
+      <!-- Cute Eyebrow Dots -->
+      <circle cx="430" cy="310" r="12" fill="#b45309"/>
+      <circle cx="594" cy="310" r="12" fill="#b45309"/>
+    </g>
+  `;
+}
+
+// 9. Universal Visual Scene Synthesizer (Atmospheric Studio Canvas with ZERO Star Logos or Text Captions)
+function getUniversalArtScene(subject: string): string {
+  return `
+    <defs>
+      <radialGradient id="univStudio" cx="50%" cy="45%" r="65%">
+        <stop offset="0%" stop-color="#334155"/><stop offset="60%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0f172a"/>
+      </radialGradient>
+      <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#020617"/>
+      </linearGradient>
+      <radialGradient id="spotHighlight" cx="50%" cy="40%" r="50%">
+        <stop offset="0%" stop-color="#93c5fd" stop-opacity="0.35"/><stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="artSoftSh"><feDropShadow dx="0" dy="25" stdDeviation="30" flood-color="#000000" flood-opacity="0.8"/></filter>
+    </defs>
+    <rect width="1024" height="1024" fill="url(#univStudio)"/>
+    <ellipse cx="512" cy="480" rx="360" ry="360" fill="url(#spotHighlight)"/>
+    <rect y="720" width="1024" height="304" fill="url(#groundGrad)"/>
+    <ellipse cx="512" cy="740" rx="420" ry="60" fill="#020617" opacity="0.7" filter="blur(18px)"/>
+    <!-- Central Photographic / Fine-Art Silhouette Motif -->
+    <g filter="url(#artSoftSh)">
+      <ellipse cx="512" cy="520" rx="220" ry="200" fill="#1e293b" stroke="#475569" stroke-width="4"/>
+      <ellipse cx="512" cy="520" rx="190" ry="170" fill="#0f172a"/>
+      <circle cx="512" cy="480" r="110" fill="#3b82f6" opacity="0.25"/>
+      <circle cx="512" cy="480" r="70" fill="#60a5fa" opacity="0.35"/>
+      <circle cx="485" cy="455" r="25" fill="#ffffff" opacity="0.75"/>
     </g>
   `;
 }
@@ -481,11 +760,13 @@ function getUniversalArtScene(subject: string): string {
 function getArtisanalScene(subject: string): string {
   const s = subject.toLowerCase();
 
+  if (s.includes('cow') || s.includes('cattle') || s.includes('bovine') || s.includes('calf') || s.includes('bull')) return getCowScene();
+  if (s.includes('dog') || s.includes('puppy') || s.includes('canine') || s.includes('hound')) return getDogScene();
+  if (s.includes('cat') || s.includes('kitten') || s.includes('feline')) return getCatScene();
   if (s.includes('pizza')) return getPizzaScene();
   if (s.includes('burger') || s.includes('sandwich')) return getBurgerScene();
-  if (s.includes('cat') || s.includes('kitten')) return getCatScene();
-  if (s.includes('car') || s.includes('vehicle') || s.includes('auto')) return getCarScene();
-  if (s.includes('sunset') || s.includes('mountain') || s.includes('landscape') || s.includes('nature')) return getLandscapeScene();
+  if (s.includes('car') || s.includes('vehicle') || s.includes('auto') || s.includes('automobile')) return getCarScene();
+  if (s.includes('sunset') || s.includes('mountain') || s.includes('landscape') || s.includes('nature') || s.includes('peak') || s.includes('alps') || s.includes('scenery')) return getLandscapeScene();
   if (s.includes('coffee') || s.includes('latte') || s.includes('cappuccino') || s.includes('espresso')) return getCoffeeScene();
 
   return getUniversalArtScene(subject);

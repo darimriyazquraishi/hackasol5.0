@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { detectImageGenerationIntent } from './imageEngine';
 
 export interface ExtractedParameter {
   name: string;
@@ -16,6 +17,130 @@ export type TaskDomain =
   | 'document_analysis'
   | 'general_qa'
   | 'image_generation';
+
+export interface ConversationHistoryItem {
+  sender: 'user' | 'assistant' | string;
+  content: string;
+  originalPrompt?: string;
+  generatedSubject?: string;
+  deliverableFormat?: string;
+}
+
+export function hasContextualReference(prompt: string): boolean {
+  const lower = prompt.toLowerCase().trim();
+  return (
+    /(?:previous|prior|last|earlier|above|just|same)\s+(?:topic|subject|discussion|conversation|task|problem|question|answer|deliverable|data|result|item|one|presentation|report)/i.test(lower) ||
+    /(?:what\s+we\s+(?:just\s+)?discussed|what\s+you\s+(?:just\s+)?generated|what\s+we\s+talked\s+about|from\s+where\s+we\s+stopped|continue\s+from|continue\s+where\s+we\s+left)/i.test(lower) ||
+    /\b(?:on\s+the\s+same\s+topic|about\s+the\s+same|about\s+that|on\s+that|based\s+on\s+that|for\s+that|of\s+that|convert\s+(?:the\s+)?(?:previous|last|that)\s+answer)\b/i.test(lower) ||
+    /^(?:make|create|generate|convert|turn)\s+(?:a\s+|an\s+|this\s+into\s+a\s+)?(?:ppt|powerpoint|presentation|pdf|report|doc|docx|spreadsheet|excel|xlsx)\s+(?:on|about|for|from)\s+(?:it|that|this|the\s+same|the\s+previous\s+one)/i.test(lower) ||
+    /^(?:now\s+)?(?:make|create|generate|give\s+me)\s+(?:a\s+|an\s+)?(?:ppt|powerpoint|presentation|pdf|report|doc|docx|spreadsheet|excel|xlsx)\s+(?:on|about)\s+(?:the\s+same\s+topic|that\s+topic|it|that)/i.test(lower)
+  );
+}
+
+/**
+ * Lightweight Context Retrieval & Topic Extraction
+ * Resolves conversational references back to the actual subject without confusing artifact containers.
+ */
+export function resolveConversationContext(
+  prompt: string,
+  history: ConversationHistoryItem[] = []
+): { resolvedPrompt: string; topic: string; contextPreserved: boolean } {
+  const p = prompt.trim();
+  if (!hasContextualReference(p) || !history || history.length === 0) {
+    return { resolvedPrompt: p, topic: '', contextPreserved: false };
+  }
+
+  // Traverse backward to find the relevant previous turn
+  let priorTopic = '';
+  let priorDetails = '';
+
+  for (let i = history.length - 1; i >= 0; i--) {
+    const item = history[i];
+
+    // 1. If item has an explicitly extracted generated subject (e.g. from an image: "cow")
+    if (item.generatedSubject) {
+      priorTopic = item.generatedSubject;
+      break;
+    }
+
+    // 2. If it was a user prompt, extract the intent/subject
+    if (item.sender === 'user') {
+      const userText = item.originalPrompt || item.content;
+      const imgIntent = detectImageGenerationIntent(userText);
+      if (imgIntent.isImageGen && imgIntent.subject) {
+        priorTopic = imgIntent.subject;
+        break;
+      }
+
+      // Check if it was an engineering or specific subject prompt
+      if (/water\s*pump|pumping/i.test(userText)) {
+        priorTopic = 'Industrial Water Pumping System';
+        priorDetails = userText;
+        break;
+      }
+      if (/compress|air\s*audit/i.test(userText)) {
+        priorTopic = 'Compressed Air System Energy Audit';
+        priorDetails = userText;
+        break;
+      }
+
+      // Extract subject from general user prompt
+      const cleanPrompt = userText
+        .replace(/^(?:generate|create|make|draw|write|calculate|analyze)\s+(?:a\s+|an\s+|the\s+)?/i, '')
+        .replace(/[.!?]+$/, '')
+        .trim();
+      if (cleanPrompt.length > 2 && cleanPrompt.length < 80) {
+        priorTopic = cleanPrompt;
+        priorDetails = userText;
+        break;
+      }
+    }
+
+    // 3. If it's an assistant message with substantive content
+    if (item.sender === 'assistant' && item.content) {
+      const cowMatch = item.content.match(/\b(cow|cattle|mountain|pizza|burger|car)\b/i);
+      if (cowMatch) {
+        priorTopic = cowMatch[1];
+        break;
+      }
+    }
+  }
+
+  if (!priorTopic) {
+    return { resolvedPrompt: p, topic: '', contextPreserved: false };
+  }
+
+  // Capitalize topic nicely
+  const cleanTopic = priorTopic.charAt(0).toUpperCase() + priorTopic.slice(1);
+
+  // Determine requested output action
+  const isPpt = /(?:powerpoint|power\s*point|\bpptx?\b|presentation|slides?\b)/i.test(p);
+  const isPdf = /(?:\bpdf\b|printable\s*report)/i.test(p);
+  const isDocx = /(?:\bdocx?\b|word\s*doc(?:ument)?|formal\s*report)/i.test(p);
+  const isXlsx = /(?:excel|\bxlsx?\b|spreadsheet|workbook)/i.test(p);
+  const isExplain = /(?:explain|describe|tell\s+me\s+more|in\s+more\s+detail|continue)/i.test(p);
+
+  let resolvedPrompt = p;
+  if (isPpt) {
+    resolvedPrompt = `Create a comprehensive, professionally formatted PowerPoint presentation on ${cleanTopic} with structured slide titles, key themes, and bullet points based on our previous discussion.`;
+  } else if (isPdf) {
+    resolvedPrompt = `Generate a formal PDF deliverable report on ${cleanTopic} compiling the key findings, data, and recommendations from our previous discussion.${priorDetails ? ` Reference: ${priorDetails}` : ''}`;
+  } else if (isDocx) {
+    resolvedPrompt = `Generate a formal DOCX Word document deliverable on ${cleanTopic} compiling the key findings, data, and recommendations from our previous discussion.`;
+  } else if (isXlsx) {
+    resolvedPrompt = `Create an Excel workbook spreadsheet on ${cleanTopic} with data tables, metrics, and structured calculations based on our previous discussion.`;
+  } else if (isExplain) {
+    resolvedPrompt = `Explain ${cleanTopic} in more detail, expanding on the concepts, significance, and context from our previous discussion.`;
+  } else {
+    resolvedPrompt = `${p} regarding ${cleanTopic}.${priorDetails ? ` Context: ${priorDetails}` : ''}`;
+  }
+
+  return {
+    resolvedPrompt,
+    topic: cleanTopic,
+    contextPreserved: true
+  };
+}
 
 export interface TaskDecomposition {
   id: string;
@@ -42,11 +167,16 @@ export interface TaskDecomposition {
  */
 export function decomposeUserTask(
   prompt: string,
-  attachments: Array<{ id: string; name: string; type: string; data?: string }> = []
+  attachments: Array<{ id: string; name: string; type: string; data?: string }> = [],
+  conversationHistory: ConversationHistoryItem[] = []
 ): TaskDecomposition {
-  const p = prompt.trim();
+  // Resolve conversation context if prompt contains contextual references
+  const { resolvedPrompt, topic: contextTopic, contextPreserved } = resolveConversationContext(prompt, conversationHistory);
+  const p = resolvedPrompt.trim();
   const lower = p.toLowerCase();
   const id = `decomp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+  const imgIntent = detectImageGenerationIntent(p);
 
   // 1. Output Format Detection
   let requestedOutputFormat: TaskDecomposition['requestedOutputFormat'] = 'markdown';
@@ -60,7 +190,7 @@ export function decomposeUserTask(
     requestedOutputFormat = 'pptx';
   } else if (/(?:\bcsv\b|comma\s*separated)/i.test(lower)) {
     requestedOutputFormat = 'csv';
-  } else if (/(?:generate|create|render)\s+(?:an?\s+)?(?:image|picture|photo|illustration|graphic)/i.test(lower)) {
+  } else if (imgIntent.isImageGen) {
     requestedOutputFormat = 'png';
   } else if (/(?:write|generate|implement)\s+(?:python|javascript|script|code|program|algorithm)/i.test(lower)) {
     requestedOutputFormat = 'code';
@@ -215,7 +345,7 @@ export function decomposeUserTask(
   const hasFluidOrMechanical = /(?:pump|flow\s*rate|dynamic\s*head|compressor|nm3|kw|kwh|pressure|bar|efficiency|pipe|hydraulic|shaft\s*power)/i.test(lower);
   const hasProgramming = /(?:python|javascript|typescript|function|script|class|api|endpoint|debug|syntax|algorithm)/i.test(lower);
   const hasSpreadsheet = /(?:excel|xlsx|csv|spreadsheet|tabular|budget|expenses|columns|rows)/i.test(lower);
-  const hasImage = /(?:image|illustration|photo|draw|render|flux|picture)/i.test(lower);
+  const hasImage = imgIntent.isImageGen;
   const hasDocAnalysis =
     /(?:analyze|review|extract|summarize|read|search|query|check|cite|retrieve|inspect|examine)\b.*?\b(?:document|guideline|standard|manual|specification|knowledge\s*base|sop|paper|pdf|policy|policies)/i.test(lower) ||
     /(?:knowledge\s*base|uploaded\s*documents?|reference\s*documents?|document\s*control|engineering\s*report\s*guidelines?)/i.test(lower) ||
@@ -225,6 +355,8 @@ export function decomposeUserTask(
     domain = 'image_generation';
   } else if (hasFluidOrMechanical || parameters.length >= 2) {
     domain = 'engineering_calculation';
+  } else if (requestedOutputFormat === 'pptx') {
+    domain = 'data_analysis';
   } else if (hasSpreadsheet) {
     domain = 'data_analysis';
   } else if (hasProgramming) {
@@ -235,18 +367,21 @@ export function decomposeUserTask(
 
   // 7. Suggested Deliverable Filename
   let suggestedDeliverableName = 'LUMI_Technical_Report.pdf';
+  const cleanTopicForFile = contextTopic ? contextTopic.replace(/[^a-zA-Z0-9_-]+/g, '_') : '';
   if (lower.includes('water pump') || lower.includes('pumping')) {
     suggestedDeliverableName = requestedOutputFormat === 'docx'
       ? 'Industrial_Water_Pumping_System_Performance_Report.docx'
       : 'Industrial_Water_Pumping_System_Performance_Report.pdf';
   } else if (lower.includes('compress') || lower.includes('air audit')) {
     suggestedDeliverableName = 'Compressed_Air_Engineering_Audit_Report.pdf';
-  } else if (requestedOutputFormat === 'xlsx') {
-    suggestedDeliverableName = 'Engineering_Analysis_Workbook.xlsx';
-  } else if (requestedOutputFormat === 'docx') {
-    suggestedDeliverableName = 'Technical_Evaluation_Report.docx';
   } else if (requestedOutputFormat === 'pptx') {
-    suggestedDeliverableName = 'Engineering_Review_Presentation.pptx';
+    suggestedDeliverableName = cleanTopicForFile ? `${cleanTopicForFile}_Presentation.pptx` : 'Engineering_Review_Presentation.pptx';
+  } else if (requestedOutputFormat === 'xlsx') {
+    suggestedDeliverableName = cleanTopicForFile ? `${cleanTopicForFile}_Analysis.xlsx` : 'Engineering_Analysis_Workbook.xlsx';
+  } else if (requestedOutputFormat === 'docx') {
+    suggestedDeliverableName = cleanTopicForFile ? `${cleanTopicForFile}_Report.docx` : 'Technical_Evaluation_Report.docx';
+  } else if (requestedOutputFormat === 'pdf') {
+    suggestedDeliverableName = cleanTopicForFile ? `${cleanTopicForFile}_Report.pdf` : 'LUMI_Technical_Report.pdf';
   } else if (requestedOutputFormat === 'csv') {
     suggestedDeliverableName = 'Dataset_Export.csv';
   } else if (requestedOutputFormat === 'png') {
@@ -261,7 +396,9 @@ export function decomposeUserTask(
     const contextStr = flowParam && headParam ? ` (${flowParam.value} ${flowParam.unit}, ${headParam.value} ${headParam.unit})` : '';
     primaryObjective = `Execute comprehensive engineering analysis for ${lower.includes('pump') ? 'industrial water pumping system' : 'mechanical/energy system'}${contextStr}: evaluate governing formulas, compute power requirements, size electrical drives with verified safety margins, project operating costs, and generate formal ${requestedOutputFormat.toUpperCase()} deliverable.`;
   } else if (domain === 'data_analysis') {
-    primaryObjective = `Perform quantitative data modeling, calculate statistical distributions, and assemble formatted ${requestedOutputFormat.toUpperCase()} deliverable.`;
+    primaryObjective = requestedOutputFormat === 'pptx'
+      ? `Compile comprehensive presentation slides for ${contextTopic || 'topic'} with thematic structure, domain evidence, and native PPTX formatting.`
+      : `Perform quantitative data modeling, calculate statistical distributions, and assemble formatted ${requestedOutputFormat.toUpperCase()} deliverable.`;
   } else if (domain === 'programming') {
     primaryObjective = `Synthesize robust code solution, execute sandboxed verification tests, and provide verified operational implementation.`;
   } else if (domain === 'document_analysis') {
