@@ -309,6 +309,12 @@ export interface GeneratedImageArtifact {
   downloadUrl: string;
   base64Data: string;
   createdAt: string;
+  verified?: boolean;
+  visionDescription?: string;
+  visionMatch?: boolean;
+  validationScore?: number;
+  generationTimeMs?: number;
+  validationTimeMs?: number;
 }
 
 export interface ChatMessage {

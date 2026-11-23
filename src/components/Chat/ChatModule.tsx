@@ -601,6 +601,21 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                             <span>Download PNG</span>
                           </a>
                         </div>
+                        {img.visionDescription && (
+                          <div className="p-2.5 rounded-lg bg-[#0e0e0e] border border-[#262626] text-[11px] space-y-1 font-sans">
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-emerald-400 flex items-center space-x-1">
+                                <span>✓ Moondream Multimodal Vision Verified</span>
+                              </span>
+                              {img.validationScore && (
+                                <span className="text-[#777] font-mono text-[10px]">Confidence: {(img.validationScore * 100).toFixed(0)}%</span>
+                              )}
+                            </div>
+                            <p className="text-[#999] text-[11px] leading-relaxed italic">
+                              "{img.visionDescription}"
+                            </p>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
