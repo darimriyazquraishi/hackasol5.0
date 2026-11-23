@@ -399,7 +399,7 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
                     {isExecutable && onExecuteCode && (
                       <button
                         onClick={() => onExecuteCode(codeString, lang)}
-                        className="px-2 py-0.5 rounded bg-[#191919] hover:bg-[#202020] text-emerald-400 border border-[#303030] flex items-center space-x-1 text-[10px] transition-colors"
+                        className="px-2 py-0.5 rounded bg-[#191919] hover:bg-[#202020] text-[#D5D2CC] hover:text-[#F5F4F1] border border-[#303030] flex items-center space-x-1 text-[10px] transition-colors"
                       >
                         <Play className="w-2.5 h-2.5 fill-current" />
                         <span>Run in Sandbox</span>
@@ -411,8 +411,8 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
                     >
                       {copiedIndex === idx ? (
                         <>
-                          <Check className="w-3 h-3 text-emerald-400" />
-                          <span className="text-emerald-400">Copied</span>
+                          <Check className="w-3 h-3 text-[#987654]" />
+                          <span className="text-[#987654]">Copied</span>
                         </>
                       ) : (
                         <>

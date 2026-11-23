@@ -16,6 +16,7 @@ export const StatusBar: React.FC = () => {
     cursorPos,
     activeFile,
     problems,
+    isBackendOnline,
     setPanelVisible,
     setPanelTab,
     setCommandPaletteMode,
@@ -74,6 +75,17 @@ export const StatusBar: React.FC = () => {
           <span className="text-[#F5F4F1] font-medium">{gitState.branch}</span>
           <RefreshCw className={`w-2.5 h-2.5 ml-0.5 text-[#9C9C9C] ${isSyncing ? 'animate-spin' : ''}`} />
         </button>
+
+        {/* Backend Heartbeat */}
+        <div
+          title={isBackendOnline ? 'LUMI Core Online' : 'Reconnecting to LUMI Core...'}
+          className="flex items-center space-x-1.5 px-2 h-full cursor-default"
+        >
+          <span className={`w-1.5 h-1.5 rounded-full ${isBackendOnline ? 'bg-[#987654]' : 'bg-amber-400 animate-ping'}`} />
+          <span className="text-[10px] text-[#9C9C9C]">
+            {isBackendOnline ? 'LUMI Online' : 'Reconnecting...'}
+          </span>
+        </div>
 
         {/* Problems counter */}
         <button

@@ -117,7 +117,7 @@ export const ModelManagerModule: React.FC = () => {
       {/* Runtime Connection Status Banner */}
       <div className="p-4 rounded bg-[#191919] border border-[#303030] flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs font-mono">
         <div className="flex items-center space-x-3">
-          <div className={`p-2 rounded ${auditData?.runtimeOnline ? 'bg-emerald-950 text-emerald-400' : 'bg-[#202020] text-[#9C9C9C]'}`}>
+          <div className={`p-2 rounded ${auditData?.runtimeOnline ? 'bg-[#1e1b18] text-[#987654]' : 'bg-[#202020] text-[#9C9C9C]'}`}>
             {auditData?.runtimeOnline ? <Server className="w-5 h-5" /> : <ServerOff className="w-5 h-5 text-[#9C9C9C]" />}
           </div>
           <div>
@@ -127,7 +127,7 @@ export const ModelManagerModule: React.FC = () => {
                   ? `Runtime Active (${auditData.runtimeType.toUpperCase()})`
                   : 'Local Service Unconnected'}
               </span>
-              <span className={`w-2 h-2 rounded-full ${auditData?.runtimeOnline ? 'bg-emerald-400' : 'bg-amber-500'}`} />
+              <span className={`w-2 h-2 rounded-full ${auditData?.runtimeOnline ? 'bg-[#987654]' : 'bg-amber-500'}`} />
             </div>
             <div className="text-[11px] text-[#9C9C9C] mt-0.5">
               Endpoint: {auditData?.endpoint || 'Local Runtime'} • Tested: {auditData?.testedAt ? new Date(auditData.testedAt).toLocaleTimeString() : 'N/A'}
@@ -212,7 +212,7 @@ export const ModelManagerModule: React.FC = () => {
                     {t.installationStatus === 'built_in' ? (
                       <span className="text-[#987654]">Built-in</span>
                     ) : t.installationStatus === 'installed' ? (
-                      <span className="text-emerald-400">Installed</span>
+                      <span className="text-[#D5D2CC]">Installed</span>
                     ) : t.installationStatus === 'unconnected' ? (
                       <span className="text-[#9C9C9C]">Unconnected</span>
                     ) : (
@@ -221,8 +221,8 @@ export const ModelManagerModule: React.FC = () => {
                   </td>
                   <td className="py-2.5 px-4">
                     {t.verificationStatus === 'verified' ? (
-                      <span className="inline-flex items-center space-x-1 text-emerald-400">
-                        <CheckCircle2 className="w-3 h-3" />
+                      <span className="inline-flex items-center space-x-1 text-[#D5D2CC]">
+                        <CheckCircle2 className="w-3 h-3 text-[#987654]" />
                         <span>Verified</span>
                       </span>
                     ) : t.verificationStatus === 'unconnected' ? (
@@ -233,12 +233,12 @@ export const ModelManagerModule: React.FC = () => {
                   </td>
                   <td className="py-2.5 px-4 text-right">
                     {t.availability === 'available' ? (
-                      <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800 text-[10px]">
-                        <span>Available</span>
+                      <span className="text-[#987654] font-medium text-xs">
+                        Available
                       </span>
                     ) : (
-                      <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded bg-[#202020] text-[#9C9C9C] border border-[#303030] text-[10px]">
-                        <span>Unavailable</span>
+                      <span className="text-[#9C9C9C] text-xs">
+                        Unavailable
                       </span>
                     )}
                   </td>
@@ -276,7 +276,7 @@ export const ModelManagerModule: React.FC = () => {
                     <td className="py-2.5 px-4 text-[#9C9C9C]">
                       {m.size ? `${(m.size / (1024 * 1024)).toFixed(0)} MB` : 'N/A'}
                     </td>
-                    <td className="py-2.5 px-4 text-right text-emerald-400">Verified</td>
+                    <td className="py-2.5 px-4 text-right text-[#987654] font-medium">Verified</td>
                   </tr>
                 ))}
               </tbody>

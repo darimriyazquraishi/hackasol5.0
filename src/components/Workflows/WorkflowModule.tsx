@@ -83,9 +83,9 @@ export const WorkflowModule: React.FC = () => {
                 >
                   <div className="flex items-center justify-between text-[10px] font-mono mb-1.5">
                     <span className="text-[#9C9C9C]">Node 0{idx + 1}</span>
-                    {node.status === 'completed' && <span className="text-emerald-400 font-semibold">DONE</span>}
-                    {node.status === 'running' && <span className="text-[#987654] font-semibold animate-pulse">RUNNING</span>}
-                    {node.status === 'idle' && <span className="text-[#9C9C9C]">IDLE</span>}
+                    {node.status === 'completed' && <span className="text-[#987654] font-medium">Done</span>}
+                    {node.status === 'running' && <span className="text-[#987654] font-medium animate-pulse">Running</span>}
+                    {node.status === 'idle' && <span className="text-[#9C9C9C]">Idle</span>}
                   </div>
 
                   <div className="font-semibold text-xs text-[#F5F4F1] truncate">
@@ -119,7 +119,7 @@ export const WorkflowModule: React.FC = () => {
                 {activeNode.type} Node
               </span>
             </div>
-            <span className="text-[11px] font-mono text-emerald-400">Status: {activeNode.status}</span>
+            <span className="text-xs text-[#987654] font-medium">Status: {activeNode.status}</span>
           </div>
 
           <p className="text-xs text-[#D5D2CC] leading-relaxed">
@@ -170,7 +170,7 @@ export const WorkflowModule: React.FC = () => {
             <div>[00:02.10] <span className="text-[#987654]">INSPECT</span> Generating candidate code solutions</div>
             <div>[00:02.89] Intermediate draft verified against unit test harness</div>
             <div>[00:03.12] Zero assertion failures detected</div>
-            <div className="text-emerald-400">[00:03.40] Ready for downstream synthesizer handover</div>
+            <div className="text-[#987654]">[00:03.40] Ready for downstream synthesizer handover</div>
           </div>
         </div>
       </div>

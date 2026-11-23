@@ -154,7 +154,7 @@ export const BottomPanel: React.FC = () => {
         {panelTab === 'output' && (
           <div className="p-3 font-mono text-xs text-[#858585] overflow-y-auto h-full space-y-2 select-text">
             {projectOutput ? (
-              <pre className="whitespace-pre-wrap text-emerald-400 font-mono text-xs leading-relaxed">{projectOutput}</pre>
+              <pre className="whitespace-pre-wrap text-[#D5D2CC] font-mono text-xs leading-relaxed">{projectOutput}</pre>
             ) : (
               <>
                 <div className="text-white font-semibold">User Project Sandbox Execution Console</div>

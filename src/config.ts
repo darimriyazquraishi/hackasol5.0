@@ -18,13 +18,14 @@ export const APP_CONFIG = {
     ragSearch: '/api/rag/search',
     diagnostics: '/api/diagnostics',
     chat: '/api/chat',
+    health: '/api/health',
     executionHistory: '/api/orchestrate/history'
   },
   timeouts: {
-    planTimeoutMs: 15000,
-    executeTimeoutMs: 60000,
-    codeExecutionTimeoutMs: 10000,
-    probeTimeoutMs: 2000
+    planTimeoutMs: 180000,
+    executeTimeoutMs: 360000,
+    codeExecutionTimeoutMs: 30000,
+    probeTimeoutMs: 5000
   },
   vramCeilings: {
     gtx1650MB: 4096,

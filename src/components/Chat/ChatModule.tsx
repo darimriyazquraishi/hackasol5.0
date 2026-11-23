@@ -653,17 +653,12 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                           </a>
                         </div>
                         {img.visionDescription && (
-                          <div className="p-2.5 rounded-lg bg-[#0e0e0e] border border-[#262626] text-[11px] space-y-1 font-sans">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-emerald-400 flex items-center space-x-1">
-                                <span>✓ Moondream Multimodal Vision Verified</span>
-                              </span>
-                              {img.validationScore && (
-                                <span className="text-[#777] font-mono text-[10px]">Confidence: {(img.validationScore * 100).toFixed(0)}%</span>
-                              )}
+                          <div className="p-2.5 rounded-lg bg-[#0e0e0e] border border-[#222222] text-xs space-y-1 font-sans">
+                            <div className="text-[10px] text-[#9C9C9C] uppercase font-mono tracking-wider font-medium">
+                              Visual Inspection
                             </div>
-                            <p className="text-[#999] text-[11px] leading-relaxed italic">
-                              "{img.visionDescription}"
+                            <p className="text-[#D5D2CC] text-xs leading-relaxed">
+                              {img.visionDescription}
                             </p>
                           </div>
                         )}
@@ -894,7 +889,7 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                             <button
                               onClick={() => handleSaveAndApproveEditedPlan(msg.lumiWorkplan!)}
                               disabled={isGenerating}
-                              className="px-4 py-2 rounded bg-emerald-700 hover:bg-emerald-600 text-[#F5F4F1] font-mono text-xs font-semibold flex items-center space-x-1.5 transition-colors"
+                              className="px-4 py-2 rounded bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1] font-mono text-xs font-semibold flex items-center space-x-1.5 transition-colors"
                             >
                               <Save className="w-3.5 h-3.5" />
                               <span>Save & Approve</span>
@@ -950,13 +945,13 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                     <div className="p-3 rounded-lg bg-[#141414] border border-[#262626] space-y-2 text-xs">
                       <div className="flex items-center justify-between border-b border-[#262626] pb-2">
                         <div className="flex items-center space-x-2">
-                          <CheckCircle2 className={`w-4 h-4 ${msg.compiledResult.validation.passed ? 'text-emerald-400' : 'text-amber-400'}`} />
+                          <CheckCircle2 className={`w-4 h-4 ${msg.compiledResult.validation.passed ? 'text-[#987654]' : 'text-amber-400'}`} />
                           <span className="font-medium text-[#F5F4F1]">Quality & Fact Validation</span>
                         </div>
                         <span className={`text-xs font-medium ${
-                          msg.compiledResult.validation.passed ? 'text-emerald-400' : 'text-amber-400'
+                          msg.compiledResult.validation.passed ? 'text-[#987654]' : 'text-amber-400'
                         }`}>
-                          {msg.compiledResult.validation.passed ? 'Verified' : 'Warnings'}
+                          {msg.compiledResult.validation.passed ? 'Verified' : 'Review Required'}
                         </span>
                       </div>
 
@@ -964,8 +959,8 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                         {msg.compiledResult.validation.checks.map(check => (
                           <div key={check.name} className="flex items-center justify-between text-[11px]">
                             <span className="text-[#D5D2CC]">{check.name}</span>
-                            <span className={check.passed ? 'text-emerald-400 font-semibold' : 'text-amber-400'}>
-                              {check.passed ? 'PASSED' : 'FLAGGED'}
+                            <span className={check.passed ? 'text-[#9C9C9C]' : 'text-amber-400'}>
+                              {check.passed ? 'Passed' : 'Flagged'}
                             </span>
                           </div>
                         ))}
@@ -991,7 +986,7 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                               <div className="flex items-center space-x-2">
                                 <button
                                   onClick={() => handleRunCodeInSandbox(cs.code, cs.language)}
-                                  className="text-[10px] px-2 py-0.5 rounded bg-[#191919] hover:bg-[#202020] text-emerald-400 border border-[#303030] flex items-center space-x-1"
+                                  className="text-[10px] px-2 py-0.5 rounded bg-[#191919] hover:bg-[#202020] text-[#D5D2CC] hover:text-[#F5F4F1] border border-[#303030] flex items-center space-x-1"
                                 >
                                   <Play className="w-2.5 h-2.5 fill-current" />
                                   <span>Execute in Sandbox</span>
@@ -1000,7 +995,7 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                                   onClick={() => copyToClipboard(cs.code, `code-${idx}`)}
                                   className="text-[10px] text-[#9C9C9C] hover:text-[#F5F4F1] flex items-center space-x-1"
                                 >
-                                  {copiedId === `code-${idx}` ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                                  {copiedId === `code-${idx}` ? <Check className="w-3 h-3 text-[#987654]" /> : <Copy className="w-3 h-3" />}
                                   <span>Copy</span>
                                 </button>
                               </div>
@@ -1009,7 +1004,7 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                               <code>{cs.code}</code>
                             </pre>
                             {cs.executionResult && (
-                              <div className="p-2.5 bg-[#141414] border-t border-[#262626] font-mono text-[10px] text-emerald-400">
+                              <div className="p-2.5 bg-[#141414] border-t border-[#262626] font-mono text-[10px] text-[#D5D2CC]">
                                 Sandbox Output: {cs.executionResult}
                               </div>
                             )}

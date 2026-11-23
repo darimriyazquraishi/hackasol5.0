@@ -306,7 +306,7 @@ export const Explorer: React.FC = () => {
                   runActiveProject();
                 }}
                 title="Run Project in Sandboxed Environment"
-                className="p-1 rounded bg-emerald-950 hover:bg-emerald-900 border border-emerald-700 text-emerald-400 flex items-center space-x-0.5 text-[10px] font-mono cursor-pointer"
+                className="px-2 py-0.5 rounded bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1] flex items-center space-x-1 text-[11px] font-medium transition-colors cursor-pointer"
               >
                 <Play className="w-3 h-3 fill-current" />
                 <span>Run</span>

@@ -287,14 +287,14 @@ export const AntigravityAssistant: React.FC = () => {
                       <span>{msg.proposedDiff.filePath}</span>
                     </div>
                     {msg.proposedDiff.applied && (
-                      <span className="text-emerald-400 text-[10px] flex items-center space-x-1">
+                      <span className="text-[#987654] text-xs flex items-center space-x-1">
                         <CheckCheck className="w-3 h-3" />
                         <span>Applied</span>
                       </span>
                     )}
                   </div>
 
-                  <pre className="p-2 rounded bg-[#080808] border border-[#222] text-[10px] text-emerald-300 overflow-x-auto max-h-48">
+                  <pre className="p-2 rounded bg-[#080808] border border-[#222] text-[10px] text-[#D5D2CC] overflow-x-auto max-h-48">
                     <code>{msg.proposedDiff.proposedCode}</code>
                   </pre>
 

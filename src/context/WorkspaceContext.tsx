@@ -102,6 +102,7 @@ interface WorkspaceContextType {
   knowledgeCollections: KnowledgeCollection[];
   workflowNodes: WorkflowNode[];
   systemMetrics: SystemMetrics;
+  isBackendOnline: boolean;
 
   // Conversation Threads & Chat-First Orchestration
   conversations: ConversationThread[];
@@ -636,6 +637,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     hardwareTier: 'CPU-Optimized Laptop (16GB RAM)'
   });
 
+  const [isBackendOnline, setIsBackendOnline] = useState<boolean>(true);
+
   const refreshModels = useCallback(async () => {
     try {
       const res = await fetch('/api/models/audit');
@@ -746,6 +749,38 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     refreshHardware();
   }, [refreshHardware]);
+
+  // Heartbeat & Auto-reconnect: pings /api/health periodically and auto-refreshes state upon recovery
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    let cancelled = false;
+
+    const checkHeartbeat = async () => {
+      try {
+        const res = await fetch('/api/health');
+        if (res.ok) {
+          if (!isBackendOnline && !cancelled) {
+            refreshHardware();
+          }
+          if (!cancelled) setIsBackendOnline(true);
+        } else {
+          if (!cancelled) setIsBackendOnline(false);
+        }
+      } catch {
+        if (!cancelled) setIsBackendOnline(false);
+      } finally {
+        if (!cancelled) {
+          timer = setTimeout(checkHeartbeat, isBackendOnline ? 10000 : 3000);
+        }
+      }
+    };
+
+    checkHeartbeat();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [isBackendOnline, refreshHardware]);
 
   const loadModel = (id: string) => {
     const target = models.find(m => m.id === id);
@@ -1378,6 +1413,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         knowledgeCollections,
         workflowNodes,
         systemMetrics,
+        isBackendOnline,
 
         conversations,
         activeConversationId,

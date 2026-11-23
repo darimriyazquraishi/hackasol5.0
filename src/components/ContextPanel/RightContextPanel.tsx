@@ -124,8 +124,8 @@ export const RightContextPanel: React.FC = () => {
                           {col.chunkCount} chunk(s)
                         </div>
                       </div>
-                      <span className="text-[10px] text-emerald-400 font-mono shrink-0">
-                        INDEXED
+                      <span className="text-[11px] text-[#9C9C9C] shrink-0">
+                        Indexed
                       </span>
                     </div>
                   ))}
@@ -142,8 +142,8 @@ export const RightContextPanel: React.FC = () => {
                 <span className="text-xs font-semibold text-[#F5F4F1]">
                   {loadedModel.name}
                 </span>
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-[#080808] text-[#987654] border border-[#303030]">
-                  {loadedModel.status === 'loaded' ? 'ACTIVE' : 'CONFIGURED'}
+                <span className="text-xs text-[#987654] font-medium">
+                  {loadedModel.status === 'loaded' ? 'Active' : 'Configured'}
                 </span>
               </div>
 
@@ -184,7 +184,7 @@ export const RightContextPanel: React.FC = () => {
             <div><span className="text-[#987654]">[SYSTEM]</span> Host: {hardwareProfile.os.platform} ({hardwareProfile.os.arch})</div>
             <div><span className="text-[#D5D2CC]">[GPU]</span> {hardwareProfile.gpu.name} ({hardwareProfile.gpu.totalVramMB} MB VRAM)</div>
             <div><span className="text-[#9C9C9C]">[CPU]</span> {hardwareProfile.cpu.model} ({hardwareProfile.cpu.cores}C/{hardwareProfile.cpu.threads}T)</div>
-            <div><span className="text-emerald-400">[RAM]</span> {hardwareProfile.ram.totalGB} GB total ({hardwareProfile.ram.freeGB} GB free)</div>
+            <div><span className="text-[#987654]">[RAM]</span> {hardwareProfile.ram.totalGB} GB total ({hardwareProfile.ram.freeGB} GB free)</div>
             <div><span className="text-[#987654]">[IPC]</span> Local loopback socket active</div>
           </div>
         )}

@@ -467,7 +467,7 @@ Perform symbolic verification on all generated code.`
                     <div className="font-medium text-[#F5F4F1]">Index Engine</div>
                     <div className="text-[11px] text-[#9C9C9C]">Local dense vector index library.</div>
                   </div>
-                  <span className="font-mono text-emerald-400 bg-[#080808] px-2 py-1 rounded border border-[#303030]">
+                  <span className="text-xs font-mono text-[#D5D2CC] bg-[#080808] px-2 py-1 rounded border border-[#262626]">
                     HNSW M=16 ef=200
                   </span>
                 </div>
@@ -539,8 +539,8 @@ Perform symbolic verification on all generated code.`
                   <span className="text-xs font-mono font-semibold text-[#F5F4F1]">
                     Detected Profile: {hardwareProfile.tierLabel}
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#080808] text-emerald-400 border border-[#303030]">
-                    OPTIMAL ADAPTATION
+                  <span className="text-xs text-[#987654] font-medium">
+                    Adaptive Profile
                   </span>
                 </div>
                 <p className="text-xs text-[#9C9C9C] leading-relaxed">
@@ -553,21 +553,21 @@ Perform symbolic verification on all generated code.`
                   <div className="text-[11px] font-mono uppercase text-[#9C9C9C]">Dedicated GPU</div>
                   <div className="text-base font-bold font-mono text-[#F5F4F1]">{hardwareProfile.gpu.name}</div>
                   <div className="text-xs text-[#987654] font-mono">{(hardwareProfile.gpu.totalVramMB / 1024).toFixed(0)} GB GDDR6 • Dedicated VRAM</div>
-                  <div className="text-[10px] text-emerald-400 font-mono">Driver {hardwareProfile.gpu.driverVersion} • CUDA 13.5 Acceleration</div>
+                  <div className="text-[10px] text-[#9C9C9C] font-mono">Driver {hardwareProfile.gpu.driverVersion} • CUDA Active</div>
                 </div>
 
                 <div className="p-4 rounded bg-[#191919] border border-[#303030] space-y-2">
                   <div className="text-[11px] font-mono uppercase text-[#9C9C9C]">Host Processor</div>
                   <div className="text-base font-bold font-mono text-[#F5F4F1]">{hardwareProfile.cpu.model}</div>
                   <div className="text-xs text-[#987654] font-mono">{hardwareProfile.cpu.cores} Physical Cores • {hardwareProfile.cpu.threads} Threads</div>
-                  <div className="text-[10px] text-emerald-400 font-mono">AVX-512 & AMD64 Instructions Active</div>
+                  <div className="text-[10px] text-[#9C9C9C] font-mono">AVX-512 & AMD64 Instructions Active</div>
                 </div>
 
                 <div className="p-4 rounded bg-[#191919] border border-[#303030] space-y-2">
                   <div className="text-[11px] font-mono uppercase text-[#9C9C9C]">System Memory</div>
                   <div className="text-base font-bold font-mono text-[#F5F4F1]">{hardwareProfile.ram.totalGB} GB Total RAM</div>
                   <div className="text-xs text-[#987654] font-mono">{hardwareProfile.ram.freeGB} GB Available for OS Caches</div>
-                  <div className="text-[10px] text-emerald-400 font-mono">Dual-Channel Memory Architecture</div>
+                  <div className="text-[10px] text-[#9C9C9C] font-mono">Dual-Channel Memory Architecture</div>
                 </div>
 
                 <div className="p-4 rounded bg-[#191919] border border-[#303030] space-y-2">
@@ -610,7 +610,7 @@ Perform symbolic verification on all generated code.`
 
                 <div className="p-3.5 rounded bg-[#191919] border border-[#303030] space-y-1">
                   <div className="text-[11px] font-mono text-[#9C9C9C]">THROUGHPUT</div>
-                  <div className="text-xl font-bold font-mono text-emerald-400">{systemMetrics.tokensPerSec} tps</div>
+                  <div className="text-xl font-bold font-mono text-[#F5F4F1]">{systemMetrics.tokensPerSec} tps</div>
                   <div className="text-[10px] font-mono text-[#9C9C9C]">Qwen2.5 1.5B (CUDA)</div>
                 </div>
               </div>
@@ -671,8 +671,8 @@ Perform symbolic verification on all generated code.`
                     <div className="font-medium text-[#F5F4F1]">KV Cache Quantization</div>
                     <div className="text-[11px] text-[#9C9C9C]">Compress attention keys and values to 4-bit precision.</div>
                   </div>
-                  <span className="text-emerald-400 font-mono text-[11px] bg-[#080808] px-2 py-1 rounded border border-[#303030]">
-                    FP8 ENABLED
+                  <span className="text-xs text-[#987654] font-medium">
+                    FP8 Quantized
                   </span>
                 </div>
 
@@ -744,7 +744,7 @@ Perform symbolic verification on all generated code.`
                     <div className="font-medium text-[#F5F4F1]">TensorRT-LLM Execution Engine</div>
                     <div className="text-[11px] text-[#9C9C9C]">Compiled static graph execution for 1.8x token speedup.</div>
                   </div>
-                  <span className="text-emerald-400 font-mono text-[10px]">ACTIVE</span>
+                  <span className="text-xs text-[#987654] font-medium">Active</span>
                 </div>
 
                 <div className="flex items-center justify-between py-2">
@@ -752,7 +752,7 @@ Perform symbolic verification on all generated code.`
                     <div className="font-medium text-[#F5F4F1]">NUMA Socket Affinity</div>
                     <div className="text-[11px] text-[#9C9C9C]">Pins inference worker processes directly to CPU Node 0.</div>
                   </div>
-                  <span className="text-[#987654] font-mono text-[10px]">NODE 0 PINNED</span>
+                  <span className="text-xs text-[#9C9C9C]">Node 0</span>
                 </div>
               </div>
             </div>
@@ -774,8 +774,8 @@ Perform symbolic verification on all generated code.`
                     <div className="font-medium text-[#F5F4F1]">Outbound Telemetry</div>
                     <div className="text-[11px] text-[#9C9C9C]">Hard-locked zero telemetry. Prompt data never leaves this machine.</div>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-[#080808] text-emerald-400 font-mono text-[10px] border border-[#303030]">
-                    ENFORCED OFF
+                  <span className="text-xs text-[#987654] font-medium">
+                    Disabled
                   </span>
                 </div>
 
@@ -784,8 +784,8 @@ Perform symbolic verification on all generated code.`
                     <div className="font-medium text-[#F5F4F1]">Offline License Validation</div>
                     <div className="text-[11px] text-[#9C9C9C]">Hardware fingerprint signed cryptographically on device.</div>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-[#080808] text-[#987654] font-mono text-[10px] border border-[#303030]">
-                    VALID LOCAL
+                  <span className="text-xs text-[#9C9C9C]">
+                    Local Device
                   </span>
                 </div>
               </div>
@@ -820,7 +820,7 @@ Perform symbolic verification on all generated code.`
                     <div className="font-medium text-[#F5F4F1]">Sandboxed Process Containment</div>
                     <div className="text-[11px] text-[#9C9C9C]">Child process timeouts and stdout/stderr capture.</div>
                   </div>
-                  <span className="text-emerald-400 font-mono text-[10px]">ENFORCED</span>
+                  <span className="text-xs text-[#987654] font-medium">Enforced</span>
                 </div>
               </div>
             </div>
@@ -890,7 +890,7 @@ Perform symbolic verification on all generated code.`
                     <div className="font-medium text-[#F5F4F1]">PII Token Masking</div>
                     <div className="text-[11px] text-[#9C9C9C]">Masks email addresses, IPs, and API tokens in inference logs.</div>
                   </div>
-                  <span className="text-emerald-400 font-mono text-[10px]">ACTIVE</span>
+                  <span className="text-xs text-[#987654] font-medium">Active</span>
                 </div>
               </div>
             </div>
@@ -911,7 +911,7 @@ Perform symbolic verification on all generated code.`
                     <div className="font-medium text-[#F5F4F1]">Seccomp-BPF Syscall Filter</div>
                     <div className="text-[11px] text-[#9C9C9C]">Blocks root execution and raw socket allocations.</div>
                   </div>
-                  <span className="text-emerald-400 font-mono text-[10px]">ENFORCED</span>
+                  <span className="text-xs text-[#987654] font-medium">Enforced</span>
                 </div>
 
                 <div className="flex items-center justify-between py-2">
@@ -985,7 +985,7 @@ Perform symbolic verification on all generated code.`
                       <div className="text-[#F5F4F1] font-medium">{service.name}</div>
                       <div className="text-[10px] text-[#9C9C9C]">Latency: {service.ping}</div>
                     </div>
-                    <div className="flex items-center space-x-1.5 text-emerald-400 text-[11px]">
+                    <div className="flex items-center space-x-1.5 text-[#987654] text-[11px]">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>{service.status}</span>
                     </div>
@@ -1111,7 +1111,7 @@ Perform symbolic verification on all generated code.`
                       </div>
                       <div className="flex items-center space-x-3 text-[11px]">
                         <span className="text-[#987654]">{m.vramRequired}</span>
-                        <span className={m.status === 'loaded' ? 'text-emerald-400' : 'text-[#9C9C9C]'}>
+                        <span className={m.status === 'loaded' ? 'text-[#987654]' : 'text-[#9C9C9C]'}>
                           {m.status.toUpperCase()}
                         </span>
                       </div>
@@ -1134,12 +1134,12 @@ Perform symbolic verification on all generated code.`
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded border uppercase ${
+                          <span className={`text-[11px] font-mono ${
                             rec.status === 'completed'
-                              ? 'text-emerald-400 border-emerald-800 bg-emerald-950/60'
-                              : 'text-amber-400 border-amber-800 bg-amber-950/60'
+                              ? 'text-[#9C9C9C]'
+                              : 'text-amber-400'
                           }`}>
-                            {rec.status} ({rec.durationMs}ms)
+                            {rec.status} • {rec.durationMs}ms
                           </span>
                         </div>
                       </div>
@@ -1163,7 +1163,7 @@ Perform symbolic verification on all generated code.`
                       <div className="text-[#F5F4F1]">{diag.name}</div>
                       <div className="text-[10px] text-[#9C9C9C]">{diag.details}</div>
                     </div>
-                    <span className="text-emerald-400 font-semibold">{diag.status}</span>
+                    <span className="text-xs text-[#987654] font-medium">Passed</span>
                   </div>
                 ))}
               </div>
@@ -1209,7 +1209,7 @@ Perform symbolic verification on all generated code.`
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>Purge Temporary Caches</span>
                   </button>
-                  {purgeMessage && <span className="text-[11px] text-emerald-400 font-mono">{purgeMessage}</span>}
+                  {purgeMessage && <span className="text-[11px] text-[#987654] font-mono">{purgeMessage}</span>}
                 </div>
               </div>
             </div>
@@ -1230,8 +1230,8 @@ Perform symbolic verification on all generated code.`
                     <div className="text-sm font-bold text-[#F5F4F1]">LUMI v13.5.0-sovereign</div>
                     <div className="text-[11px] text-[#9C9C9C] mt-0.5">Build Commit 9f3b12a • Production Release</div>
                   </div>
-                  <span className="px-2.5 py-1 rounded bg-[#080808] text-emerald-400 border border-[#303030] text-[11px]">
-                    UP TO DATE
+                  <span className="text-xs text-[#987654] font-medium">
+                    Up to date
                   </span>
                 </div>
 

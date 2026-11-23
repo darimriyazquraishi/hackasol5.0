@@ -48,7 +48,7 @@ export const SERVER_CONFIG = {
   ollama: {
     host: process.env.OLLAMA_HOST || '127.0.0.1',
     port: parseInt(process.env.OLLAMA_PORT || '11434', 10),
-    timeoutMs: parseInt(process.env.OLLAMA_TIMEOUT_MS || '60000', 10)
+    timeoutMs: parseInt(process.env.OLLAMA_TIMEOUT_MS || '300000', 10)
   },
   lmStudio: {
     host: process.env.LMSTUDIO_HOST || '127.0.0.1',
@@ -606,6 +606,7 @@ export function callOllamaGenerate(model: string, prompt: string, systemPrompt?:
       model,
       prompt,
       stream: false,
+      keep_alive: -1,
       system: systemPrompt || 'Provide direct, concise technical answers without conversational filler or introductory statements.',
       ...(images && images.length > 0 ? { images } : {})
     });
@@ -1653,6 +1654,18 @@ Describe the subject, artistic style, lighting, and composition in 2-3 engaging 
 
 export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boolean {
   const url = req.url || '';
+
+  // 0. Lightweight Health & Heartbeat Endpoint (zero-timeout auto-recovery)
+  if (url === '/api/health') {
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({
+      status: 'ok',
+      uptime: process.uptime(),
+      timestamp: Date.now(),
+      service: 'LUMI Core Server'
+    }));
+    return true;
+  }
 
   // 1. Hardware endpoint
   if (url === '/api/hardware') {
