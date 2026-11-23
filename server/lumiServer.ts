@@ -665,14 +665,7 @@ export async function generateLumiWorkplan(
   preferredReasoningModel: string = 'qwen2.5:1.5b',
   conversationHistory: Array<any> = []
 ): Promise<LumiWorkplan> {
-  let history = conversationHistory;
-  if ((!history || history.length === 0) && EXECUTION_HISTORY.length > 0) {
-    history = EXECUTION_HISTORY.slice(0, 5).map(e => ({
-      sender: 'user',
-      content: e.prompt,
-      originalPrompt: e.prompt
-    }));
-  }
+  const history = conversationHistory || [];
   const decomp = decomposeUserTask(prompt, attachments, history);
   const audit = await auditLocalRuntime();
   const rawWorkplan = generateDynamicWorkplan(decomp, audit.installedModels);
@@ -841,14 +834,7 @@ export async function executeLumiWorkplan(
 
   // If effectivePrompt has contextual references, resolve it with conversationHistory
   if (hasContextualReference(effectivePrompt)) {
-    let history = conversationHistory;
-    if ((!history || history.length === 0) && EXECUTION_HISTORY.length > 0) {
-      history = EXECUTION_HISTORY.slice(0, 5).map(e => ({
-        sender: 'user',
-        content: e.prompt,
-        originalPrompt: e.prompt
-      }));
-    }
+    const history = conversationHistory || [];
     const resolved = resolveConversationContext(effectivePrompt, history);
     if (resolved.contextPreserved) {
       effectivePrompt = resolved.resolvedPrompt;
@@ -1832,6 +1818,14 @@ export function handleApiRequest(req: IncomingMessage, res: ServerResponse): boo
   if (url === '/api/orchestrate/history') {
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ history: EXECUTION_HISTORY }));
+    return true;
+  }
+
+  // 8b. Clear Execution History endpoint (when user deletes chat or clears history)
+  if ((url === '/api/chat/clear-history' || url === '/api/orchestrate/history') && (req.method === 'POST' || req.method === 'DELETE')) {
+    EXECUTION_HISTORY.length = 0;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ success: true, message: 'Execution history cleared' }));
     return true;
   }
 

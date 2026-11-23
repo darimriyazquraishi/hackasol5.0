@@ -28,17 +28,9 @@ export const LeftSidebar: React.FC = () => {
     deleteConversation
   } = useWorkspace();
 
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (confirmDeleteId === id) {
-      deleteConversation(id);
-      setConfirmDeleteId(null);
-    } else {
-      setConfirmDeleteId(id);
-      setTimeout(() => setConfirmDeleteId(null), 3000);
-    }
+    deleteConversation(id);
   };
 
   return (
@@ -95,8 +87,6 @@ export const LeftSidebar: React.FC = () => {
             <div className="flex-1 overflow-y-auto px-2 space-y-1">
               {conversations.map(conv => {
                 const isActive = activeModule === 'chat' && activeConversationId === conv.id;
-                const isConfirming = confirmDeleteId === conv.id;
-
                 return (
                   <div
                     key={conv.id}
@@ -120,18 +110,10 @@ export const LeftSidebar: React.FC = () => {
 
                     <button
                       onClick={e => handleDelete(e, conv.id)}
-                      title={isConfirming ? 'Click again to confirm delete' : 'Delete conversation'}
-                      className={`p-1 rounded transition-colors shrink-0 ${
-                        isConfirming
-                          ? 'bg-red-950 text-red-300 opacity-100'
-                          : 'text-[#9C9C9C]/50 hover:text-red-400 hover:bg-[#202020]'
-                      }`}
+                      title="Delete conversation"
+                      className="p-1 rounded transition-colors shrink-0 text-[#9C9C9C]/50 hover:text-red-400 hover:bg-[#202020]"
                     >
-                      {isConfirming ? (
-                        <Check className="w-3 h-3 text-red-400" />
-                      ) : (
-                        <Trash2 className="w-3 h-3" />
-                      )}
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 );

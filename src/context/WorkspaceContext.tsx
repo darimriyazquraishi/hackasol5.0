@@ -435,6 +435,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [setActiveModule]);
 
   const deleteConversation = useCallback((id: string) => {
+    // Wipe backend execution history so deleted conversation context is not resurrected
+    fetch('/api/chat/clear-history', { method: 'POST' }).catch(() => {});
+
     setConversations(prev => {
       const remaining = prev.filter(c => c.id !== id);
       if (remaining.length === 0) {
@@ -445,24 +448,31 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           lastUpdated: 'Just now',
           messages: []
         };
-        setActiveConversationId(freshId);
         try {
           localStorage.setItem('lumi_conversations', JSON.stringify([freshThread]));
+          localStorage.setItem('lumi_active_conv_id', freshId);
         } catch {}
+        setTimeout(() => setActiveConversationId(freshId), 0);
         return [freshThread];
       }
 
-      if (activeConversationId === id) {
-        setActiveConversationId(remaining[0].id);
-      }
       try {
         localStorage.setItem('lumi_conversations', JSON.stringify(remaining));
       } catch {}
+
+      if (activeConversationId === id) {
+        const nextActiveId = remaining[0].id;
+        try {
+          localStorage.setItem('lumi_active_conv_id', nextActiveId);
+        } catch {}
+        setTimeout(() => setActiveConversationId(nextActiveId), 0);
+      }
       return remaining;
     });
   }, [activeConversationId]);
 
   const clearActiveConversation = useCallback(() => {
+    fetch('/api/chat/clear-history', { method: 'POST' }).catch(() => {});
     setConversations(prev => {
       const targetId = activeConversationId || (prev.length > 0 ? prev[0].id : null);
       if (!targetId) return prev;
@@ -485,6 +495,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [activeConversationId]);
 
   const clearAllConversations = useCallback(() => {
+    fetch('/api/chat/clear-history', { method: 'POST' }).catch(() => {});
     const freshId = `conv-${Date.now()}`;
     const freshThread: ConversationThread = {
       id: freshId,
@@ -496,6 +507,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setActiveConversationId(freshId);
     try {
       localStorage.setItem('lumi_conversations', JSON.stringify([freshThread]));
+      localStorage.setItem('lumi_active_conv_id', freshId);
     } catch {}
   }, []);
 
