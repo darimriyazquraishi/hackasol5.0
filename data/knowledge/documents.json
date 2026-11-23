@@ -118,5 +118,77 @@
     "status": "indexed",
     "extractedTextLength": 547,
     "chunkCount": 1
+  },
+  {
+    "id": "doc-1795425974920-8117",
+    "name": "Infrastructure_Project_Status.pdf",
+    "extension": ".pdf",
+    "sizeBytes": 5454,
+    "size": "5.3 KB",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795425974920-8117_Infrastructure_Project_Status.pdf",
+    "uploadedAt": "2026-11-23T09:26:18.583Z",
+    "status": "indexed",
+    "extractedTextLength": 2636,
+    "chunkCount": 7
+  },
+  {
+    "id": "doc-1795425978608-lahn",
+    "name": "README_Test_Pack.pdf",
+    "extension": ".pdf",
+    "sizeBytes": 4644,
+    "size": "4.5 KB",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795425978608-lahn_README_Test_Pack.pdf",
+    "uploadedAt": "2026-11-23T09:26:19.230Z",
+    "status": "indexed",
+    "extractedTextLength": 2337,
+    "chunkCount": 7
+  },
+  {
+    "id": "doc-1795425979255-eu7e",
+    "name": "Maintenance_and_Safety_Report.pdf",
+    "extension": ".pdf",
+    "sizeBytes": 7022,
+    "size": "6.9 KB",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795425979255-eu7e_Maintenance_and_Safety_Report.pdf",
+    "uploadedAt": "2026-11-23T09:26:20.103Z",
+    "status": "indexed",
+    "extractedTextLength": 3095,
+    "chunkCount": 10
+  },
+  {
+    "id": "doc-1795425980126-pok6",
+    "name": "October_Production_Data.pdf",
+    "extension": ".pdf",
+    "sizeBytes": 5877,
+    "size": "5.7 KB",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795425980126-pok6_October_Production_Data.pdf",
+    "uploadedAt": "2026-11-23T09:26:20.911Z",
+    "status": "indexed",
+    "extractedTextLength": 2726,
+    "chunkCount": 10
+  },
+  {
+    "id": "doc-1795425980933-5j69",
+    "name": "Corporate_Reporting_Guidelines.pdf",
+    "extension": ".pdf",
+    "sizeBytes": 7455,
+    "size": "7.3 KB",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795425980933-5j69_Corporate_Reporting_Guidelines.pdf",
+    "uploadedAt": "2026-11-23T09:26:21.929Z",
+    "status": "indexed",
+    "extractedTextLength": 4486,
+    "chunkCount": 11
+  },
+  {
+    "id": "doc-1795425981960-aqqd",
+    "name": "Energy_and_Expenditure_Statement.pdf",
+    "extension": ".pdf",
+    "sizeBytes": 5324,
+    "size": "5.2 KB",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795425981960-aqqd_Energy_and_Expenditure_Statement.pdf",
+    "uploadedAt": "2026-11-23T09:26:22.637Z",
+    "status": "indexed",
+    "extractedTextLength": 2440,
+    "chunkCount": 7
   }
 ]
