@@ -4,6 +4,7 @@ import { LeftSidebar } from './components/Navigation/LeftSidebar';
 import { RightContextPanel } from './components/ContextPanel/RightContextPanel';
 import { ChatModule } from './components/Chat/ChatModule';
 import { IDEModule } from './components/IDE/IDEModule';
+import { BlenderStudioModule } from './components/Studio/BlenderStudioModule';
 import { KnowledgeBaseModule } from './components/KnowledgeBase/KnowledgeBaseModule';
 import { SettingsModule } from './components/Settings/SettingsModule';
 import { CommandPalette } from './components/CommandPalette/CommandPalette';
@@ -16,19 +17,20 @@ const MainLayout: React.FC = () => {
       {/* 1. Persistent Collapsible Left Navigation (Always present before and after first message) */}
       <LeftSidebar />
 
-      {/* 2. Main Module Workspace: Chat-first by default, IDE, Knowledge Base, Settings */}
+      {/* 2. Main Module Workspace: Chat-first by default, IDE, 3D Studio, Knowledge Base, Settings */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
         {activeModule === 'chat' && <ChatModule />}
         {activeModule === 'ide' && <IDEModule />}
+        {activeModule === 'studio' && <BlenderStudioModule />}
         {activeModule === 'knowledge' && <KnowledgeBaseModule />}
         {activeModule === 'settings' && <SettingsModule />}
-        {activeModule !== 'chat' && activeModule !== 'ide' && activeModule !== 'knowledge' && activeModule !== 'settings' && (
+        {activeModule !== 'chat' && activeModule !== 'ide' && activeModule !== 'studio' && activeModule !== 'knowledge' && activeModule !== 'settings' && (
           <ChatModule />
         )}
       </main>
 
       {/* 3. Collapsible Right Context Panel */}
-      {activeModule !== 'ide' && <RightContextPanel />}
+      {activeModule !== 'ide' && activeModule !== 'studio' && <RightContextPanel />}
 
       {/* 4. Global Command Palette */}
       <CommandPalette />

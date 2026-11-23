@@ -10,7 +10,8 @@ import {
   Trash2,
   MessagesSquare,
   Check,
-  Database
+  Database,
+  Box
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { LumiLogo } from '../Branding/LumiLogo';
@@ -175,6 +176,27 @@ export const LeftSidebar: React.FC = () => {
                 className={`w-4 h-4 ${activeModule === 'ide' ? 'text-[#987654]' : 'text-[#9C9C9C]'}`}
               />
               {!leftNavCollapsed && <span>IDE Workspace</span>}
+            </div>
+          </button>
+
+          {/* 3D Studio (Blender Automation Workspace) */}
+          <button
+            onClick={() => setActiveModule('studio')}
+            title={leftNavCollapsed ? '3D Studio (Blender)' : undefined}
+            className={`w-full h-8 rounded px-2.5 flex items-center justify-between text-xs transition-colors relative ${
+              activeModule === 'studio'
+                ? 'bg-[#191919] text-[#F5F4F1] font-medium border border-[#303030]'
+                : 'text-[#9C9C9C] hover:text-[#F5F4F1] hover:bg-[#191919]/60'
+            }`}
+          >
+            {activeModule === 'studio' && (
+              <div className="absolute left-0 top-1 bottom-1 w-[2px] bg-[#987654] rounded-r" />
+            )}
+            <div className="flex items-center space-x-2.5 min-w-0">
+              <Box
+                className={`w-4 h-4 ${activeModule === 'studio' ? 'text-[#987654]' : 'text-[#9C9C9C]'}`}
+              />
+              {!leftNavCollapsed && <span>3D Studio</span>}
             </div>
           </button>
 

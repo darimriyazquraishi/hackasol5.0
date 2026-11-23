@@ -1,0 +1,110 @@
+{
+  "openai_and_ollama": {
+    "type": "function",
+    "function": {
+      "name": "blender_skill",
+      "description": "Start and operate Blender 3.6+ via the local prj Blender engine. Supports checking Blender availability, creating and incrementally editing 3D models and P&ID technical diagrams via structured JSON actions (CREATE_OBJECT, MOVE_OBJECT, ROTATE_OBJECT, SCALE_OBJECT, CHANGE_MATERIAL, DELETE_OBJECT, GROUP_OBJECTS) with bounding-box spatial relations (ON_TOP, UNDER, BEHIND, IN_FRONT_OF, BESIDE, LEFT_OF, RIGHT_OF, INSIDE), PBR materials, modifiers, studio lighting, EEVEE preview rendering, scene inspection, launching Blender GUI, and starting the prj web server.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "status",
+              "execute_plan",
+              "generate",
+              "inspect",
+              "start_blender",
+              "start_server",
+              "list_projects"
+            ]
+          },
+          "project_id": { "type": "string" },
+          "plan": { "type": "object" },
+          "prompt": { "type": "string" },
+          "blend_path": { "type": "string" },
+          "existing_blend": { "type": "string" },
+          "save_blend": { "type": "string" },
+          "render_preview": { "type": "boolean" },
+          "open_gui": { "type": "boolean" },
+          "use_ollama": { "type": "boolean" },
+          "model": { "type": "string" },
+          "refresh": { "type": "boolean" },
+          "port": { "type": "integer" },
+          "open_browser": { "type": "boolean" }
+        },
+        "required": ["action"]
+      }
+    }
+  },
+  "anthropic": {
+    "name": "blender_skill",
+    "description": "Start and operate Blender 3.6+ via the local prj Blender engine (status, execute_plan, generate, inspect, start_blender, start_server, list_projects).",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "status",
+            "execute_plan",
+            "generate",
+            "inspect",
+            "start_blender",
+            "start_server",
+            "list_projects"
+          ]
+        },
+        "project_id": { "type": "string" },
+        "plan": { "type": "object" },
+        "prompt": { "type": "string" },
+        "blend_path": { "type": "string" },
+        "existing_blend": { "type": "string" },
+        "save_blend": { "type": "string" },
+        "render_preview": { "type": "boolean" },
+        "open_gui": { "type": "boolean" },
+        "use_ollama": { "type": "boolean" },
+        "model": { "type": "string" },
+        "refresh": { "type": "boolean" },
+        "port": { "type": "integer" },
+        "open_browser": { "type": "boolean" }
+      },
+      "required": ["action"]
+    }
+  },
+  "gemini": {
+    "name": "blender_skill",
+    "description": "Start and operate Blender 3.6+ via the local prj Blender engine (status, execute_plan, generate, inspect, start_blender, start_server, list_projects).",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "status",
+            "execute_plan",
+            "generate",
+            "inspect",
+            "start_blender",
+            "start_server",
+            "list_projects"
+          ]
+        },
+        "project_id": { "type": "string" },
+        "plan": { "type": "object" },
+        "prompt": { "type": "string" },
+        "blend_path": { "type": "string" },
+        "existing_blend": { "type": "string" },
+        "save_blend": { "type": "string" },
+        "render_preview": { "type": "boolean" },
+        "open_gui": { "type": "boolean" },
+        "use_ollama": { "type": "boolean" },
+        "model": { "type": "string" },
+        "refresh": { "type": "boolean" },
+        "port": { "type": "integer" },
+        "open_browser": { "type": "boolean" }
+      },
+      "required": ["action"]
+    }
+  }
+}

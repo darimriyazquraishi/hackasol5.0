@@ -24,7 +24,13 @@ export default defineConfig({
     port: 3000,
     host: true,
     watch: {
-      ignored: ['**/dist/**', '**/scratch/**', '**/.git/**']
+      ignored: [
+        '**/dist/**',
+        '**/scratch/**',
+        '**/.git/**',
+        '**/server/prj_blender_skill/prj/projects/**',
+        '**/server/prj_blender_skill/prj/tasks/**'
+      ]
     }
   }
 });

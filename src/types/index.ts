@@ -105,7 +105,7 @@ export interface AssistantMessage {
 }
 
 // Navigation Modules
-export type LumiModule = 'chat' | 'ide' | 'settings' | 'dashboard' | 'knowledge' | 'models' | 'workflows' | 'documents' | 'audio';
+export type LumiModule = 'chat' | 'ide' | 'studio' | 'settings' | 'dashboard' | 'knowledge' | 'models' | 'workflows' | 'documents' | 'audio';
 
 // Settings Categories and Subsections
 export type SettingsCategory = 'workbench' | 'hardware' | 'security' | 'system';

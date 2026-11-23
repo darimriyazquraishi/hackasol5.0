@@ -16,3 +16,8 @@ data/images/*
 !data/images/.gitkeep
 data/knowledge/files/*
 !data/knowledge/files/.gitkeep
+*.blend1
+server/prj_blender_skill/prj/projects/prj_*
+__pycache__/
+*.pyc
+server/prj_blender_skill/prj/tasks/task_*

@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PRJ Blender Engine Plan Schema",
+  "description": "Structured JSON modeling and scene-action plan executed by prj/blender_engine/runner.py inside Blender 3.6+.",
+  "type": "object",
+  "properties": {
+    "project_name": {
+      "type": "string",
+      "default": "ai_scene"
+    },
+    "clear_scene": {
+      "type": "boolean",
+      "description": "Set true for a fresh scene; false to preserve existing objects when editing an existing .blend file."
+    },
+    "is_diagram": {
+      "type": "boolean",
+      "description": "Set true for 2D/3D P&ID or technical schematics to align the camera front-facing."
+    },
+    "category": {
+      "type": "string",
+      "description": "Optional scene category (e.g. 'DIAGRAM', 'FURNITURE', 'PROP')."
+    },
+    "actions": {
+      "type": "array",
+      "description": "Priority execution mode: discrete atomic or group operations on the Blender scene.",
+      "items": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "CREATE_OBJECT",
+              "MOVE_OBJECT",
+              "ROTATE_OBJECT",
+              "SCALE_OBJECT",
+              "CHANGE_MATERIAL",
+              "DELETE_OBJECT",
+              "GROUP_OBJECTS",
+              "MODIFY_OBJECT"
+            ]
+          },
+          "target": {
+            "type": "string",
+            "description": "Object ai_id, object name, group_id, or group_name to target."
+          },
+          "scope": {
+            "type": "string",
+            "enum": ["GROUP", "SINGLE", "AUTO"],
+            "default": "AUTO"
+          },
+          "group_id": { "type": "string" },
+          "group_name": { "type": "string" },
+          "is_root": { "type": "boolean" },
+          "objects": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Object names to link when action is GROUP_OBJECTS."
+          },
+          "root": {
+            "type": "string",
+            "description": "Root object name when action is GROUP_OBJECTS."
+          },
+          "relative_to": {
+            "$ref": "#/$defs/relative_to"
+          },
+          "object_data": {
+            "$ref": "#/$defs/component"
+          },
+          "translation": {
+            "type": "object",
+            "properties": {
+              "mode": { "type": "string", "enum": ["RELATIVE", "ABSOLUTE"], "default": "RELATIVE" },
+              "vector": { "$ref": "#/$defs/vec3" }
+            }
+          },
+          "rotation": {
+            "type": "object",
+            "properties": {
+              "mode": { "type": "string", "enum": ["RELATIVE", "ABSOLUTE"], "default": "RELATIVE" },
+              "angles": { "$ref": "#/$defs/vec3", "description": "Euler angles in degrees [rx, ry, rz]." }
+            }
+          },
+          "scale": {
+            "type": "object",
+            "properties": {
+              "mode": { "type": "string", "enum": ["FACTOR", "ABSOLUTE"], "default": "FACTOR" },
+              "factors": { "$ref": "#/$defs/vec3" }
+            }
+          },
+          "material": {
+            "$ref": "#/$defs/material"
+          }
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "description": "Fallback/blueprint mode used when `actions` is empty. Creates components and resolves parent & relative_to.",
+      "items": {
+        "$ref": "#/$defs/component"
+      }
+    },
+    "lighting": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["AREA", "POINT", "SUN", "SPOT"] },
+          "position": { "$ref": "#/$defs/vec3" },
+          "energy": { "type": "number" },
+          "color": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+          "size": { "type": "number" }
+        }
+      }
+    },
+    "camera": {
+      "type": "object",
+      "properties": {
+        "lens": { "type": "number", "default": 50.0 },
+        "position": { "$ref": "#/$defs/vec3" },
+        "target": { "$ref": "#/$defs/vec3" }
+      }
+    }
+  },
+  "$defs": {
+    "vec3": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "rgba": {
+      "type": "array",
+      "items": { "type": "number", "minimum": 0, "maximum": 1 },
+      "minItems": 3,
+      "maxItems": 4
+    },
+    "relative_to": {
+      "type": "object",
+      "properties": {
+        "target": { "type": "string" },
+        "relation": {
+          "type": "string",
+          "enum": ["ON_TOP", "UNDER", "BEHIND", "IN_FRONT_OF", "BESIDE", "LEFT_OF", "RIGHT_OF", "INSIDE"]
+        },
+        "gap": { "type": "number", "default": 0.0 }
+      }
+    },
+    "material": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "color": { "$ref": "#/$defs/rgba" },
+        "metallic": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.0 },
+        "roughness": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.4 },
+        "transmission": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.0 },
+        "emission_color": { "$ref": "#/$defs/rgba" },
+        "emission_strength": { "type": "number", "minimum": 0, "default": 0.0 }
+      }
+    },
+    "modifier": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["BEVEL", "SUBSURF", "SUBDIVISION", "SOLIDIFY", "MIRROR", "ARRAY", "BOOLEAN"]
+        },
+        "width": { "type": "number" },
+        "segments": { "type": "integer" },
+        "limit_method": { "type": "string", "enum": ["NONE", "ANGLE", "WEIGHT", "VGROUP"] },
+        "angle_limit": { "type": "number" },
+        "levels": { "type": "integer" },
+        "render_levels": { "type": "integer" },
+        "thickness": { "type": "number" },
+        "offset": { "type": "number" },
+        "use_axis": { "type": "array", "items": { "type": "boolean" }, "minItems": 3, "maxItems": 3 },
+        "count": { "type": "integer" },
+        "relative_offset_displace": { "$ref": "#/$defs/vec3" },
+        "object": { "type": "string" },
+        "operation": { "type": "string", "enum": ["DIFFERENCE", "UNION", "INTERSECT"] }
+      }
+    },
+    "component": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "group_id": { "type": "string" },
+        "group_name": { "type": "string" },
+        "is_root": { "type": "boolean" },
+        "parent": { "type": "string" },
+        "collection": { "type": "string", "default": "Main" },
+        "geometry_type": {
+          "type": "string",
+          "enum": [
+            "PRIMITIVE",
+            "BEVEL_BOX",
+            "PROFILE_EXTRUSION",
+            "LATHE_REVOLUTION",
+            "TEXT",
+            "TEXT_LABEL",
+            "PIPELINE",
+            "CURVE",
+            "SIGNAL_LINE",
+            "FLOW_ARROW",
+            "ARROW",
+            "VALVE",
+            "PUMP",
+            "VESSEL",
+            "TANK",
+            "INSTRUMENT",
+            "SENSOR",
+            "CONTROLLER",
+            "PLC",
+            "LEGEND",
+            "TITLE_BLOCK"
+          ],
+          "default": "PRIMITIVE"
+        },
+        "primitive": {
+          "type": "string",
+          "enum": ["CUBE", "BOX", "CYLINDER", "SPHERE", "UVSPHERE", "CONE", "TORUS", "PLANE"],
+          "default": "CUBE"
+        },
+        "profile_type": {
+          "type": "string",
+          "enum": ["RECTANGLE", "HEXAGON", "STAR"]
+        },
+        "dimensions": { "$ref": "#/$defs/vec3" },
+        "position": { "$ref": "#/$defs/vec3" },
+        "rotation": { "$ref": "#/$defs/vec3", "description": "Euler degrees [rx, ry, rz]." },
+        "modifiers": { "type": "array", "items": { "$ref": "#/$defs/modifier" } },
+        "material": { "$ref": "#/$defs/material" },
+        "relative_to": { "$ref": "#/$defs/relative_to" },
+        "text": { "type": "string", "description": "For TEXT_LABEL." },
+        "points": { "type": "array", "items": { "$ref": "#/$defs/vec3" }, "description": "For PIPELINE / SIGNAL_LINE." },
+        "radius": { "type": "number" },
+        "is_signal": { "type": "boolean" },
+        "direction": { "$ref": "#/$defs/vec3", "description": "For FLOW_ARROW." },
+        "length": { "type": "number" },
+        "size": { "type": "number" },
+        "valve_type": { "type": "string", "enum": ["GATE", "CONTROL", "CHECK"] },
+        "tag": { "type": "string" },
+        "subtext": { "type": "string" },
+        "color": { "$ref": "#/$defs/rgba" },
+        "title": { "type": "string" },
+        "legend_items": { "type": "array" }
+      }
+    }
+  }
+}

@@ -57,7 +57,44 @@ export function deriveRetrievalQueries(prompt: string, decomp: TaskDecomposition
     queries.push(cleanedTopic);
   }
 
-  // 3. Domain: Presentations
+  // 3. Domain: Financial, Budget, Expenditure & Tariff
+  if (/expenditure|utilities|energy|consumption|budget|overrun|overspending|variance|deviation|tariff|water\s*expenditure|coal\s*expenditure|financial/i.test(lower)) {
+    queries.push('October financial records budget actual expenditure');
+    queries.push('Energy Expenditure Report');
+    queries.push('energy consumption electricity coal MWh MT tariff');
+    if (/overrun|overspending|variance|deviation/i.test(lower)) {
+      queries.push('budget overruns percentage deviations largest contributor overspending');
+    }
+  }
+
+  // 4. Domain: Production & Operations Data
+  if (/production|operations|departmental|uptime|capacity|generation|electricity\s*generation|gwh|plant\s*load\s*factor|plf|unit\s*\d|shortfall|target.*actual/i.test(lower)) {
+    queries.push('electricity generation target actual production report');
+    queries.push('Raipur Production Report');
+    queries.push('unit wise production target actual achievement');
+    if (/unit\s*3|boiler.*shutdown|lowest/i.test(lower)) {
+      queries.push('Unit 3 boiler-related shutdowns lowest production');
+    }
+  }
+
+  // 5. Domain: Maintenance, Safety & Corrective Actions
+  if (/maintenance|safety|ehs|incident|equipment|corrective|shutdown|breakdown|downtime|boiler|turbine|conveyor|failure|leakage|interventions/i.test(lower)) {
+    queries.push('Maintenance Safety Report');
+    queries.push('preventive corrective maintenance records equipment downtime');
+    queries.push('safety incidents severity status pending corrective actions');
+    if (/highest\s*downtime|rank|operational\s*risk/i.test(lower)) {
+      queries.push('highest downtime operational risk ranking pending maintenance');
+    }
+  }
+
+  // 6. Cross-reference production and maintenance
+  if ((/cross-reference|correlate|explain.*shortfall|production.*loss/i.test(lower)) && (/maintenance|failure|breakdown|equipment/i.test(lower))) {
+    queries.push('Raipur Production Report');
+    queries.push('Maintenance Safety Report');
+    queries.push('equipment failures explain production shortfall');
+  }
+
+  // 7. Domain: Presentations
   if (
     decomp.requestedOutputFormat === 'pptx' ||
     decomp.operation === 'deliverable_pptx' ||
@@ -74,7 +111,7 @@ export function deriveRetrievalQueries(prompt: string, decomp: TaskDecomposition
     }
   }
 
-  // 4. Domain: Reports & Document Compilation Standards
+  // 8. Domain: Reports & Document Compilation Standards
   if (
     /report\s*(?:guidelines?|standards?|templates?|policies|writing|format)/i.test(lower) ||
     /controlled\s*doc/i.test(lower) ||
@@ -86,45 +123,12 @@ export function deriveRetrievalQueries(prompt: string, decomp: TaskDecomposition
     queries.push('ENG-STD-002 Technical Report Guidelines');
   }
 
-  // 5. Domain: Financial & Spreadsheets
-  if (/expenditure|utilities|energy\s*statement|consumption/i.test(lower)) {
-    queries.push('Energy and Expenditure Statement');
-    queries.push('utilities consumption performance');
-  } else if (
-    decomp.requestedOutputFormat === 'xlsx' ||
-    decomp.requestedOutputFormat === 'csv' ||
-    decomp.operation === 'deliverable_xlsx' ||
-    /financial\s*(?:guidelines?|standards?|policies)/i.test(lower)
-  ) {
-    queries.push('financial reporting guidelines');
-    queries.push('spreadsheet templates');
-  }
-
-  // 6. Domain: Production & Operations Data
-  if (/production|operations|departmental|uptime|capacity/i.test(lower)) {
-    queries.push('October Production Data');
-    queries.push('production operations data');
-  }
-
-  // 7. Domain: Infrastructure & Capital Projects
-  if (/infrastructure|capital\s*works|milestone|project\s*status/i.test(lower)) {
-    queries.push('Infrastructure Project Status');
-    queries.push('capital works milestone review');
-  }
-
-  // 8. Domain: Maintenance, Safety & Corrective Actions
-  if (/maintenance|safety|ehs|incident|equipment|corrective|shutdown|breakdown|downtime|boiler|turbine/i.test(lower)) {
-    queries.push('Maintenance and Safety Report');
-    queries.push('corrective actions maintenance report');
-    queries.push('monthly maintenance EHS summary');
-  }
-
   // 9. Direct organizational inquiry
   if (/guideline|policy|standard|rule|procedure|how\s+does\s+the\s+company|what\s+are\s+the\s+(?:company|our)/i.test(lower)) {
     if (!queries.includes(p)) queries.unshift(p);
   }
 
-  return Array.from(new Set(queries)).slice(0, 6);
+  return Array.from(new Set(queries)).slice(0, 8);
 }
 
 /**
@@ -290,14 +294,6 @@ export async function retrieveTaskContext(
       versionDate,
       keyRequirements
     });
-
-    // Build sanitized, untrusted reference context block (Requirement 10 & Test 7)
-    for (const item of items.slice(0, 3)) {
-      const clean = sanitizeContextText(item.chunk.text);
-      sanitizedBlocks.push(
-        `<untrusted_reference_document source="${docName}" section="${item.chunk.section || 'Section'}" score="${item.score.toFixed(2)}" untrusted="true">\n${clean}\n</untrusted_reference_document>`
-      );
-    }
   }
 
   // Sort matches by relevance score descending
@@ -312,6 +308,18 @@ export async function retrieveTaskContext(
   const filteredMatches = hasSpecificHighConfidenceDoc && !askedForReportGuidelines
     ? matches.filter(m => !/corporate_reporting_guidelines|01_controlled_pdf|readme_test_pack/i.test(m.docName) || m.relevanceScore >= 0.90)
     : matches;
+
+  // Build sanitized, untrusted reference context block from accepted filtered matches
+  const allowedDocNames = new Set(filteredMatches.map(m => m.docName));
+  for (const [docName, items] of docMap.entries()) {
+    if (!allowedDocNames.has(docName)) continue;
+    for (const item of items.slice(0, 6)) {
+      const clean = sanitizeContextText(item.chunk.text);
+      sanitizedBlocks.push(
+        `<untrusted_reference_document source="${docName}" section="${item.chunk.section || 'Section'}" score="${item.score.toFixed(2)}" untrusted="true">\n${clean}\n</untrusted_reference_document>`
+      );
+    }
+  }
 
   // Conflicting Document Detection & Resolution (Requirement 7 & Test 6)
   let conflictDetected = false;
@@ -401,13 +409,13 @@ export function enrichWorkplan(
           name: 'Production Data Validation & Unit-Wise Generation Comparison',
           agent: 'reasoning_synthesis',
           model: 'qwen2.5:1.5b',
-          description: 'Extract and reconcile monthly generation figures across Unit 1 (225 GWh / 240 GWh target), Unit 2 (218 GWh / 240 GWh target), and Unit 3 (205 GWh / 240 GWh target) against plant total target (720 GWh target vs 648 GWh actual) from October_Production_Data.pdf.',
+          description: 'Extract and reconcile monthly generation figures across Unit 1 (225 GWh / 240 GWh target), Unit 2 (218 GWh / 240 GWh target), and Unit 3 (205 GWh / 240 GWh target) against plant total target (720 GWh target vs 648 GWh actual) from Raipur_Production_Report.txt.',
           actions: [
             'Reconcile plant-wide 72 GWh generation deficit (648 GWh actual vs 720 GWh target)',
             'Compare individual unit generation against equal 240 GWh benchmarks',
             'Validate Unit 3 deficit of 35 GWh (14.6% shortfall) as the primary generation drag'
           ],
-          inputs: 'October 2026 Production & Operations Data (October_Production_Data.pdf)',
+          inputs: 'October 2026 Production & Operations Data (Raipur_Production_Report.txt)',
           dependencies: [],
           expectedOutput: 'Validated unit-wise generation ledger and shortfall breakdown',
           validationCriteria: '100% numerical reconciliation with official production records',
@@ -437,13 +445,13 @@ export function enrichWorkplan(
           name: 'Investigation of Unit 3 Boiler Shutdowns & Downtime Logs',
           agent: 'reasoning_synthesis',
           model: 'qwen2.5:1.5b',
-          description: 'Correlate Unit 3 generation loss with repeated boiler-related forced outages and corrective work orders in Maintenance_and_Safety_Report.pdf.',
+          description: 'Correlate Unit 3 generation loss with repeated boiler-related forced outages and corrective work orders in Maintenance_Safety_Report.txt.',
           actions: [
             'Evaluate equipment availability degradation from 95% down to 87%',
             'Cross-reference boiler trip logs, tube leakage history, and unplanned downtime hours',
             'Isolate Unit 3 boiler outage duration vs Unit 2 turbine vibration events'
           ],
-          inputs: 'Maintenance & Safety Report (Maintenance_and_Safety_Report.pdf)',
+          inputs: 'Maintenance & Safety Report (Maintenance_Safety_Report.txt)',
           dependencies: ['step-1'],
           expectedOutput: 'Boiler shutdown root-cause correlation and downtime chronology',
           validationCriteria: 'All forced outage hours accounted for against availability drop',
@@ -472,7 +480,7 @@ export function enrichWorkplan(
           stageNumber: 5,
           name: 'Evidence-Based Corrective Actions & Performance Recovery Recommendations',
           agent: 'reasoning_synthesis',
-          model: 'lumi-quality-gate',
+          model: 'qwen2.5:1.5b',
           description: 'Formulate prioritized, time-bound engineering and operational corrective actions to restore Unit 3 availability and eliminate boiler trips.',
           actions: [
             'Establish immediate boiler inspection, non-destructive testing (NDT), and tube thickness mapping protocol',

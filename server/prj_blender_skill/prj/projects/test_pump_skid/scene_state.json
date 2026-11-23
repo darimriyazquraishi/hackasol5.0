@@ -1,0 +1,69 @@
+{
+  "object_count": 1,
+  "objects": [
+    {
+      "id": "obj_89639539",
+      "name": "Centrifugal_slurry_pump_Main",
+      "type": "BEVEL_BOX",
+      "group_id": null,
+      "group_name": "model_Centrifugal_slurry_pump",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.5
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.2,
+        1.2,
+        1.0
+      ],
+      "bounding_box": {
+        "min": [
+          -0.6,
+          -0.6,
+          0.0
+        ],
+        "max": [
+          0.6,
+          0.6,
+          1.0
+        ],
+        "center": [
+          0.0,
+          0.0,
+          0.5
+        ],
+        "size": [
+          1.2,
+          1.2,
+          1.0
+        ]
+      },
+      "material": {
+        "name": "Mat_Centrifugal_slurry_pump",
+        "color": [
+          0.75,
+          0.78,
+          0.84,
+          1.0
+        ],
+        "metallic": 0.15,
+        "roughness": 0.35
+      },
+      "collection": "Collection"
+    }
+  ],
+  "groups": {}
+}

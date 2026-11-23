@@ -1,0 +1,206 @@
+{
+  "project_id": "test_pump_skid",
+  "prompt": "Centrifugal slurry pump skid with electric induction motor and flanged discharge",
+  "model": "prj_blueprint",
+  "created_at": "2026-11-24T00:58:16.660749",
+  "updated_at": "2026-11-24T01:23:27.092858",
+  "blend_path": "D:\\IIIT(2)\\server\\prj_blender_skill\\prj\\projects\\test_pump_skid\\model.blend",
+  "render_path": "D:\\IIIT(2)\\server\\prj_blender_skill\\prj\\projects\\test_pump_skid\\preview.png",
+  "plan": {
+    "project_name": "model_Centrifugal_slurry_pump",
+    "category": "PROP",
+    "description": "Parametric 3D model for: Centrifugal slurry pump skid with electric induction motor and flanged discharge",
+    "overall_dimensions": [
+      1.2,
+      1.2,
+      1.2
+    ],
+    "clear_scene": false,
+    "components": [
+      {
+        "name": "Centrifugal_slurry_pump_Main",
+        "geometry_type": "BEVEL_BOX",
+        "dimensions": [
+          1.2,
+          1.2,
+          1.0
+        ],
+        "position": [
+          0.0,
+          0.0,
+          0.5
+        ],
+        "modifiers": [
+          {
+            "type": "BEVEL",
+            "width": 0.04,
+            "segments": 3
+          }
+        ],
+        "material": {
+          "name": "Mat_Centrifugal_slurry_pump",
+          "color": [
+            0.75,
+            0.78,
+            0.84,
+            1.0
+          ],
+          "metallic": 0.15,
+          "roughness": 0.35
+        }
+      }
+    ]
+  },
+  "scene_state": {
+    "object_count": 1,
+    "objects": [
+      {
+        "id": "obj_89639539",
+        "name": "Centrifugal_slurry_pump_Main",
+        "type": "BEVEL_BOX",
+        "group_id": null,
+        "group_name": "model_Centrifugal_slurry_pump",
+        "is_root": false,
+        "parent": null,
+        "position": [
+          0.0,
+          0.0,
+          0.5
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "dimensions": [
+          1.2,
+          1.2,
+          1.0
+        ],
+        "bounding_box": {
+          "min": [
+            -0.6,
+            -0.6,
+            0.0
+          ],
+          "max": [
+            0.6,
+            0.6,
+            1.0
+          ],
+          "center": [
+            0.0,
+            0.0,
+            0.5
+          ],
+          "size": [
+            1.2,
+            1.2,
+            1.0
+          ]
+        },
+        "material": {
+          "name": "Mat_Centrifugal_slurry_pump",
+          "color": [
+            0.75,
+            0.78,
+            0.84,
+            1.0
+          ],
+          "metallic": 0.15,
+          "roughness": 0.35
+        },
+        "collection": "Collection"
+      }
+    ],
+    "groups": {}
+  },
+  "components": [
+    "Centrifugal_slurry_pump_Main"
+  ],
+  "stats": {
+    "success": true,
+    "task_id": "task_1795463601216",
+    "blend_path": "D:\\IIIT(2)\\server\\prj_blender_skill\\prj\\projects\\test_pump_skid\\model.blend",
+    "render_path": "D:\\IIIT(2)\\server\\prj_blender_skill\\prj\\projects\\test_pump_skid\\preview.png",
+    "actions_executed": [],
+    "components_created": [
+      "Centrifugal_slurry_pump_Main"
+    ],
+    "scene_state": {
+      "object_count": 1,
+      "objects": [
+        {
+          "id": "obj_89639539",
+          "name": "Centrifugal_slurry_pump_Main",
+          "type": "BEVEL_BOX",
+          "group_id": null,
+          "group_name": "model_Centrifugal_slurry_pump",
+          "is_root": false,
+          "parent": null,
+          "position": [
+            0.0,
+            0.0,
+            0.5
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "dimensions": [
+            1.2,
+            1.2,
+            1.0
+          ],
+          "bounding_box": {
+            "min": [
+              -0.6,
+              -0.6,
+              0.0
+            ],
+            "max": [
+              0.6,
+              0.6,
+              1.0
+            ],
+            "center": [
+              0.0,
+              0.0,
+              0.5
+            ],
+            "size": [
+              1.2,
+              1.2,
+              1.0
+            ]
+          },
+          "material": {
+            "name": "Mat_Centrifugal_slurry_pump",
+            "color": [
+              0.75,
+              0.78,
+              0.84,
+              1.0
+            ],
+            "metallic": 0.15,
+            "roughness": 0.35
+          },
+          "collection": "Collection"
+        }
+      ],
+      "groups": {}
+    },
+    "total_objects": 1
+  }
+}

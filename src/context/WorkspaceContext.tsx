@@ -290,6 +290,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (hash === 'ide') {
         return { module: 'ide', cat: 'workbench', sub: 'model-manager' };
       }
+      if (hash === 'studio' || hash === '3d' || hash === 'blender') {
+        return { module: 'studio', cat: 'workbench', sub: 'model-manager' };
+      }
       if (hash === 'knowledge') {
         return { module: 'knowledge', cat: 'workbench', sub: 'model-manager' };
       }

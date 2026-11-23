@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Copy, Check, Play, Terminal, ChevronDown, ChevronRight } from 'lucide-react';
+import { cleanAgentResponse } from '../../services/cleanResponse';
 
 interface MarkdownContentProps {
   content: string;
@@ -35,24 +36,9 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
-  // Clean raw text to strip generic conversational filler
+  // Clean raw text to strip generic conversational filler and unwraps JSON cleanly
   const cleanContent = (raw: string): string => {
-    let text = raw.trim();
-    // Remove JSON wrapper if raw JSON was returned
-    if (text.startsWith('{') && text.endsWith('}')) {
-      try {
-        const parsed = JSON.parse(text);
-        if (parsed.response) text = parsed.response;
-        else if (parsed.content) text = parsed.content;
-        else if (parsed.answer) text = parsed.answer;
-      } catch {
-        // ignore
-      }
-    }
-    // Remove conversational pleasantries
-    text = text.replace(/^(Certainly!|Sure!|Here is|Here's|Of course|I'd be happy to|Below is|As an AI language model)[^\n]*\n+/i, '');
-    text = text.replace(/\n+(Hope this helps!|Let me know if you need anything else!|Feel free to ask[^\n]*)\s*$/i, '');
-    return text.trim();
+    return cleanAgentResponse(raw);
   };
 
   const text = cleanContent(content);
@@ -274,12 +260,12 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
       }
 
       if (!earliest) {
-        parts.push(remaining);
+        parts.push(remaining.replace(/\\+/g, '').replace(/\*+/g, ''));
         break;
       }
 
       if (earliest.match[1]) {
-        parts.push(earliest.match[1]);
+        parts.push(earliest.match[1].replace(/\\+/g, '').replace(/\*+/g, ''));
       }
 
       if (earliest.type === 'image') {

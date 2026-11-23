@@ -1,0 +1,331 @@
+{
+  "project_id": "demo_portable_scene",
+  "prompt": "ai_scene",
+  "model": "external_ai",
+  "created_at": "2026-11-24T00:48:55.390702",
+  "updated_at": "2026-11-24T00:49:00.915575",
+  "blend_path": "D:\\IIIT(2)\\server\\prj_blender_skill\\prj\\projects\\demo_portable_scene\\model.blend",
+  "render_path": "D:\\IIIT(2)\\server\\prj_blender_skill\\prj\\projects\\demo_portable_scene\\preview.png",
+  "plan": {
+    "clear_scene": false,
+    "actions": [
+      {
+        "action": "CREATE_OBJECT",
+        "relative_to": {
+          "target": "Table_Top",
+          "relation": "ON_TOP",
+          "gap": 0.0
+        },
+        "object_data": {
+          "name": "Red_Sphere",
+          "geometry_type": "PRIMITIVE",
+          "primitive": "SPHERE",
+          "dimensions": [
+            0.28,
+            0.28,
+            0.28
+          ],
+          "material": {
+            "name": "Glossy_Red",
+            "color": [
+              0.9,
+              0.1,
+              0.1,
+              1.0
+            ],
+            "roughness": 0.2
+          }
+        }
+      }
+    ],
+    "project_name": "ai_scene"
+  },
+  "scene_state": {
+    "object_count": 2,
+    "objects": [
+      {
+        "id": "obj_4b3185f1",
+        "name": "Red_Sphere",
+        "type": "PRIMITIVE",
+        "group_id": null,
+        "group_name": null,
+        "is_root": false,
+        "parent": null,
+        "position": [
+          0.0,
+          0.0,
+          0.93
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "dimensions": [
+          0.28,
+          0.28,
+          0.28
+        ],
+        "bounding_box": {
+          "min": [
+            -0.14,
+            -0.14,
+            0.79
+          ],
+          "max": [
+            0.14,
+            0.14,
+            1.07
+          ],
+          "center": [
+            0.0,
+            0.0,
+            0.93
+          ],
+          "size": [
+            0.28,
+            0.28,
+            0.28
+          ]
+        },
+        "material": {
+          "name": "Glossy_Red",
+          "color": [
+            0.9,
+            0.1,
+            0.1,
+            1.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.2
+        },
+        "collection": "Collection"
+      },
+      {
+        "id": "obj_91d4f971",
+        "name": "Table_Top",
+        "type": "BEVEL_BOX",
+        "group_id": null,
+        "group_name": null,
+        "is_root": false,
+        "parent": null,
+        "position": [
+          0.0,
+          0.0,
+          0.75
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "dimensions": [
+          1.6,
+          0.8,
+          0.08
+        ],
+        "bounding_box": {
+          "min": [
+            -0.8,
+            -0.4,
+            0.71
+          ],
+          "max": [
+            0.8,
+            0.4,
+            0.79
+          ],
+          "center": [
+            0.0,
+            0.0,
+            0.75
+          ],
+          "size": [
+            1.6,
+            0.8,
+            0.08
+          ]
+        },
+        "material": {
+          "name": "Oak_Wood",
+          "color": [
+            0.55,
+            0.35,
+            0.18,
+            1.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.45
+        },
+        "collection": "Collection"
+      }
+    ],
+    "groups": {}
+  },
+  "components": [],
+  "stats": {
+    "success": true,
+    "task_id": "task_1795461535395",
+    "blend_path": "D:\\IIIT(2)\\server\\prj_blender_skill\\prj\\projects\\demo_portable_scene\\model.blend",
+    "render_path": "D:\\IIIT(2)\\server\\prj_blender_skill\\prj\\projects\\demo_portable_scene\\preview.png",
+    "actions_executed": [
+      {
+        "action": "CREATE_OBJECT",
+        "success": true,
+        "id": "obj_4b3185f1",
+        "name": "Red_Sphere",
+        "group_id": null,
+        "group_name": null,
+        "position": [
+          0.0,
+          0.0,
+          0.93
+        ]
+      }
+    ],
+    "components_created": [],
+    "scene_state": {
+      "object_count": 2,
+      "objects": [
+        {
+          "id": "obj_4b3185f1",
+          "name": "Red_Sphere",
+          "type": "PRIMITIVE",
+          "group_id": null,
+          "group_name": null,
+          "is_root": false,
+          "parent": null,
+          "position": [
+            0.0,
+            0.0,
+            0.93
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "dimensions": [
+            0.28,
+            0.28,
+            0.28
+          ],
+          "bounding_box": {
+            "min": [
+              -0.14,
+              -0.14,
+              0.79
+            ],
+            "max": [
+              0.14,
+              0.14,
+              1.07
+            ],
+            "center": [
+              0.0,
+              0.0,
+              0.93
+            ],
+            "size": [
+              0.28,
+              0.28,
+              0.28
+            ]
+          },
+          "material": {
+            "name": "Glossy_Red",
+            "color": [
+              0.9,
+              0.1,
+              0.1,
+              1.0
+            ],
+            "metallic": 0.0,
+            "roughness": 0.2
+          },
+          "collection": "Collection"
+        },
+        {
+          "id": "obj_91d4f971",
+          "name": "Table_Top",
+          "type": "BEVEL_BOX",
+          "group_id": null,
+          "group_name": null,
+          "is_root": false,
+          "parent": null,
+          "position": [
+            0.0,
+            0.0,
+            0.75
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "dimensions": [
+            1.6,
+            0.8,
+            0.08
+          ],
+          "bounding_box": {
+            "min": [
+              -0.8,
+              -0.4,
+              0.71
+            ],
+            "max": [
+              0.8,
+              0.4,
+              0.79
+            ],
+            "center": [
+              0.0,
+              0.0,
+              0.75
+            ],
+            "size": [
+              1.6,
+              0.8,
+              0.08
+            ]
+          },
+          "material": {
+            "name": "Oak_Wood",
+            "color": [
+              0.55,
+              0.35,
+              0.18,
+              1.0
+            ],
+            "metallic": 0.0,
+            "roughness": 0.45
+          },
+          "collection": "Collection"
+        }
+      ],
+      "groups": {}
+    },
+    "total_objects": 2
+  }
+}

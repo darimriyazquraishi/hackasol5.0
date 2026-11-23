@@ -1,0 +1,6117 @@
+{
+  "object_count": 97,
+  "objects": [
+    {
+      "id": "valve_937edf",
+      "name": "Check_Valve_NRV101A_CheckDisc",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        1.4,
+        0.0,
+        1.2
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.192,
+        0.192,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          1.304,
+          -0.096,
+          1.185
+        ],
+        "max": [
+          1.496,
+          0.096,
+          1.215
+        ],
+        "center": [
+          1.4,
+          0.0,
+          1.2
+        ],
+        "size": [
+          0.192,
+          0.192,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Check_Valve_NRV101A",
+        "color": [
+          0.85,
+          0.35,
+          0.2,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_b2e9c2",
+      "name": "Check_Valve_NRV101A_Cone_Left",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        1.304,
+        0.0,
+        1.2
+      ],
+      "rotation": [
+        0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.24,
+        0.24,
+        0.24
+      ],
+      "bounding_box": {
+        "min": [
+          1.184,
+          -0.12,
+          1.08
+        ],
+        "max": [
+          1.424,
+          0.12,
+          1.32
+        ],
+        "center": [
+          1.304,
+          0.0,
+          1.2
+        ],
+        "size": [
+          0.24,
+          0.24,
+          0.24
+        ]
+      },
+      "material": {
+        "name": "Mat_Check_Valve_NRV101A",
+        "color": [
+          0.85,
+          0.35,
+          0.2,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_157a4d",
+      "name": "Check_Valve_NRV101A_Cone_Right",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        1.496,
+        0.0,
+        1.2
+      ],
+      "rotation": [
+        0.0,
+        -90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.24,
+        0.24,
+        0.24
+      ],
+      "bounding_box": {
+        "min": [
+          1.376,
+          -0.12,
+          1.08
+        ],
+        "max": [
+          1.616,
+          0.12,
+          1.32
+        ],
+        "center": [
+          1.496,
+          0.0,
+          1.2
+        ],
+        "size": [
+          0.24,
+          0.24,
+          0.24
+        ]
+      },
+      "material": {
+        "name": "Mat_Check_Valve_NRV101A",
+        "color": [
+          0.85,
+          0.35,
+          0.2,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_66e62f",
+      "name": "Check_Valve_NRV101B_CheckDisc",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        1.4,
+        0.0,
+        -2.2
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.192,
+        0.192,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          1.304,
+          -0.096,
+          -2.215
+        ],
+        "max": [
+          1.496,
+          0.096,
+          -2.185
+        ],
+        "center": [
+          1.4,
+          0.0,
+          -2.2
+        ],
+        "size": [
+          0.192,
+          0.192,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Check_Valve_NRV101B",
+        "color": [
+          0.85,
+          0.35,
+          0.2,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_8a944a",
+      "name": "Check_Valve_NRV101B_Cone_Left",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        1.304,
+        0.0,
+        -2.2
+      ],
+      "rotation": [
+        0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.24,
+        0.24,
+        0.24
+      ],
+      "bounding_box": {
+        "min": [
+          1.184,
+          -0.12,
+          -2.32
+        ],
+        "max": [
+          1.424,
+          0.12,
+          -2.08
+        ],
+        "center": [
+          1.304,
+          0.0,
+          -2.2
+        ],
+        "size": [
+          0.24,
+          0.24,
+          0.24
+        ]
+      },
+      "material": {
+        "name": "Mat_Check_Valve_NRV101B",
+        "color": [
+          0.85,
+          0.35,
+          0.2,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_89f205",
+      "name": "Check_Valve_NRV101B_Cone_Right",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        1.496,
+        0.0,
+        -2.2
+      ],
+      "rotation": [
+        0.0,
+        -90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.24,
+        0.24,
+        0.24
+      ],
+      "bounding_box": {
+        "min": [
+          1.376,
+          -0.12,
+          -2.32
+        ],
+        "max": [
+          1.616,
+          0.12,
+          -2.08
+        ],
+        "center": [
+          1.496,
+          0.0,
+          -2.2
+        ],
+        "size": [
+          0.24,
+          0.24,
+          0.24
+        ]
+      },
+      "material": {
+        "name": "Mat_Check_Valve_NRV101B",
+        "color": [
+          0.85,
+          0.35,
+          0.2,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_26fad7",
+      "name": "Control_Valve_CV101_Actuator",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        7.4,
+        0.0,
+        0.256
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        0.5
+      ],
+      "dimensions": [
+        0.224,
+        0.224,
+        0.112
+      ],
+      "bounding_box": {
+        "min": [
+          7.288,
+          -0.112,
+          0.2
+        ],
+        "max": [
+          7.512,
+          0.112,
+          0.312
+        ],
+        "center": [
+          7.4,
+          0.0,
+          0.256
+        ],
+        "size": [
+          0.224,
+          0.224,
+          0.112
+        ]
+      },
+      "material": {
+        "name": "Mat_Control_Valve_CV101",
+        "color": [
+          0.95,
+          0.35,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_7d35de",
+      "name": "Control_Valve_CV101_Cone_Left",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        7.272,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.32,
+        0.32,
+        0.32
+      ],
+      "bounding_box": {
+        "min": [
+          7.112,
+          -0.16,
+          -0.16
+        ],
+        "max": [
+          7.432,
+          0.16,
+          0.16
+        ],
+        "center": [
+          7.272,
+          0.0,
+          0.0
+        ],
+        "size": [
+          0.32,
+          0.32,
+          0.32
+        ]
+      },
+      "material": {
+        "name": "Mat_Control_Valve_CV101",
+        "color": [
+          0.95,
+          0.35,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_4b5e7d",
+      "name": "Control_Valve_CV101_Cone_Right",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        7.528,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        -90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.32,
+        0.32,
+        0.32
+      ],
+      "bounding_box": {
+        "min": [
+          7.368,
+          -0.16,
+          -0.16
+        ],
+        "max": [
+          7.688,
+          0.16,
+          0.16
+        ],
+        "center": [
+          7.528,
+          0.0,
+          0.0
+        ],
+        "size": [
+          0.32,
+          0.32,
+          0.32
+        ]
+      },
+      "material": {
+        "name": "Mat_Control_Valve_CV101",
+        "color": [
+          0.95,
+          0.35,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_0961d2",
+      "name": "Control_Valve_CV101_Stem",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        7.4,
+        0.0,
+        0.128
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.0512,
+        0.0512,
+        0.192
+      ],
+      "bounding_box": {
+        "min": [
+          7.374,
+          -0.026,
+          0.032
+        ],
+        "max": [
+          7.426,
+          0.026,
+          0.224
+        ],
+        "center": [
+          7.4,
+          0.0,
+          0.128
+        ],
+        "size": [
+          0.051,
+          0.051,
+          0.192
+        ]
+      },
+      "material": {
+        "name": "Mat_Control_Valve_CV101",
+        "color": [
+          0.95,
+          0.35,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "Controller_PLC100_Bar",
+      "name": "Controller_PLC100_Bar",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        5.2,
+        0.0,
+        3.84
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        2.112,
+        0.16,
+        0.12
+      ],
+      "dimensions": [
+        2.112,
+        0.16,
+        0.12
+      ],
+      "bounding_box": {
+        "min": [
+          4.144,
+          -0.08,
+          3.78
+        ],
+        "max": [
+          6.256,
+          0.08,
+          3.9
+        ],
+        "center": [
+          5.2,
+          0.0,
+          3.84
+        ],
+        "size": [
+          2.112,
+          0.16,
+          0.12
+        ]
+      },
+      "material": {
+        "name": "Mat_Controller_PLC100_Bar",
+        "color": [
+          0.25,
+          0.5,
+          0.85,
+          1.0
+        ],
+        "metallic": 0.2,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "Controller_PLC100_Box",
+      "name": "Controller_PLC100_Box",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        5.2,
+        0.0,
+        3.4
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        2.2,
+        0.15,
+        1.1
+      ],
+      "dimensions": [
+        2.2,
+        0.15,
+        1.1
+      ],
+      "bounding_box": {
+        "min": [
+          4.1,
+          -0.075,
+          2.85
+        ],
+        "max": [
+          6.3,
+          0.075,
+          3.95
+        ],
+        "center": [
+          5.2,
+          0.0,
+          3.4
+        ],
+        "size": [
+          2.2,
+          0.15,
+          1.1
+        ]
+      },
+      "material": {
+        "name": "Mat_Controller_PLC100_PLC",
+        "color": [
+          0.12,
+          0.14,
+          0.18,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "label_9f45d1",
+      "name": "Diagram_Main_Title",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -7.5,
+        0.0,
+        3.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.9489,
+        0.238,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -8.475,
+          -0.105,
+          2.985
+        ],
+        "max": [
+          -6.527,
+          0.133,
+          3.015
+        ],
+        "center": [
+          -7.501,
+          0.014,
+          3.0
+        ],
+        "size": [
+          1.949,
+          0.238,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Diagram_Main_Title_Text",
+        "color": [
+          1.0,
+          0.95,
+          0.5,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_5292eb",
+      "name": "Diagram_Sub_Title",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -7.5,
+        0.0,
+        2.55
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        5.1115,
+        0.1663,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -10.058,
+          -0.095,
+          2.535
+        ],
+        "max": [
+          -4.946,
+          0.071,
+          2.565
+        ],
+        "center": [
+          -7.502,
+          -0.012,
+          2.55
+        ],
+        "size": [
+          5.111,
+          0.166,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Diagram_Sub_Title_Text",
+        "color": [
+          0.7,
+          0.85,
+          1.0,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "pipe_758175",
+      "name": "Discharge_Header_Main",
+      "type": "PIPELINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        6.6,
+        0.12,
+        0.12
+      ],
+      "bounding_box": {
+        "min": [
+          3.0,
+          -0.06,
+          -0.06
+        ],
+        "max": [
+          9.6,
+          0.06,
+          0.06
+        ],
+        "center": [
+          6.3,
+          0.0,
+          0.0
+        ],
+        "size": [
+          6.6,
+          0.12,
+          0.12
+        ]
+      },
+      "material": {
+        "name": "Mat_Discharge_Header_Main",
+        "color": [
+          0.12,
+          0.65,
+          0.88,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.3
+      },
+      "collection": "Pipelines"
+    },
+    {
+      "id": "pipe_7ef56d",
+      "name": "Discharge_Header_Manifold",
+      "type": "PIPELINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.12,
+        0.12,
+        3.4
+      ],
+      "bounding_box": {
+        "min": [
+          2.94,
+          -0.06,
+          -2.2
+        ],
+        "max": [
+          3.06,
+          0.06,
+          1.2
+        ],
+        "center": [
+          3.0,
+          0.0,
+          -0.5
+        ],
+        "size": [
+          0.12,
+          0.12,
+          3.4
+        ]
+      },
+      "material": {
+        "name": "Mat_Discharge_Header_Manifold",
+        "color": [
+          0.12,
+          0.65,
+          0.88,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.3
+      },
+      "collection": "Pipelines"
+    },
+    {
+      "id": "pipe_9dee86",
+      "name": "Discharge_Pipe_Pump_A",
+      "type": "PIPELINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        2.3,
+        0.1,
+        0.1
+      ],
+      "bounding_box": {
+        "min": [
+          0.7,
+          -0.05,
+          1.15
+        ],
+        "max": [
+          3.0,
+          0.05,
+          1.25
+        ],
+        "center": [
+          1.85,
+          -0.0,
+          1.2
+        ],
+        "size": [
+          2.3,
+          0.1,
+          0.1
+        ]
+      },
+      "material": {
+        "name": "Mat_Discharge_Pipe_Pump_A",
+        "color": [
+          0.12,
+          0.65,
+          0.88,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.3
+      },
+      "collection": "Pipelines"
+    },
+    {
+      "id": "pipe_2a97c7",
+      "name": "Discharge_Pipe_Pump_B",
+      "type": "PIPELINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        2.3,
+        0.1,
+        0.1
+      ],
+      "bounding_box": {
+        "min": [
+          0.7,
+          -0.05,
+          -2.25
+        ],
+        "max": [
+          3.0,
+          0.05,
+          -2.15
+        ],
+        "center": [
+          1.85,
+          -0.0,
+          -2.2
+        ],
+        "size": [
+          2.3,
+          0.1,
+          0.1
+        ]
+      },
+      "material": {
+        "name": "Mat_Discharge_Pipe_Pump_B",
+        "color": [
+          0.12,
+          0.65,
+          0.88,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.3
+      },
+      "collection": "Pipelines"
+    },
+    {
+      "id": "valve_0b58bf",
+      "name": "Discharge_Valve_V103A_Cone_Left",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        2.104,
+        0.0,
+        1.2
+      ],
+      "rotation": [
+        0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.24,
+        0.24,
+        0.24
+      ],
+      "bounding_box": {
+        "min": [
+          1.984,
+          -0.12,
+          1.08
+        ],
+        "max": [
+          2.224,
+          0.12,
+          1.32
+        ],
+        "center": [
+          2.104,
+          0.0,
+          1.2
+        ],
+        "size": [
+          0.24,
+          0.24,
+          0.24
+        ]
+      },
+      "material": {
+        "name": "Mat_Discharge_Valve_V103A",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_5615dc",
+      "name": "Discharge_Valve_V103A_Cone_Right",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        2.296,
+        0.0,
+        1.2
+      ],
+      "rotation": [
+        0.0,
+        -90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.24,
+        0.24,
+        0.24
+      ],
+      "bounding_box": {
+        "min": [
+          2.176,
+          -0.12,
+          1.08
+        ],
+        "max": [
+          2.416,
+          0.12,
+          1.32
+        ],
+        "center": [
+          2.296,
+          0.0,
+          1.2
+        ],
+        "size": [
+          0.24,
+          0.24,
+          0.24
+        ]
+      },
+      "material": {
+        "name": "Mat_Discharge_Valve_V103A",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_ad7d4f",
+      "name": "Discharge_Valve_V103A_Stem",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        2.2,
+        0.0,
+        1.284
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.0288,
+        0.0288,
+        0.12
+      ],
+      "bounding_box": {
+        "min": [
+          2.186,
+          -0.014,
+          1.224
+        ],
+        "max": [
+          2.214,
+          0.014,
+          1.344
+        ],
+        "center": [
+          2.2,
+          0.0,
+          1.284
+        ],
+        "size": [
+          0.029,
+          0.029,
+          0.12
+        ]
+      },
+      "material": {
+        "name": "Mat_Discharge_Valve_V103A",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_11af51",
+      "name": "Discharge_Valve_V103A_Wheel",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        2.2,
+        0.0,
+        1.344
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.1456,
+        0.1456,
+        0.04
+      ],
+      "bounding_box": {
+        "min": [
+          2.127,
+          -0.073,
+          1.324
+        ],
+        "max": [
+          2.273,
+          0.073,
+          1.364
+        ],
+        "center": [
+          2.2,
+          0.0,
+          1.344
+        ],
+        "size": [
+          0.146,
+          0.146,
+          0.04
+        ]
+      },
+      "material": {
+        "name": "Mat_Discharge_Valve_V103A",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_ed7677",
+      "name": "Discharge_Valve_V103B_Cone_Left",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        2.104,
+        0.0,
+        -2.2
+      ],
+      "rotation": [
+        0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.24,
+        0.24,
+        0.24
+      ],
+      "bounding_box": {
+        "min": [
+          1.984,
+          -0.12,
+          -2.32
+        ],
+        "max": [
+          2.224,
+          0.12,
+          -2.08
+        ],
+        "center": [
+          2.104,
+          0.0,
+          -2.2
+        ],
+        "size": [
+          0.24,
+          0.24,
+          0.24
+        ]
+      },
+      "material": {
+        "name": "Mat_Discharge_Valve_V103B",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_5ec2c0",
+      "name": "Discharge_Valve_V103B_Cone_Right",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        2.296,
+        0.0,
+        -2.2
+      ],
+      "rotation": [
+        0.0,
+        -90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.24,
+        0.24,
+        0.24
+      ],
+      "bounding_box": {
+        "min": [
+          2.176,
+          -0.12,
+          -2.32
+        ],
+        "max": [
+          2.416,
+          0.12,
+          -2.08
+        ],
+        "center": [
+          2.296,
+          0.0,
+          -2.2
+        ],
+        "size": [
+          0.24,
+          0.24,
+          0.24
+        ]
+      },
+      "material": {
+        "name": "Mat_Discharge_Valve_V103B",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_80498b",
+      "name": "Discharge_Valve_V103B_Stem",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        2.2,
+        0.0,
+        -2.116
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.0288,
+        0.0288,
+        0.12
+      ],
+      "bounding_box": {
+        "min": [
+          2.186,
+          -0.014,
+          -2.176
+        ],
+        "max": [
+          2.214,
+          0.014,
+          -2.056
+        ],
+        "center": [
+          2.2,
+          0.0,
+          -2.116
+        ],
+        "size": [
+          0.029,
+          0.029,
+          0.12
+        ]
+      },
+      "material": {
+        "name": "Mat_Discharge_Valve_V103B",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_ed9a07",
+      "name": "Discharge_Valve_V103B_Wheel",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        2.2,
+        0.0,
+        -2.056
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.1456,
+        0.1456,
+        0.04
+      ],
+      "bounding_box": {
+        "min": [
+          2.127,
+          -0.073,
+          -2.076
+        ],
+        "max": [
+          2.273,
+          0.073,
+          -2.036
+        ],
+        "center": [
+          2.2,
+          0.0,
+          -2.056
+        ],
+        "size": [
+          0.146,
+          0.146,
+          0.04
+        ]
+      },
+      "material": {
+        "name": "Mat_Discharge_Valve_V103B",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "arrow_7dc229",
+      "name": "Flow_Arrow_Header_1",
+      "type": "FLOW_ARROW",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        3.7,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        -0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.2,
+        0.2,
+        0.3
+      ],
+      "bounding_box": {
+        "min": [
+          3.55,
+          -0.1,
+          -0.1
+        ],
+        "max": [
+          3.85,
+          0.1,
+          0.1
+        ],
+        "center": [
+          3.7,
+          0.0,
+          0.0
+        ],
+        "size": [
+          0.3,
+          0.2,
+          0.2
+        ]
+      },
+      "material": {
+        "name": "Mat_Flow_Arrow_Header_1",
+        "color": [
+          0.15,
+          0.85,
+          0.35,
+          1.0
+        ],
+        "metallic": 0.1,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "arrow_d87469",
+      "name": "Flow_Arrow_Header_2",
+      "type": "FLOW_ARROW",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        8.8,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        -0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.2,
+        0.2,
+        0.3
+      ],
+      "bounding_box": {
+        "min": [
+          8.65,
+          -0.1,
+          -0.1
+        ],
+        "max": [
+          8.95,
+          0.1,
+          0.1
+        ],
+        "center": [
+          8.8,
+          0.0,
+          0.0
+        ],
+        "size": [
+          0.3,
+          0.2,
+          0.2
+        ]
+      },
+      "material": {
+        "name": "Mat_Flow_Arrow_Header_2",
+        "color": [
+          0.15,
+          0.85,
+          0.35,
+          1.0
+        ],
+        "metallic": 0.1,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "arrow_9e7f5a",
+      "name": "Flow_Arrow_Pump_A_Discharge",
+      "type": "FLOW_ARROW",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        2.6,
+        0.0,
+        1.2
+      ],
+      "rotation": [
+        -0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.18,
+        0.18,
+        0.26
+      ],
+      "bounding_box": {
+        "min": [
+          2.47,
+          -0.09,
+          1.11
+        ],
+        "max": [
+          2.73,
+          0.09,
+          1.29
+        ],
+        "center": [
+          2.6,
+          0.0,
+          1.2
+        ],
+        "size": [
+          0.26,
+          0.18,
+          0.18
+        ]
+      },
+      "material": {
+        "name": "Mat_Flow_Arrow_Pump_A_Discharge",
+        "color": [
+          0.15,
+          0.85,
+          0.35,
+          1.0
+        ],
+        "metallic": 0.1,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "arrow_6757f5",
+      "name": "Flow_Arrow_Pump_A_Inlet",
+      "type": "FLOW_ARROW",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -1.5,
+        0.0,
+        1.2
+      ],
+      "rotation": [
+        -0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.18,
+        0.18,
+        0.26
+      ],
+      "bounding_box": {
+        "min": [
+          -1.63,
+          -0.09,
+          1.11
+        ],
+        "max": [
+          -1.37,
+          0.09,
+          1.29
+        ],
+        "center": [
+          -1.5,
+          0.0,
+          1.2
+        ],
+        "size": [
+          0.26,
+          0.18,
+          0.18
+        ]
+      },
+      "material": {
+        "name": "Mat_Flow_Arrow_Pump_A_Inlet",
+        "color": [
+          0.15,
+          0.85,
+          0.35,
+          1.0
+        ],
+        "metallic": 0.1,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "arrow_543981",
+      "name": "Flow_Arrow_Pump_B_Discharge",
+      "type": "FLOW_ARROW",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        2.6,
+        0.0,
+        -2.2
+      ],
+      "rotation": [
+        -0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.18,
+        0.18,
+        0.26
+      ],
+      "bounding_box": {
+        "min": [
+          2.47,
+          -0.09,
+          -2.29
+        ],
+        "max": [
+          2.73,
+          0.09,
+          -2.11
+        ],
+        "center": [
+          2.6,
+          0.0,
+          -2.2
+        ],
+        "size": [
+          0.26,
+          0.18,
+          0.18
+        ]
+      },
+      "material": {
+        "name": "Mat_Flow_Arrow_Pump_B_Discharge",
+        "color": [
+          0.15,
+          0.85,
+          0.35,
+          1.0
+        ],
+        "metallic": 0.1,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "arrow_c42806",
+      "name": "Flow_Arrow_Pump_B_Inlet",
+      "type": "FLOW_ARROW",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -1.5,
+        0.0,
+        -2.2
+      ],
+      "rotation": [
+        -0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.18,
+        0.18,
+        0.26
+      ],
+      "bounding_box": {
+        "min": [
+          -1.63,
+          -0.09,
+          -2.29
+        ],
+        "max": [
+          -1.37,
+          0.09,
+          -2.11
+        ],
+        "center": [
+          -1.5,
+          0.0,
+          -2.2
+        ],
+        "size": [
+          0.26,
+          0.18,
+          0.18
+        ]
+      },
+      "material": {
+        "name": "Mat_Flow_Arrow_Pump_B_Inlet",
+        "color": [
+          0.15,
+          0.85,
+          0.35,
+          1.0
+        ],
+        "metallic": 0.1,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "arrow_53947a",
+      "name": "Flow_Arrow_Suction_Main",
+      "type": "FLOW_ARROW",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -3.7,
+        0.0,
+        -1.2
+      ],
+      "rotation": [
+        -0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.22,
+        0.22,
+        0.32
+      ],
+      "bounding_box": {
+        "min": [
+          -3.86,
+          -0.11,
+          -1.31
+        ],
+        "max": [
+          -3.54,
+          0.11,
+          -1.09
+        ],
+        "center": [
+          -3.7,
+          0.0,
+          -1.2
+        ],
+        "size": [
+          0.32,
+          0.22,
+          0.22
+        ]
+      },
+      "material": {
+        "name": "Mat_Flow_Arrow_Suction_Main",
+        "color": [
+          0.15,
+          0.85,
+          0.35,
+          1.0
+        ],
+        "metallic": 0.1,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "pipe_c2d07c",
+      "name": "Flow_Sensor_Line",
+      "type": "PIPELINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.04,
+        0.04,
+        1.0
+      ],
+      "bounding_box": {
+        "min": [
+          5.88,
+          -0.02,
+          0.0
+        ],
+        "max": [
+          5.92,
+          0.02,
+          1.0
+        ],
+        "center": [
+          5.9,
+          0.0,
+          0.5
+        ],
+        "size": [
+          0.04,
+          0.04,
+          1.0
+        ]
+      },
+      "material": {
+        "name": "Mat_Flow_Sensor_Line",
+        "color": [
+          0.75,
+          0.75,
+          0.8,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.3
+      },
+      "collection": "Pipelines"
+    },
+    {
+      "id": "inst_e5b0b3",
+      "name": "Flow_Transmitter_FT101_Disc",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Instruments",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        5.9,
+        0.0,
+        1.4
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.45,
+        0.45,
+        0.04
+      ],
+      "bounding_box": {
+        "min": [
+          5.675,
+          -0.225,
+          1.38
+        ],
+        "max": [
+          6.125,
+          0.225,
+          1.42
+        ],
+        "center": [
+          5.9,
+          0.0,
+          1.4
+        ],
+        "size": [
+          0.45,
+          0.45,
+          0.04
+        ]
+      },
+      "material": {
+        "name": "Mat_Flow_Transmitter_FT101_Disc",
+        "color": [
+          0.08,
+          0.09,
+          0.12,
+          1.0
+        ],
+        "metallic": 0.1,
+        "roughness": 0.5
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "inst_b7560b",
+      "name": "Flow_Transmitter_FT101_Ring",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Instruments",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        5.9,
+        0.0,
+        1.4
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.49,
+        0.49,
+        0.04
+      ],
+      "bounding_box": {
+        "min": [
+          5.655,
+          -0.245,
+          1.38
+        ],
+        "max": [
+          6.145,
+          0.245,
+          1.42
+        ],
+        "center": [
+          5.9,
+          0.0,
+          1.4
+        ],
+        "size": [
+          0.49,
+          0.49,
+          0.04
+        ]
+      },
+      "material": {
+        "name": "Mat_Flow_Transmitter_FT101_Ring",
+        "color": [
+          0.95,
+          0.85,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.2
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "label_335723",
+      "name": "Label_Pipeline_Discharge",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        4.5,
+        0.0,
+        -0.4
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.5111,
+        0.1305,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          3.748,
+          -0.056,
+          -0.415
+        ],
+        "max": [
+          5.259,
+          0.075,
+          -0.385
+        ],
+        "center": [
+          4.503,
+          0.01,
+          -0.4
+        ],
+        "size": [
+          1.511,
+          0.131,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Label_Pipeline_Discharge_Text",
+        "color": [
+          0.8,
+          0.9,
+          1.0,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_d0e8e4",
+      "name": "Label_Pipeline_Suction",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -4.4,
+        0.0,
+        -1.6
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.4681,
+        0.1305,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -5.136,
+          -0.056,
+          -1.615
+        ],
+        "max": [
+          -3.668,
+          0.075,
+          -1.585
+        ],
+        "center": [
+          -4.402,
+          0.01,
+          -1.6
+        ],
+        "size": [
+          1.468,
+          0.131,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Label_Pipeline_Suction_Text",
+        "color": [
+          0.8,
+          0.9,
+          1.0,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_7682ba",
+      "name": "Label_Process_Delivery",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        9.8,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        3.6132,
+        0.14,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          7.99,
+          -0.062,
+          -0.015
+        ],
+        "max": [
+          11.603,
+          0.078,
+          0.015
+        ],
+        "center": [
+          9.796,
+          0.008,
+          0.0
+        ],
+        "size": [
+          3.613,
+          0.14,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Label_Process_Delivery_Text",
+        "color": [
+          0.2,
+          0.9,
+          0.4,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "inst_6994bd",
+      "name": "Level_Transmitter_LT101_Disc",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Instruments",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -7.0,
+        0.0,
+        2.8
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.42,
+        0.42,
+        0.04
+      ],
+      "bounding_box": {
+        "min": [
+          -7.21,
+          -0.21,
+          2.78
+        ],
+        "max": [
+          -6.79,
+          0.21,
+          2.82
+        ],
+        "center": [
+          -7.0,
+          0.0,
+          2.8
+        ],
+        "size": [
+          0.42,
+          0.42,
+          0.04
+        ]
+      },
+      "material": {
+        "name": "Mat_Level_Transmitter_LT101_Disc",
+        "color": [
+          0.08,
+          0.09,
+          0.12,
+          1.0
+        ],
+        "metallic": 0.1,
+        "roughness": 0.5
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "inst_332f13",
+      "name": "Level_Transmitter_LT101_Ring",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Instruments",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -7.0,
+        0.0,
+        2.8
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.46,
+        0.46,
+        0.04
+      ],
+      "bounding_box": {
+        "min": [
+          -7.23,
+          -0.23,
+          2.78
+        ],
+        "max": [
+          -6.77,
+          0.23,
+          2.82
+        ],
+        "center": [
+          -7.0,
+          0.0,
+          2.8
+        ],
+        "size": [
+          0.46,
+          0.46,
+          0.04
+        ]
+      },
+      "material": {
+        "name": "Mat_Level_Transmitter_LT101_Ring",
+        "color": [
+          0.95,
+          0.85,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.2
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "pipe_aacb20",
+      "name": "Pressure_Impulse_Line",
+      "type": "PIPELINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.04,
+        0.04,
+        1.0
+      ],
+      "bounding_box": {
+        "min": [
+          4.48,
+          -0.02,
+          0.0
+        ],
+        "max": [
+          4.52,
+          0.02,
+          1.0
+        ],
+        "center": [
+          4.5,
+          0.0,
+          0.5
+        ],
+        "size": [
+          0.04,
+          0.04,
+          1.0
+        ]
+      },
+      "material": {
+        "name": "Mat_Pressure_Impulse_Line",
+        "color": [
+          0.75,
+          0.75,
+          0.8,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.3
+      },
+      "collection": "Pipelines"
+    },
+    {
+      "id": "inst_9e211e",
+      "name": "Pressure_Transmitter_PT101_Disc",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Instruments",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        4.5,
+        0.0,
+        1.4
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.45,
+        0.45,
+        0.04
+      ],
+      "bounding_box": {
+        "min": [
+          4.275,
+          -0.225,
+          1.38
+        ],
+        "max": [
+          4.725,
+          0.225,
+          1.42
+        ],
+        "center": [
+          4.5,
+          0.0,
+          1.4
+        ],
+        "size": [
+          0.45,
+          0.45,
+          0.04
+        ]
+      },
+      "material": {
+        "name": "Mat_Pressure_Transmitter_PT101_Disc",
+        "color": [
+          0.08,
+          0.09,
+          0.12,
+          1.0
+        ],
+        "metallic": 0.1,
+        "roughness": 0.5
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "inst_3767c9",
+      "name": "Pressure_Transmitter_PT101_Ring",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Instruments",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        4.5,
+        0.0,
+        1.4
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.49,
+        0.49,
+        0.04
+      ],
+      "bounding_box": {
+        "min": [
+          4.255,
+          -0.245,
+          1.38
+        ],
+        "max": [
+          4.745,
+          0.245,
+          1.42
+        ],
+        "center": [
+          4.5,
+          0.0,
+          1.4
+        ],
+        "size": [
+          0.49,
+          0.49,
+          0.04
+        ]
+      },
+      "material": {
+        "name": "Mat_Pressure_Transmitter_PT101_Ring",
+        "color": [
+          0.95,
+          0.85,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.2
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "pipe_1cb02f",
+      "name": "Signal_Line_FT_To_PLC",
+      "type": "SIGNAL_LINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.024,
+        0.024,
+        0.9
+      ],
+      "bounding_box": {
+        "min": [
+          5.888,
+          -0.012,
+          1.9
+        ],
+        "max": [
+          5.912,
+          0.012,
+          2.8
+        ],
+        "center": [
+          5.9,
+          0.0,
+          2.35
+        ],
+        "size": [
+          0.024,
+          0.024,
+          0.9
+        ]
+      },
+      "material": {
+        "name": "Mat_Signal_Line_FT_To_PLC",
+        "color": [
+          0.95,
+          0.7,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.3
+      },
+      "collection": "Instruments"
+    },
+    {
+      "id": "pipe_37d4ee",
+      "name": "Signal_Line_PLC_To_CV101",
+      "type": "SIGNAL_LINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.112,
+        0.024,
+        2.612
+      ],
+      "bounding_box": {
+        "min": [
+          6.3,
+          -0.012,
+          0.8
+        ],
+        "max": [
+          7.412,
+          0.012,
+          3.412
+        ],
+        "center": [
+          6.856,
+          0.0,
+          2.106
+        ],
+        "size": [
+          1.112,
+          0.024,
+          2.612
+        ]
+      },
+      "material": {
+        "name": "Mat_Signal_Line_PLC_To_CV101",
+        "color": [
+          0.95,
+          0.7,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.3
+      },
+      "collection": "Instruments"
+    },
+    {
+      "id": "pipe_14bbee",
+      "name": "Signal_Line_PLC_To_Pump_A",
+      "type": "SIGNAL_LINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        4.112,
+        0.024,
+        1.512
+      ],
+      "bounding_box": {
+        "min": [
+          -0.012,
+          -0.012,
+          1.9
+        ],
+        "max": [
+          4.1,
+          0.012,
+          3.412
+        ],
+        "center": [
+          2.044,
+          0.0,
+          2.656
+        ],
+        "size": [
+          4.112,
+          0.024,
+          1.512
+        ]
+      },
+      "material": {
+        "name": "Mat_Signal_Line_PLC_To_Pump_A",
+        "color": [
+          0.95,
+          0.7,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.3
+      },
+      "collection": "Instruments"
+    },
+    {
+      "id": "pipe_c8dd33",
+      "name": "Signal_Line_PT_To_PLC",
+      "type": "SIGNAL_LINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.412,
+        0.024,
+        1.512
+      ],
+      "bounding_box": {
+        "min": [
+          4.1,
+          -0.012,
+          1.9
+        ],
+        "max": [
+          4.512,
+          0.012,
+          3.412
+        ],
+        "center": [
+          4.306,
+          0.0,
+          2.656
+        ],
+        "size": [
+          0.412,
+          0.024,
+          1.512
+        ]
+      },
+      "material": {
+        "name": "Mat_Signal_Line_PT_To_PLC",
+        "color": [
+          0.95,
+          0.7,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.3
+      },
+      "collection": "Instruments"
+    },
+    {
+      "id": "label_5be91d",
+      "name": "Sub_Controller_PLC100",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        5.2,
+        0.0,
+        3.15
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.6096,
+        0.084,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          4.395,
+          -0.037,
+          3.135
+        ],
+        "max": [
+          6.005,
+          0.047,
+          3.165
+        ],
+        "center": [
+          5.2,
+          0.005,
+          3.15
+        ],
+        "size": [
+          1.61,
+          0.084,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Sub_Controller_PLC100_Text",
+        "color": [
+          0.75,
+          0.85,
+          1.0,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_fe5d2b",
+      "name": "Sub_Flow_Transmitter_FT101",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        5.9,
+        0.0,
+        1.085
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.6055,
+        0.1294,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          5.098,
+          -0.074,
+          1.07
+        ],
+        "max": [
+          6.704,
+          0.055,
+          1.1
+        ],
+        "center": [
+          5.901,
+          -0.01,
+          1.085
+        ],
+        "size": [
+          1.606,
+          0.129,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Sub_Flow_Transmitter_FT101_Text",
+        "color": [
+          0.8,
+          0.8,
+          0.8,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_19bd6c",
+      "name": "Sub_Level_Transmitter_LT101",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -7.0,
+        0.0,
+        2.506
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.0014,
+        0.0967,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -7.495,
+          -0.043,
+          2.491
+        ],
+        "max": [
+          -6.494,
+          0.053,
+          2.521
+        ],
+        "center": [
+          -6.995,
+          0.005,
+          2.506
+        ],
+        "size": [
+          1.001,
+          0.097,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Sub_Level_Transmitter_LT101_Text",
+        "color": [
+          0.8,
+          0.8,
+          0.8,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_e11a5f",
+      "name": "Sub_Pressure_Transmitter_PT101",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        4.5,
+        0.0,
+        1.085
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.8011,
+        0.1294,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          3.6,
+          -0.074,
+          1.07
+        ],
+        "max": [
+          5.401,
+          0.055,
+          1.1
+        ],
+        "center": [
+          4.5,
+          -0.01,
+          1.085
+        ],
+        "size": [
+          1.801,
+          0.129,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Sub_Pressure_Transmitter_PT101_Text",
+        "color": [
+          0.8,
+          0.8,
+          0.8,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_109d19",
+      "name": "Sub_Water_Pump_P101A",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.3
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.5101,
+        0.1386,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -0.754,
+          -0.08,
+          0.285
+        ],
+        "max": [
+          0.756,
+          0.059,
+          0.315
+        ],
+        "center": [
+          0.001,
+          -0.01,
+          0.3
+        ],
+        "size": [
+          1.51,
+          0.139,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Sub_Water_Pump_P101A_Text",
+        "color": [
+          0.75,
+          0.85,
+          0.95,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_3a0e34",
+      "name": "Sub_Water_Pump_P101B",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        -3.1
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.7796,
+        0.1386,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -0.892,
+          -0.08,
+          -3.115
+        ],
+        "max": [
+          0.888,
+          0.059,
+          -3.085
+        ],
+        "center": [
+          -0.002,
+          -0.01,
+          -3.1
+        ],
+        "size": [
+          1.78,
+          0.139,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Sub_Water_Pump_P101B_Text",
+        "color": [
+          0.75,
+          0.85,
+          0.95,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_07d1bd",
+      "name": "Sub_Water_Storage_Tank_TK101",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -7.0,
+        0.0,
+        -0.2
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.9937,
+        0.3458,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -7.997,
+          -0.185,
+          -0.215
+        ],
+        "max": [
+          -6.003,
+          0.16,
+          -0.185
+        ],
+        "center": [
+          -7.0,
+          -0.013,
+          -0.2
+        ],
+        "size": [
+          1.994,
+          0.346,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Sub_Water_Storage_Tank_TK101_Text",
+        "color": [
+          0.8,
+          0.9,
+          1.0,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "pipe_44ab77",
+      "name": "Suction_Branch_Pump_A",
+      "type": "PIPELINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.7,
+        0.1,
+        0.1
+      ],
+      "bounding_box": {
+        "min": [
+          -3.0,
+          -0.05,
+          1.15
+        ],
+        "max": [
+          -1.3,
+          0.05,
+          1.25
+        ],
+        "center": [
+          -2.15,
+          -0.0,
+          1.2
+        ],
+        "size": [
+          1.7,
+          0.1,
+          0.1
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Branch_Pump_A",
+        "color": [
+          0.12,
+          0.65,
+          0.88,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.3
+      },
+      "collection": "Pipelines"
+    },
+    {
+      "id": "pipe_c34fb1",
+      "name": "Suction_Branch_Pump_B",
+      "type": "PIPELINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        1.7,
+        0.1,
+        0.1
+      ],
+      "bounding_box": {
+        "min": [
+          -3.0,
+          -0.05,
+          -2.25
+        ],
+        "max": [
+          -1.3,
+          0.05,
+          -2.15
+        ],
+        "center": [
+          -2.15,
+          -0.0,
+          -2.2
+        ],
+        "size": [
+          1.7,
+          0.1,
+          0.1
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Branch_Pump_B",
+        "color": [
+          0.12,
+          0.65,
+          0.88,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.3
+      },
+      "collection": "Pipelines"
+    },
+    {
+      "id": "pipe_e16a6b",
+      "name": "Suction_Header_Manifold",
+      "type": "PIPELINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.12,
+        0.12,
+        3.4
+      ],
+      "bounding_box": {
+        "min": [
+          -3.06,
+          -0.06,
+          -2.2
+        ],
+        "max": [
+          -2.94,
+          0.06,
+          1.2
+        ],
+        "center": [
+          -3.0,
+          0.0,
+          -0.5
+        ],
+        "size": [
+          0.12,
+          0.12,
+          3.4
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Header_Manifold",
+        "color": [
+          0.12,
+          0.65,
+          0.88,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.3
+      },
+      "collection": "Pipelines"
+    },
+    {
+      "id": "pipe_fe9427",
+      "name": "Suction_Line_Tank_To_Manifold",
+      "type": "PIPELINE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        2.6,
+        0.12,
+        0.12
+      ],
+      "bounding_box": {
+        "min": [
+          -5.6,
+          -0.06,
+          -1.26
+        ],
+        "max": [
+          -3.0,
+          0.06,
+          -1.14
+        ],
+        "center": [
+          -4.3,
+          0.0,
+          -1.2
+        ],
+        "size": [
+          2.6,
+          0.12,
+          0.12
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Line_Tank_To_Manifold",
+        "color": [
+          0.12,
+          0.65,
+          0.88,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.3
+      },
+      "collection": "Pipelines"
+    },
+    {
+      "id": "valve_0224a5",
+      "name": "Suction_Valve_V101_Cone_Left",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -4.512,
+        0.0,
+        -1.2
+      ],
+      "rotation": [
+        0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.28,
+        0.28,
+        0.28
+      ],
+      "bounding_box": {
+        "min": [
+          -4.652,
+          -0.14,
+          -1.34
+        ],
+        "max": [
+          -4.372,
+          0.14,
+          -1.06
+        ],
+        "center": [
+          -4.512,
+          0.0,
+          -1.2
+        ],
+        "size": [
+          0.28,
+          0.28,
+          0.28
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Valve_V101",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_57d7b3",
+      "name": "Suction_Valve_V101_Cone_Right",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -4.288,
+        0.0,
+        -1.2
+      ],
+      "rotation": [
+        0.0,
+        -90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.28,
+        0.28,
+        0.28
+      ],
+      "bounding_box": {
+        "min": [
+          -4.428,
+          -0.14,
+          -1.34
+        ],
+        "max": [
+          -4.148,
+          0.14,
+          -1.06
+        ],
+        "center": [
+          -4.288,
+          0.0,
+          -1.2
+        ],
+        "size": [
+          0.28,
+          0.28,
+          0.28
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Valve_V101",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_8101e2",
+      "name": "Suction_Valve_V101_Stem",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -4.4,
+        0.0,
+        -1.102
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.0336,
+        0.0336,
+        0.14
+      ],
+      "bounding_box": {
+        "min": [
+          -4.417,
+          -0.017,
+          -1.172
+        ],
+        "max": [
+          -4.383,
+          0.017,
+          -1.032
+        ],
+        "center": [
+          -4.4,
+          0.0,
+          -1.102
+        ],
+        "size": [
+          0.034,
+          0.034,
+          0.14
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Valve_V101",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_2bc9ef",
+      "name": "Suction_Valve_V101_Wheel",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -4.4,
+        0.0,
+        -1.032
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.1632,
+        0.1632,
+        0.04
+      ],
+      "bounding_box": {
+        "min": [
+          -4.482,
+          -0.082,
+          -1.052
+        ],
+        "max": [
+          -4.318,
+          0.082,
+          -1.012
+        ],
+        "center": [
+          -4.4,
+          0.0,
+          -1.032
+        ],
+        "size": [
+          0.163,
+          0.163,
+          0.04
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Valve_V101",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_20d6b6",
+      "name": "Suction_Valve_V102A_Cone_Left",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -2.196,
+        0.0,
+        1.2
+      ],
+      "rotation": [
+        0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.24,
+        0.24,
+        0.24
+      ],
+      "bounding_box": {
+        "min": [
+          -2.316,
+          -0.12,
+          1.08
+        ],
+        "max": [
+          -2.076,
+          0.12,
+          1.32
+        ],
+        "center": [
+          -2.196,
+          0.0,
+          1.2
+        ],
+        "size": [
+          0.24,
+          0.24,
+          0.24
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Valve_V102A",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_ec2a86",
+      "name": "Suction_Valve_V102A_Cone_Right",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -2.004,
+        0.0,
+        1.2
+      ],
+      "rotation": [
+        0.0,
+        -90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.24,
+        0.24,
+        0.24
+      ],
+      "bounding_box": {
+        "min": [
+          -2.124,
+          -0.12,
+          1.08
+        ],
+        "max": [
+          -1.884,
+          0.12,
+          1.32
+        ],
+        "center": [
+          -2.004,
+          0.0,
+          1.2
+        ],
+        "size": [
+          0.24,
+          0.24,
+          0.24
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Valve_V102A",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_cf56dd",
+      "name": "Suction_Valve_V102A_Stem",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -2.1,
+        0.0,
+        1.284
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.0288,
+        0.0288,
+        0.12
+      ],
+      "bounding_box": {
+        "min": [
+          -2.114,
+          -0.014,
+          1.224
+        ],
+        "max": [
+          -2.086,
+          0.014,
+          1.344
+        ],
+        "center": [
+          -2.1,
+          0.0,
+          1.284
+        ],
+        "size": [
+          0.029,
+          0.029,
+          0.12
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Valve_V102A",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_02cdc9",
+      "name": "Suction_Valve_V102A_Wheel",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -2.1,
+        0.0,
+        1.344
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.1456,
+        0.1456,
+        0.04
+      ],
+      "bounding_box": {
+        "min": [
+          -2.173,
+          -0.073,
+          1.324
+        ],
+        "max": [
+          -2.027,
+          0.073,
+          1.364
+        ],
+        "center": [
+          -2.1,
+          0.0,
+          1.344
+        ],
+        "size": [
+          0.146,
+          0.146,
+          0.04
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Valve_V102A",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_db7520",
+      "name": "Suction_Valve_V102B_Cone_Left",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -2.196,
+        0.0,
+        -2.2
+      ],
+      "rotation": [
+        0.0,
+        90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.24,
+        0.24,
+        0.24
+      ],
+      "bounding_box": {
+        "min": [
+          -2.316,
+          -0.12,
+          -2.32
+        ],
+        "max": [
+          -2.076,
+          0.12,
+          -2.08
+        ],
+        "center": [
+          -2.196,
+          0.0,
+          -2.2
+        ],
+        "size": [
+          0.24,
+          0.24,
+          0.24
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Valve_V102B",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_118bfb",
+      "name": "Suction_Valve_V102B_Cone_Right",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -2.004,
+        0.0,
+        -2.2
+      ],
+      "rotation": [
+        0.0,
+        -90.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.24,
+        0.24,
+        0.24
+      ],
+      "bounding_box": {
+        "min": [
+          -2.124,
+          -0.12,
+          -2.32
+        ],
+        "max": [
+          -1.884,
+          0.12,
+          -2.08
+        ],
+        "center": [
+          -2.004,
+          0.0,
+          -2.2
+        ],
+        "size": [
+          0.24,
+          0.24,
+          0.24
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Valve_V102B",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_bfb4a2",
+      "name": "Suction_Valve_V102B_Stem",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -2.1,
+        0.0,
+        -2.116
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.0288,
+        0.0288,
+        0.12
+      ],
+      "bounding_box": {
+        "min": [
+          -2.114,
+          -0.014,
+          -2.176
+        ],
+        "max": [
+          -2.086,
+          0.014,
+          -2.056
+        ],
+        "center": [
+          -2.1,
+          0.0,
+          -2.116
+        ],
+        "size": [
+          0.029,
+          0.029,
+          0.12
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Valve_V102B",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "valve_a3a594",
+      "name": "Suction_Valve_V102B_Wheel",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Valve",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -2.1,
+        0.0,
+        -2.056
+      ],
+      "rotation": [
+        0.0,
+        -0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.1456,
+        0.1456,
+        0.04
+      ],
+      "bounding_box": {
+        "min": [
+          -2.173,
+          -0.073,
+          -2.076
+        ],
+        "max": [
+          -2.027,
+          0.073,
+          -2.036
+        ],
+        "center": [
+          -2.1,
+          0.0,
+          -2.056
+        ],
+        "size": [
+          0.146,
+          0.146,
+          0.04
+        ]
+      },
+      "material": {
+        "name": "Mat_Suction_Valve_V102B",
+        "color": [
+          0.95,
+          0.45,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.7,
+        "roughness": 0.3
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "label_65dcfc",
+      "name": "Tag_Check_Valve_NRV101A",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        1.4,
+        0.0,
+        1.464
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.7929,
+        0.126,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          1.01,
+          -0.056,
+          1.449
+        ],
+        "max": [
+          1.803,
+          0.07,
+          1.479
+        ],
+        "center": [
+          1.407,
+          0.007,
+          1.464
+        ],
+        "size": [
+          0.793,
+          0.126,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Check_Valve_NRV101A_Text",
+        "color": [
+          1.0,
+          0.9,
+          0.3,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_f0763a",
+      "name": "Tag_Check_Valve_NRV101B",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        1.4,
+        0.0,
+        -1.936
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.7706,
+        0.126,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          1.02,
+          -0.056,
+          -1.951
+        ],
+        "max": [
+          1.79,
+          0.07,
+          -1.921
+        ],
+        "center": [
+          1.405,
+          0.007,
+          -1.936
+        ],
+        "size": [
+          0.771,
+          0.126,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Check_Valve_NRV101B_Text",
+        "color": [
+          1.0,
+          0.9,
+          0.3,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_2b4f7b",
+      "name": "Tag_Control_Valve_CV101",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        7.4,
+        0.0,
+        0.352
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.5197,
+        0.126,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          7.126,
+          -0.056,
+          0.337
+        ],
+        "max": [
+          7.646,
+          0.07,
+          0.367
+        ],
+        "center": [
+          7.386,
+          0.007,
+          0.352
+        ],
+        "size": [
+          0.52,
+          0.126,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Control_Valve_CV101_Text",
+        "color": [
+          1.0,
+          0.9,
+          0.3,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_253732",
+      "name": "Tag_Controller_PLC100",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        5.2,
+        0.0,
+        3.45
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.3505,
+        0.374,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          5.028,
+          -0.178,
+          3.435
+        ],
+        "max": [
+          5.378,
+          0.196,
+          3.465
+        ],
+        "center": [
+          5.203,
+          0.009,
+          3.45
+        ],
+        "size": [
+          0.35,
+          0.374,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Controller_PLC100_Text",
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_b31994",
+      "name": "Tag_Discharge_Valve_V103A",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        2.2,
+        0.0,
+        1.464
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.5569,
+        0.126,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          1.922,
+          -0.056,
+          1.449
+        ],
+        "max": [
+          2.478,
+          0.07,
+          1.479
+        ],
+        "center": [
+          2.2,
+          0.007,
+          1.464
+        ],
+        "size": [
+          0.557,
+          0.126,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Discharge_Valve_V103A_Text",
+        "color": [
+          1.0,
+          0.9,
+          0.3,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_c59aa4",
+      "name": "Tag_Discharge_Valve_V103B",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        2.2,
+        0.0,
+        -1.936
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.5346,
+        0.126,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          1.931,
+          -0.056,
+          -1.951
+        ],
+        "max": [
+          2.466,
+          0.07,
+          -1.921
+        ],
+        "center": [
+          2.198,
+          0.007,
+          -1.936
+        ],
+        "size": [
+          0.535,
+          0.126,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Discharge_Valve_V103B_Text",
+        "color": [
+          1.0,
+          0.9,
+          0.3,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_3ec3a8",
+      "name": "Tag_Flow_Transmitter_FT101",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        5.9,
+        0.0,
+        1.44
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.1757,
+        0.2706,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          5.812,
+          -0.129,
+          1.425
+        ],
+        "max": [
+          5.988,
+          0.141,
+          1.455
+        ],
+        "center": [
+          5.9,
+          0.006,
+          1.44
+        ],
+        "size": [
+          0.176,
+          0.271,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Flow_Transmitter_FT101_Text",
+        "color": [
+          0.95,
+          0.85,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_87938e",
+      "name": "Tag_Level_Transmitter_LT101",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -7.0,
+        0.0,
+        2.84
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.1757,
+        0.2706,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -7.088,
+          -0.129,
+          2.825
+        ],
+        "max": [
+          -6.912,
+          0.141,
+          2.855
+        ],
+        "center": [
+          -7.0,
+          0.006,
+          2.84
+        ],
+        "size": [
+          0.176,
+          0.271,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Level_Transmitter_LT101_Text",
+        "color": [
+          0.95,
+          0.85,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_6e76a7",
+      "name": "Tag_Pressure_Transmitter_PT101",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        4.5,
+        0.0,
+        1.44
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.1757,
+        0.2706,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          4.412,
+          -0.129,
+          1.425
+        ],
+        "max": [
+          4.588,
+          0.141,
+          1.455
+        ],
+        "center": [
+          4.5,
+          0.006,
+          1.44
+        ],
+        "size": [
+          0.176,
+          0.271,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Pressure_Transmitter_PT101_Text",
+        "color": [
+          0.95,
+          0.85,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_c75fec",
+      "name": "Tag_Suction_Valve_V101",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -4.4,
+        0.0,
+        -0.892
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.4009,
+        0.126,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -4.618,
+          -0.056,
+          -0.907
+        ],
+        "max": [
+          -4.218,
+          0.07,
+          -0.877
+        ],
+        "center": [
+          -4.418,
+          0.007,
+          -0.892
+        ],
+        "size": [
+          0.401,
+          0.126,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Suction_Valve_V101_Text",
+        "color": [
+          1.0,
+          0.9,
+          0.3,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_8adfe4",
+      "name": "Tag_Suction_Valve_V102A",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -2.1,
+        0.0,
+        1.464
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.5569,
+        0.126,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -2.378,
+          -0.056,
+          1.449
+        ],
+        "max": [
+          -1.822,
+          0.07,
+          1.479
+        ],
+        "center": [
+          -2.1,
+          0.007,
+          1.464
+        ],
+        "size": [
+          0.557,
+          0.126,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Suction_Valve_V102A_Text",
+        "color": [
+          1.0,
+          0.9,
+          0.3,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_727490",
+      "name": "Tag_Suction_Valve_V102B",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -2.1,
+        0.0,
+        -1.936
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.5346,
+        0.126,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -2.369,
+          -0.056,
+          -1.951
+        ],
+        "max": [
+          -1.834,
+          0.07,
+          -1.921
+        ],
+        "center": [
+          -2.102,
+          0.007,
+          -1.936
+        ],
+        "size": [
+          0.535,
+          0.126,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Suction_Valve_V102B_Text",
+        "color": [
+          1.0,
+          0.9,
+          0.3,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_430f01",
+      "name": "Tag_Water_Pump_P101A",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.552
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.6446,
+        0.154,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -0.315,
+          -0.068,
+          0.537
+        ],
+        "max": [
+          0.33,
+          0.086,
+          0.567
+        ],
+        "center": [
+          0.008,
+          0.009,
+          0.552
+        ],
+        "size": [
+          0.645,
+          0.154,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Water_Pump_P101A_Text",
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_bf8fc5",
+      "name": "Tag_Water_Pump_P101B",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        -2.848
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.6173,
+        0.154,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -0.303,
+          -0.068,
+          -2.863
+        ],
+        "max": [
+          0.314,
+          0.086,
+          -2.833
+        ],
+        "center": [
+          0.006,
+          0.009,
+          -2.848
+        ],
+        "size": [
+          0.617,
+          0.154,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Water_Pump_P101B_Text",
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_a5249d",
+      "name": "Tag_Water_Storage_Tank_TK101",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -7.0,
+        0.0,
+        0.3
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.8025,
+        0.196,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          -7.427,
+          -0.087,
+          0.285
+        ],
+        "max": [
+          -6.624,
+          0.109,
+          0.315
+        ],
+        "center": [
+          -7.026,
+          0.011,
+          0.3
+        ],
+        "size": [
+          0.802,
+          0.196,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Tag_Water_Storage_Tank_TK101_Text",
+        "color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "label_f306ab",
+      "name": "Title_Block",
+      "type": "TEXT_LABEL",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        5.5,
+        0.0,
+        -3.6
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        4.351,
+        0.648,
+        0.03
+      ],
+      "bounding_box": {
+        "min": [
+          3.325,
+          -0.314,
+          -3.615
+        ],
+        "max": [
+          7.676,
+          0.334,
+          -3.585
+        ],
+        "center": [
+          5.5,
+          0.01,
+          -3.6
+        ],
+        "size": [
+          4.351,
+          0.648,
+          0.03
+        ]
+      },
+      "material": {
+        "name": "Mat_Title_Block_Text",
+        "color": [
+          1.0,
+          0.95,
+          0.4,
+          1.0
+        ],
+        "metallic": 0.0,
+        "roughness": 0.2
+      },
+      "collection": "Labels"
+    },
+    {
+      "id": "pump_f2c131",
+      "name": "Water_Pump_P101A_Base",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Pumps",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        0.804
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.648,
+        0.2,
+        0.12
+      ],
+      "dimensions": [
+        0.648,
+        0.2,
+        0.12
+      ],
+      "bounding_box": {
+        "min": [
+          -0.324,
+          -0.1,
+          0.744
+        ],
+        "max": [
+          0.324,
+          0.1,
+          0.864
+        ],
+        "center": [
+          0.0,
+          0.0,
+          0.804
+        ],
+        "size": [
+          0.648,
+          0.2,
+          0.12
+        ]
+      },
+      "material": {
+        "name": "Mat_Water_Pump_P101A",
+        "color": [
+          0.2,
+          0.78,
+          0.35,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.25
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "pump_7e5941",
+      "name": "Water_Pump_P101A_Casing",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Pumps",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.72,
+        0.72,
+        0.15
+      ],
+      "bounding_box": {
+        "min": [
+          -0.36,
+          -0.36,
+          1.125
+        ],
+        "max": [
+          0.36,
+          0.36,
+          1.275
+        ],
+        "center": [
+          0.0,
+          0.0,
+          1.2
+        ],
+        "size": [
+          0.72,
+          0.72,
+          0.15
+        ]
+      },
+      "material": {
+        "name": "Mat_Water_Pump_P101A",
+        "color": [
+          0.2,
+          0.78,
+          0.35,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.25
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "pump_e56c2d",
+      "name": "Water_Pump_P101A_Nozzle",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Pumps",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.1296,
+        0.0,
+        1.452
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        -30.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.5612,
+        0.486,
+        0.15
+      ],
+      "bounding_box": {
+        "min": [
+          -0.194,
+          -0.281,
+          1.377
+        ],
+        "max": [
+          0.535,
+          0.421,
+          1.527
+        ],
+        "center": [
+          0.17,
+          0.07,
+          1.452
+        ],
+        "size": [
+          0.729,
+          0.701,
+          0.15
+        ]
+      },
+      "material": {
+        "name": "Mat_Water_Pump_P101A",
+        "color": [
+          0.2,
+          0.78,
+          0.35,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.25
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "pump_e64246",
+      "name": "Water_Pump_P101B_Base",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Pumps",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        -2.596
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.648,
+        0.2,
+        0.12
+      ],
+      "dimensions": [
+        0.648,
+        0.2,
+        0.12
+      ],
+      "bounding_box": {
+        "min": [
+          -0.324,
+          -0.1,
+          -2.656
+        ],
+        "max": [
+          0.324,
+          0.1,
+          -2.536
+        ],
+        "center": [
+          0.0,
+          0.0,
+          -2.596
+        ],
+        "size": [
+          0.648,
+          0.2,
+          0.12
+        ]
+      },
+      "material": {
+        "name": "Mat_Water_Pump_P101B",
+        "color": [
+          0.92,
+          0.58,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.25
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "pump_5b792d",
+      "name": "Water_Pump_P101B_Casing",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Pumps",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.0,
+        0.0,
+        -2.2
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.72,
+        0.72,
+        0.15
+      ],
+      "bounding_box": {
+        "min": [
+          -0.36,
+          -0.36,
+          -2.275
+        ],
+        "max": [
+          0.36,
+          0.36,
+          -2.125
+        ],
+        "center": [
+          0.0,
+          0.0,
+          -2.2
+        ],
+        "size": [
+          0.72,
+          0.72,
+          0.15
+        ]
+      },
+      "material": {
+        "name": "Mat_Water_Pump_P101B",
+        "color": [
+          0.92,
+          0.58,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.25
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "pump_0e9563",
+      "name": "Water_Pump_P101B_Nozzle",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Pumps",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        0.1296,
+        0.0,
+        -1.948
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        -30.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.5612,
+        0.486,
+        0.15
+      ],
+      "bounding_box": {
+        "min": [
+          -0.194,
+          -0.281,
+          -2.023
+        ],
+        "max": [
+          0.535,
+          0.421,
+          -1.873
+        ],
+        "center": [
+          0.17,
+          0.07,
+          -1.948
+        ],
+        "size": [
+          0.729,
+          0.701,
+          0.15
+        ]
+      },
+      "material": {
+        "name": "Mat_Water_Pump_P101B",
+        "color": [
+          0.92,
+          0.58,
+          0.15,
+          1.0
+        ],
+        "metallic": 0.8,
+        "roughness": 0.25
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "vessel_a91e2a",
+      "name": "Water_Storage_Tank_TK101_BottomHead",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Vessels",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -7.0,
+        0.0,
+        -1.54
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        0.35
+      ],
+      "dimensions": [
+        2.8,
+        2.8,
+        0.98
+      ],
+      "bounding_box": {
+        "min": [
+          -8.4,
+          -1.4,
+          -2.03
+        ],
+        "max": [
+          -5.6,
+          1.4,
+          -1.05
+        ],
+        "center": [
+          -7.0,
+          0.0,
+          -1.54
+        ],
+        "size": [
+          2.8,
+          2.8,
+          0.98
+        ]
+      },
+      "material": {
+        "name": "Mat_Water_Storage_Tank_TK101",
+        "color": [
+          0.35,
+          0.55,
+          0.85,
+          1.0
+        ],
+        "metallic": 0.5,
+        "roughness": 0.35
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "Water_Storage_Tank_TK101_LevelGauge",
+      "name": "Water_Storage_Tank_TK101_LevelGauge",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": null,
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -5.46,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        0.06,
+        0.06,
+        2.2
+      ],
+      "bounding_box": {
+        "min": [
+          -5.49,
+          -0.03,
+          -1.1
+        ],
+        "max": [
+          -5.43,
+          0.03,
+          1.1
+        ],
+        "center": [
+          -5.46,
+          0.0,
+          0.0
+        ],
+        "size": [
+          0.06,
+          0.06,
+          2.2
+        ]
+      },
+      "material": {
+        "name": "Mat_Water_Storage_Tank_TK101_Gauge",
+        "color": [
+          0.0,
+          0.9,
+          1.0,
+          1.0
+        ],
+        "metallic": 0.1,
+        "roughness": 0.1
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "vessel_520f3e",
+      "name": "Water_Storage_Tank_TK101_Shell",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Vessels",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -7.0,
+        0.0,
+        0.0
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "dimensions": [
+        2.8,
+        2.8,
+        3.08
+      ],
+      "bounding_box": {
+        "min": [
+          -8.4,
+          -1.4,
+          -1.54
+        ],
+        "max": [
+          -5.6,
+          1.4,
+          1.54
+        ],
+        "center": [
+          -7.0,
+          0.0,
+          0.0
+        ],
+        "size": [
+          2.8,
+          2.8,
+          3.08
+        ]
+      },
+      "material": {
+        "name": "Mat_Water_Storage_Tank_TK101",
+        "color": [
+          0.35,
+          0.55,
+          0.85,
+          1.0
+        ],
+        "metallic": 0.5,
+        "roughness": 0.35
+      },
+      "collection": "Collection"
+    },
+    {
+      "id": "vessel_ef4be1",
+      "name": "Water_Storage_Tank_TK101_TopHead",
+      "type": "PRIMITIVE",
+      "group_id": null,
+      "group_name": "Vessels",
+      "is_root": false,
+      "parent": null,
+      "position": [
+        -7.0,
+        0.0,
+        1.54
+      ],
+      "rotation": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        0.35
+      ],
+      "dimensions": [
+        2.8,
+        2.8,
+        0.98
+      ],
+      "bounding_box": {
+        "min": [
+          -8.4,
+          -1.4,
+          1.05
+        ],
+        "max": [
+          -5.6,
+          1.4,
+          2.03
+        ],
+        "center": [
+          -7.0,
+          0.0,
+          1.54
+        ],
+        "size": [
+          2.8,
+          2.8,
+          0.98
+        ]
+      },
+      "material": {
+        "name": "Mat_Water_Storage_Tank_TK101",
+        "color": [
+          0.35,
+          0.55,
+          0.85,
+          1.0
+        ],
+        "metallic": 0.5,
+        "roughness": 0.35
+      },
+      "collection": "Collection"
+    }
+  ],
+  "groups": {}
+}

@@ -1,0 +1,987 @@
+{
+  "project_id": "test_coffee_table",
+  "prompt": "test_coffee_table",
+  "model": "external_ai",
+  "created_at": "2026-11-24T00:58:09.947918",
+  "updated_at": "2026-11-24T01:23:38.442549",
+  "blend_path": "D:\\IIIT(2)\\server\\prj_blender_skill\\prj\\projects\\test_coffee_table\\model.blend",
+  "render_path": "D:\\IIIT(2)\\server\\prj_blender_skill\\prj\\projects\\test_coffee_table\\preview.png",
+  "plan": {
+    "project_name": "test_coffee_table",
+    "clear_scene": false,
+    "actions": [
+      {
+        "action": "CREATE_OBJECT",
+        "object_data": {
+          "name": "Ceramic_Mug",
+          "geometry_type": "PRIMITIVE",
+          "primitive": "CYLINDER",
+          "dimensions": [
+            0.12,
+            0.12,
+            0.14
+          ],
+          "position": [
+            0.2,
+            0.1,
+            0.85
+          ],
+          "material": {
+            "name": "Glossy_White",
+            "color": [
+              0.95,
+              0.95,
+              0.95,
+              1
+            ],
+            "roughness": 0.1
+          }
+        }
+      }
+    ]
+  },
+  "scene_state": {
+    "object_count": 7,
+    "objects": [
+      {
+        "id": "obj_337157cc",
+        "name": "Ceramic_Mug",
+        "type": "PRIMITIVE",
+        "group_id": null,
+        "group_name": null,
+        "is_root": false,
+        "parent": null,
+        "position": [
+          0.2,
+          0.1,
+          0.85
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "dimensions": [
+          0.12,
+          0.12,
+          0.14
+        ],
+        "bounding_box": {
+          "min": [
+            0.14,
+            0.04,
+            0.78
+          ],
+          "max": [
+            0.26,
+            0.16,
+            0.92
+          ],
+          "center": [
+            0.2,
+            0.1,
+            0.85
+          ],
+          "size": [
+            0.12,
+            0.12,
+            0.14
+          ]
+        },
+        "material": {
+          "name": "Glossy_White",
+          "color": [
+            0.95,
+            0.95,
+            0.95,
+            1.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.1
+        },
+        "collection": "Collection"
+      },
+      {
+        "id": "obj_8ea794eb",
+        "name": "Ceramic_Mug.001",
+        "type": "PRIMITIVE",
+        "group_id": null,
+        "group_name": null,
+        "is_root": false,
+        "parent": null,
+        "position": [
+          0.2,
+          0.1,
+          0.85
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "dimensions": [
+          0.12,
+          0.12,
+          0.14
+        ],
+        "bounding_box": {
+          "min": [
+            0.14,
+            0.04,
+            0.78
+          ],
+          "max": [
+            0.26,
+            0.16,
+            0.92
+          ],
+          "center": [
+            0.2,
+            0.1,
+            0.85
+          ],
+          "size": [
+            0.12,
+            0.12,
+            0.14
+          ]
+        },
+        "material": {
+          "name": "Glossy_White",
+          "color": [
+            0.95,
+            0.95,
+            0.95,
+            1.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.1
+        },
+        "collection": "Collection"
+      },
+      {
+        "id": "obj_82efdac2",
+        "name": "Leg_Front_Left",
+        "type": "PRIMITIVE",
+        "group_id": "table_assembly",
+        "group_name": "Table",
+        "is_root": false,
+        "parent": "Table_Top_Surface",
+        "position": [
+          -0.6,
+          -0.32,
+          0.345
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "dimensions": [
+          0.06,
+          0.06,
+          0.69
+        ],
+        "bounding_box": {
+          "min": [
+            -0.63,
+            -0.35,
+            0.0
+          ],
+          "max": [
+            -0.57,
+            -0.29,
+            0.69
+          ],
+          "center": [
+            -0.6,
+            -0.32,
+            0.345
+          ],
+          "size": [
+            0.06,
+            0.06,
+            0.69
+          ]
+        },
+        "material": {
+          "name": "Mat_Brushed_Brass",
+          "color": [
+            0.85,
+            0.7,
+            0.35,
+            1.0
+          ],
+          "metallic": 0.9,
+          "roughness": 0.25
+        },
+        "collection": "Collection"
+      },
+      {
+        "id": "obj_b0c7fe99",
+        "name": "Leg_Front_Right",
+        "type": "PRIMITIVE",
+        "group_id": "table_assembly",
+        "group_name": "Table",
+        "is_root": false,
+        "parent": "Table_Top_Surface",
+        "position": [
+          0.6,
+          -0.32,
+          0.345
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "dimensions": [
+          0.06,
+          0.06,
+          0.69
+        ],
+        "bounding_box": {
+          "min": [
+            0.57,
+            -0.35,
+            0.0
+          ],
+          "max": [
+            0.63,
+            -0.29,
+            0.69
+          ],
+          "center": [
+            0.6,
+            -0.32,
+            0.345
+          ],
+          "size": [
+            0.06,
+            0.06,
+            0.69
+          ]
+        },
+        "material": {
+          "name": "Mat_Brushed_Brass",
+          "color": [
+            0.85,
+            0.7,
+            0.35,
+            1.0
+          ],
+          "metallic": 0.9,
+          "roughness": 0.25
+        },
+        "collection": "Collection"
+      },
+      {
+        "id": "obj_b55ee098",
+        "name": "Leg_Rear_Left",
+        "type": "PRIMITIVE",
+        "group_id": "table_assembly",
+        "group_name": "Table",
+        "is_root": false,
+        "parent": "Table_Top_Surface",
+        "position": [
+          -0.6,
+          0.32,
+          0.345
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "dimensions": [
+          0.06,
+          0.06,
+          0.69
+        ],
+        "bounding_box": {
+          "min": [
+            -0.63,
+            0.29,
+            0.0
+          ],
+          "max": [
+            -0.57,
+            0.35,
+            0.69
+          ],
+          "center": [
+            -0.6,
+            0.32,
+            0.345
+          ],
+          "size": [
+            0.06,
+            0.06,
+            0.69
+          ]
+        },
+        "material": {
+          "name": "Mat_Brushed_Brass",
+          "color": [
+            0.85,
+            0.7,
+            0.35,
+            1.0
+          ],
+          "metallic": 0.9,
+          "roughness": 0.25
+        },
+        "collection": "Collection"
+      },
+      {
+        "id": "obj_358d90cd",
+        "name": "Leg_Rear_Right",
+        "type": "PRIMITIVE",
+        "group_id": "table_assembly",
+        "group_name": "Table",
+        "is_root": false,
+        "parent": "Table_Top_Surface",
+        "position": [
+          0.6,
+          0.32,
+          0.345
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "dimensions": [
+          0.06,
+          0.06,
+          0.69
+        ],
+        "bounding_box": {
+          "min": [
+            0.57,
+            0.29,
+            0.0
+          ],
+          "max": [
+            0.63,
+            0.35,
+            0.69
+          ],
+          "center": [
+            0.6,
+            0.32,
+            0.345
+          ],
+          "size": [
+            0.06,
+            0.06,
+            0.69
+          ]
+        },
+        "material": {
+          "name": "Mat_Brushed_Brass",
+          "color": [
+            0.85,
+            0.7,
+            0.35,
+            1.0
+          ],
+          "metallic": 0.9,
+          "roughness": 0.25
+        },
+        "collection": "Collection"
+      },
+      {
+        "id": "obj_814b1c9d",
+        "name": "Table_Top_Surface",
+        "type": "BEVEL_BOX",
+        "group_id": "table_assembly",
+        "group_name": "Table",
+        "is_root": true,
+        "parent": null,
+        "position": [
+          0.0,
+          0.0,
+          0.72
+        ],
+        "rotation": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "dimensions": [
+          1.4,
+          0.8,
+          0.06
+        ],
+        "bounding_box": {
+          "min": [
+            -0.7,
+            -0.4,
+            0.69
+          ],
+          "max": [
+            0.7,
+            0.4,
+            0.75
+          ],
+          "center": [
+            0.0,
+            0.0,
+            0.72
+          ],
+          "size": [
+            1.4,
+            0.8,
+            0.06
+          ]
+        },
+        "material": {
+          "name": "Mat_Oak_Wood",
+          "color": [
+            0.65,
+            0.45,
+            0.28,
+            1.0
+          ],
+          "metallic": 0.0,
+          "roughness": 0.4
+        },
+        "collection": "Collection"
+      }
+    ],
+    "groups": {
+      "table_assembly": {
+        "group_id": "table_assembly",
+        "group_name": "Table",
+        "objects": [
+          "Leg_Front_Left",
+          "Leg_Front_Right",
+          "Leg_Rear_Left",
+          "Leg_Rear_Right",
+          "Table_Top_Surface"
+        ],
+        "root": "Table_Top_Surface"
+      }
+    }
+  },
+  "components": [],
+  "stats": {
+    "success": true,
+    "task_id": "task_1795463614314",
+    "blend_path": "D:\\IIIT(2)\\server\\prj_blender_skill\\prj\\projects\\test_coffee_table\\model.blend",
+    "render_path": "D:\\IIIT(2)\\server\\prj_blender_skill\\prj\\projects\\test_coffee_table\\preview.png",
+    "actions_executed": [
+      {
+        "action": "CREATE_OBJECT",
+        "success": true,
+        "id": "obj_8ea794eb",
+        "name": "Ceramic_Mug.001",
+        "group_id": null,
+        "group_name": null,
+        "position": [
+          0.2,
+          0.1,
+          0.85
+        ]
+      }
+    ],
+    "components_created": [],
+    "scene_state": {
+      "object_count": 7,
+      "objects": [
+        {
+          "id": "obj_337157cc",
+          "name": "Ceramic_Mug",
+          "type": "PRIMITIVE",
+          "group_id": null,
+          "group_name": null,
+          "is_root": false,
+          "parent": null,
+          "position": [
+            0.2,
+            0.1,
+            0.85
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "dimensions": [
+            0.12,
+            0.12,
+            0.14
+          ],
+          "bounding_box": {
+            "min": [
+              0.14,
+              0.04,
+              0.78
+            ],
+            "max": [
+              0.26,
+              0.16,
+              0.92
+            ],
+            "center": [
+              0.2,
+              0.1,
+              0.85
+            ],
+            "size": [
+              0.12,
+              0.12,
+              0.14
+            ]
+          },
+          "material": {
+            "name": "Glossy_White",
+            "color": [
+              0.95,
+              0.95,
+              0.95,
+              1.0
+            ],
+            "metallic": 0.0,
+            "roughness": 0.1
+          },
+          "collection": "Collection"
+        },
+        {
+          "id": "obj_8ea794eb",
+          "name": "Ceramic_Mug.001",
+          "type": "PRIMITIVE",
+          "group_id": null,
+          "group_name": null,
+          "is_root": false,
+          "parent": null,
+          "position": [
+            0.2,
+            0.1,
+            0.85
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "dimensions": [
+            0.12,
+            0.12,
+            0.14
+          ],
+          "bounding_box": {
+            "min": [
+              0.14,
+              0.04,
+              0.78
+            ],
+            "max": [
+              0.26,
+              0.16,
+              0.92
+            ],
+            "center": [
+              0.2,
+              0.1,
+              0.85
+            ],
+            "size": [
+              0.12,
+              0.12,
+              0.14
+            ]
+          },
+          "material": {
+            "name": "Glossy_White",
+            "color": [
+              0.95,
+              0.95,
+              0.95,
+              1.0
+            ],
+            "metallic": 0.0,
+            "roughness": 0.1
+          },
+          "collection": "Collection"
+        },
+        {
+          "id": "obj_82efdac2",
+          "name": "Leg_Front_Left",
+          "type": "PRIMITIVE",
+          "group_id": "table_assembly",
+          "group_name": "Table",
+          "is_root": false,
+          "parent": "Table_Top_Surface",
+          "position": [
+            -0.6,
+            -0.32,
+            0.345
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "dimensions": [
+            0.06,
+            0.06,
+            0.69
+          ],
+          "bounding_box": {
+            "min": [
+              -0.63,
+              -0.35,
+              0.0
+            ],
+            "max": [
+              -0.57,
+              -0.29,
+              0.69
+            ],
+            "center": [
+              -0.6,
+              -0.32,
+              0.345
+            ],
+            "size": [
+              0.06,
+              0.06,
+              0.69
+            ]
+          },
+          "material": {
+            "name": "Mat_Brushed_Brass",
+            "color": [
+              0.85,
+              0.7,
+              0.35,
+              1.0
+            ],
+            "metallic": 0.9,
+            "roughness": 0.25
+          },
+          "collection": "Collection"
+        },
+        {
+          "id": "obj_b0c7fe99",
+          "name": "Leg_Front_Right",
+          "type": "PRIMITIVE",
+          "group_id": "table_assembly",
+          "group_name": "Table",
+          "is_root": false,
+          "parent": "Table_Top_Surface",
+          "position": [
+            0.6,
+            -0.32,
+            0.345
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "dimensions": [
+            0.06,
+            0.06,
+            0.69
+          ],
+          "bounding_box": {
+            "min": [
+              0.57,
+              -0.35,
+              0.0
+            ],
+            "max": [
+              0.63,
+              -0.29,
+              0.69
+            ],
+            "center": [
+              0.6,
+              -0.32,
+              0.345
+            ],
+            "size": [
+              0.06,
+              0.06,
+              0.69
+            ]
+          },
+          "material": {
+            "name": "Mat_Brushed_Brass",
+            "color": [
+              0.85,
+              0.7,
+              0.35,
+              1.0
+            ],
+            "metallic": 0.9,
+            "roughness": 0.25
+          },
+          "collection": "Collection"
+        },
+        {
+          "id": "obj_b55ee098",
+          "name": "Leg_Rear_Left",
+          "type": "PRIMITIVE",
+          "group_id": "table_assembly",
+          "group_name": "Table",
+          "is_root": false,
+          "parent": "Table_Top_Surface",
+          "position": [
+            -0.6,
+            0.32,
+            0.345
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "dimensions": [
+            0.06,
+            0.06,
+            0.69
+          ],
+          "bounding_box": {
+            "min": [
+              -0.63,
+              0.29,
+              0.0
+            ],
+            "max": [
+              -0.57,
+              0.35,
+              0.69
+            ],
+            "center": [
+              -0.6,
+              0.32,
+              0.345
+            ],
+            "size": [
+              0.06,
+              0.06,
+              0.69
+            ]
+          },
+          "material": {
+            "name": "Mat_Brushed_Brass",
+            "color": [
+              0.85,
+              0.7,
+              0.35,
+              1.0
+            ],
+            "metallic": 0.9,
+            "roughness": 0.25
+          },
+          "collection": "Collection"
+        },
+        {
+          "id": "obj_358d90cd",
+          "name": "Leg_Rear_Right",
+          "type": "PRIMITIVE",
+          "group_id": "table_assembly",
+          "group_name": "Table",
+          "is_root": false,
+          "parent": "Table_Top_Surface",
+          "position": [
+            0.6,
+            0.32,
+            0.345
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "dimensions": [
+            0.06,
+            0.06,
+            0.69
+          ],
+          "bounding_box": {
+            "min": [
+              0.57,
+              0.29,
+              0.0
+            ],
+            "max": [
+              0.63,
+              0.35,
+              0.69
+            ],
+            "center": [
+              0.6,
+              0.32,
+              0.345
+            ],
+            "size": [
+              0.06,
+              0.06,
+              0.69
+            ]
+          },
+          "material": {
+            "name": "Mat_Brushed_Brass",
+            "color": [
+              0.85,
+              0.7,
+              0.35,
+              1.0
+            ],
+            "metallic": 0.9,
+            "roughness": 0.25
+          },
+          "collection": "Collection"
+        },
+        {
+          "id": "obj_814b1c9d",
+          "name": "Table_Top_Surface",
+          "type": "BEVEL_BOX",
+          "group_id": "table_assembly",
+          "group_name": "Table",
+          "is_root": true,
+          "parent": null,
+          "position": [
+            0.0,
+            0.0,
+            0.72
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "dimensions": [
+            1.4,
+            0.8,
+            0.06
+          ],
+          "bounding_box": {
+            "min": [
+              -0.7,
+              -0.4,
+              0.69
+            ],
+            "max": [
+              0.7,
+              0.4,
+              0.75
+            ],
+            "center": [
+              0.0,
+              0.0,
+              0.72
+            ],
+            "size": [
+              1.4,
+              0.8,
+              0.06
+            ]
+          },
+          "material": {
+            "name": "Mat_Oak_Wood",
+            "color": [
+              0.65,
+              0.45,
+              0.28,
+              1.0
+            ],
+            "metallic": 0.0,
+            "roughness": 0.4
+          },
+          "collection": "Collection"
+        }
+      ],
+      "groups": {
+        "table_assembly": {
+          "group_id": "table_assembly",
+          "group_name": "Table",
+          "objects": [
+            "Leg_Front_Left",
+            "Leg_Front_Right",
+            "Leg_Rear_Left",
+            "Leg_Rear_Right",
+            "Table_Top_Surface"
+          ],
+          "root": "Table_Top_Surface"
+        }
+      }
+    },
+    "total_objects": 7
+  }
+}

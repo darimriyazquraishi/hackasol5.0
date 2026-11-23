@@ -70,6 +70,12 @@ export const CommandPalette: React.FC = () => {
         action: () => setActiveModule('ide')
       },
       {
+        id: 'view.studio',
+        category: 'View',
+        title: 'Switch to 3D Studio (Blender Automation)',
+        action: () => setActiveModule('studio')
+      },
+      {
         id: 'view.terminal',
         category: 'View',
         title: 'Toggle Integrated Terminal',
