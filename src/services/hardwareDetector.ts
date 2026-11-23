@@ -50,7 +50,7 @@ export interface HardwareProfile {
   }>;
 }
 
-// Fallback baseline when API is loading or in sandboxed browser mode
+// Baseline profile reflecting local hardware
 export const DEFAULT_HARDWARE_PROFILE: HardwareProfile = {
   cpu: {
     model: 'AMD Ryzen 5 4600H with Radeon Graphics',
@@ -64,13 +64,13 @@ export const DEFAULT_HARDWARE_PROFILE: HardwareProfile = {
     usedGB: 11.7
   },
   gpu: {
-    detected: true,
-    vendor: 'NVIDIA',
-    name: 'NVIDIA GeForce GTX 1650',
-    totalVramMB: 4096,
-    freeVramMB: 3935,
-    driverVersion: '621.01',
-    cudaSupported: true
+    detected: false,
+    vendor: 'None',
+    name: 'Integrated CPU Compute Only',
+    totalVramMB: 0,
+    freeVramMB: 0,
+    driverVersion: 'N/A',
+    cudaSupported: false
   },
   storage: {
     freeGB: 120,
@@ -81,36 +81,36 @@ export const DEFAULT_HARDWARE_PROFILE: HardwareProfile = {
     release: '10.0',
     arch: 'x64'
   },
-  tier: 'mid-range-laptop',
-  tierLabel: 'Mid-Range Laptop (4GB VRAM, 16GB RAM)',
+  tier: 'low-end',
+  tierLabel: 'CPU-Optimized Laptop (16GB RAM)',
   constraints: {
-    maxSafeVramGB: 3.2,
+    maxSafeVramGB: 0,
     maxSafeRamGB: 8.0,
     maxContextTokens: 32768,
     concurrencySlots: 2
   },
   recommendedModels: [
     {
-      id: 'qwen3:8b',
-      name: 'Qwen3 8B',
+      id: 'qwen2.5:1.5b',
+      name: 'Qwen2.5 1.5B',
       role: 'chat',
-      parameterSize: '8B',
+      parameterSize: '1.5B',
       quantization: 'Q4_K_M',
-      vramRequiredMB: 2800,
+      vramRequiredMB: 980,
       contextWindow: '32K',
-      runMode: 'GPU (CUDA)',
-      status: 'unloaded'
+      runMode: 'CPU (AVX-512)',
+      status: 'loaded'
     },
     {
-      id: 'qwen2.5-coder:7b',
-      name: 'Qwen2.5-Coder 7B',
+      id: 'qwen2.5-coder:1.5b',
+      name: 'Qwen2.5-Coder 1.5B',
       role: 'code',
-      parameterSize: '7B',
+      parameterSize: '1.5B',
       quantization: 'Q4_K_M',
-      vramRequiredMB: 2600,
+      vramRequiredMB: 980,
       contextWindow: '32K',
-      runMode: 'GPU (CUDA)',
-      status: 'unloaded'
+      runMode: 'CPU (AVX-512)',
+      status: 'loaded'
     },
     {
       id: 'nomic-embed-text',
@@ -121,19 +121,19 @@ export const DEFAULT_HARDWARE_PROFILE: HardwareProfile = {
       vramRequiredMB: 280,
       vramUsedMB: 280,
       contextWindow: '8K',
-      runMode: 'GPU (CUDA)',
+      runMode: 'CPU (AVX-512)',
       status: 'loaded'
     },
     {
-      id: 'qwen2.5vl:7b',
-      name: 'Qwen2.5-VL 7B',
+      id: 'moondream:latest',
+      name: 'Moondream Vision',
       role: 'vision',
-      parameterSize: '7B',
+      parameterSize: '1.8B',
       quantization: 'Q4_K_M',
-      vramRequiredMB: 2900,
+      vramRequiredMB: 1700,
       contextWindow: '8K',
-      runMode: 'GPU (CUDA)',
-      status: 'unloaded'
+      runMode: 'CPU (AVX-512)',
+      status: 'loaded'
     }
   ]
 };
@@ -206,13 +206,13 @@ export function calculateOptimalHardwareProfile(raw: Partial<HardwareProfile>): 
       usedGB: +(totalRamGB - (raw.ram?.freeGB ?? 3.7)).toFixed(1)
     },
     gpu: {
-      detected: gpu.detected ?? true,
-      vendor: gpu.vendor ?? 'NVIDIA',
-      name: gpu.name || 'NVIDIA GeForce GTX 1650',
-      totalVramMB: gpu.totalVramMB || 4096,
-      freeVramMB: gpu.freeVramMB || 3935,
-      driverVersion: gpu.driverVersion || '621.01',
-      cudaSupported: gpu.cudaSupported ?? true
+      detected: Boolean(gpu.detected),
+      vendor: gpu.vendor || (gpu.detected ? 'NVIDIA' : 'None'),
+      name: gpu.name || (gpu.detected ? 'Discrete GPU' : 'Integrated CPU Compute Only'),
+      totalVramMB: gpu.totalVramMB || 0,
+      freeVramMB: gpu.freeVramMB || 0,
+      driverVersion: gpu.driverVersion || 'N/A',
+      cudaSupported: Boolean(gpu.cudaSupported)
     },
     storage: {
       freeGB: raw.storage?.freeGB ?? 142,

@@ -300,7 +300,7 @@ export const ModelManagerModule: React.FC = () => {
           <span>Configured Model Registry</span>
         </div>
         <p className="text-[11px] text-[#9C9C9C]">
-          Authoritative models: <span className="text-[#987654]">qwen3:8b</span> (Reasoning), <span className="text-[#987654]">qwen2.5-coder:7b</span> (Math & Code), <span className="text-[#987654]">qwen2.5vl:7b</span> (Vision), <span className="text-[#987654]">nomic-embed-text</span> (RAG), and <span className="text-[#987654]">flux1-schnell</span> (Image Gen).
+          Active verified models: <span className="text-[#987654]">qwen2.5:1.5b</span> (Reasoning), <span className="text-[#987654]">qwen2.5-coder:1.5b</span> (Math & Code), <span className="text-[#987654]">moondream:latest</span> (Vision), <span className="text-[#987654]">nomic-embed-text</span> (RAG), and <span className="text-[#987654]">stabilityai/sd-turbo</span> (Image Gen).
         </p>
         <div className="flex space-x-2">
           <input

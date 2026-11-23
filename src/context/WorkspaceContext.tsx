@@ -607,7 +607,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       status: 'idle',
       inputs: ['Mathematical Expressions', 'Code Specifications'],
       outputs: ['Verified Code Blocks', 'Sandbox Output Logs'],
-      description: 'Code synthesis and computational sandboxed execution via Qwen2.5-Coder 7B.'
+      description: 'Code synthesis and computational sandboxed execution via Qwen2.5-Coder 1.5B.'
     },
     {
       id: 'node-synthesis',
@@ -616,7 +616,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       status: 'idle',
       inputs: ['Multi-Agent Findings', 'Citations', 'Sandbox Results'],
       outputs: ['Compiled Markdown Deliverable'],
-      description: 'Orchestrates multi-agent findings and synthesizes final answer via Qwen3.'
+      description: 'Orchestrates multi-agent findings and synthesizes final answer via Qwen2.5 1.5B.'
     }
   ]);
 
@@ -626,14 +626,14 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
     gpuUtilization: 0,
     vramAllocated: 0,
-    vramTotal: 4.0,
+    vramTotal: 0,
     cpuUtilization: 5,
     ramUsed: 0,
     ramTotal: 16.0,
     tokensPerSec: 0,
-    gpuName: 'NVIDIA GeForce GTX 1650',
+    gpuName: 'Integrated CPU Compute Only',
     cpuName: 'AMD Ryzen 5 4600H',
-    hardwareTier: 'Mid-Range Laptop (4GB VRAM, 16GB RAM)'
+    hardwareTier: 'CPU-Optimized Laptop (16GB RAM)'
   });
 
   const refreshModels = useCallback(async () => {

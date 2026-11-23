@@ -176,11 +176,10 @@ export function probeRealHardware(): HardwareInfo {
 
 // Configured authoritative models with active local hardware-adaptive models
 export const CONFIGURED_MODELS = {
-  image_generation: { id: 'flux1-schnell', name: 'Flux.1 Schnell', role: 'Image Generation' },
+  image_generation: { id: 'stabilityai/sd-turbo', name: 'SD-Turbo (Active)', role: 'Single-Step Photorealistic Image Generation' },
   vision: { id: 'moondream:latest', name: 'Moondream Vision (Active)', role: 'Vision and Image Understanding' },
   reasoning: [
-    { id: 'qwen2.5:1.5b', name: 'Qwen2.5 1.5B (Active)', role: 'Reasoning and Synthesis (Hardware-Adaptive)' },
-    { id: 'qwen3:8b', name: 'Qwen3 8B', role: 'Reasoning and Synthesis (High-Capacity)' }
+    { id: 'qwen2.5:1.5b', name: 'Qwen2.5 1.5B (Active)', role: 'Reasoning and Synthesis (Hardware-Adaptive)' }
   ],
   math_code: { id: 'qwen2.5-coder:1.5b', name: 'Qwen2.5-Coder 1.5B (Active)', role: 'Math and Code' },
   vector_rag: { id: 'nomic-embed-text:latest', name: 'Nomic Embed Text (Active)', role: 'Vector RAG Embeddings' }

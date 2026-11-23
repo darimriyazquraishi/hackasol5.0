@@ -11,7 +11,7 @@ export interface ModelRegistryConfig {
 
 const DEFAULT_MODELS: ModelRegistryConfig = {
   vision: 'moondream:latest',
-  image_generation: 'flux1-schnell',
+  image_generation: 'stabilityai/sd-turbo',
   math_code: 'qwen2.5-coder:1.5b',
   reasoning: 'qwen2.5:1.5b',
   coder: 'qwen2.5-coder:1.5b'
@@ -772,7 +772,7 @@ export function generateDynamicWorkplan(
   // 10. IMAGE GENERATION (DIFFUSION)
   // -------------------------------------------------------------------------
   } else if (decomp.operation === 'image_generation') {
-    requiredCapabilities.push('Visual Prompt Enhancement', 'Authentic Diffusion Synthesis (FLUX.1-schnell)');
+    requiredCapabilities.push('Visual Prompt Enhancement', 'Authentic Diffusion Synthesis (SD-Turbo)');
     selectedAgents.push('image_generation', 'reasoning_synthesis');
     selectedModels['image_generation'] = models.image_generation;
     selectedModels['reasoning_synthesis'] = models.reasoning;
@@ -806,7 +806,7 @@ export function generateDynamicWorkplan(
       model: models.image_generation,
       description: 'Execute genuine image generation pipeline to synthesize authentic PNG binary.',
       actions: [
-        'Dispatch generation task to local FLUX.1-schnell / authentic diffusion engine.',
+        'Dispatch generation task to local SD-Turbo 1-step diffusion engine.',
         'Process latent diffusion steps with guidance scale and sampling schedule.',
         'Decode latent tensor to high-resolution PNG image.'
       ],
