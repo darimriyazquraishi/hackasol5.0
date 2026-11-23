@@ -48,6 +48,9 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
   const {
     activeConversation,
     addMessageToActiveConversation,
+    createConversation,
+    deleteConversation,
+    clearActiveConversation,
     createFile,
     toggleLeftNav,
     setActiveModule
@@ -58,6 +61,7 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [executingPlanId, setExecutingPlanId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [confirmClearChat, setConfirmClearChat] = useState(false);
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
   const [editedInterpretation, setEditedInterpretation] = useState('');
@@ -482,6 +486,54 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
           <h1 className="text-xs font-mono font-semibold tracking-wide text-[#F5F4F1] truncate">
             {activeConversation?.title || 'Intelligence Chat'}
           </h1>
+        </div>
+
+        {/* Chat Control Actions: New Chat & Delete / Clear Chat */}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={createConversation}
+            title="Start New Conversation"
+            className="flex items-center space-x-1.5 px-2.5 py-1 text-xs font-medium rounded bg-[#191919] hover:bg-[#202020] text-[#F5F4F1] border border-[#303030] transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5 text-[#987654]" />
+            <span className="hidden sm:inline">New Chat</span>
+          </button>
+
+          {messages.length > 0 && (
+            confirmClearChat ? (
+              <div className="flex items-center space-x-1.5 bg-red-950/80 border border-red-800/80 rounded px-2 py-1">
+                <span className="text-[11px] text-red-200">Delete chat?</span>
+                <button
+                  onClick={() => {
+                    if (activeConversation) {
+                      deleteConversation(activeConversation.id);
+                    } else {
+                      clearActiveConversation();
+                    }
+                    setConfirmClearChat(false);
+                  }}
+                  className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-red-600 hover:bg-red-500 text-white transition-colors"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => setConfirmClearChat(false)}
+                  className="px-1.5 py-0.5 text-[10px] rounded bg-[#202020] hover:bg-[#282828] text-[#9C9C9C] transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmClearChat(true)}
+                title="Delete or clear this conversation"
+                className="flex items-center space-x-1.5 px-2.5 py-1 text-xs font-medium rounded bg-[#191919] hover:bg-red-950/40 hover:text-red-300 text-[#9C9C9C] border border-[#303030] hover:border-red-900/60 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                <span className="hidden sm:inline">Clear Chat</span>
+              </button>
+            )
+          )}
         </div>
       </div>
 

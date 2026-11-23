@@ -123,8 +123,8 @@ export const LeftSidebar: React.FC = () => {
                       title={isConfirming ? 'Click again to confirm delete' : 'Delete conversation'}
                       className={`p-1 rounded transition-colors shrink-0 ${
                         isConfirming
-                          ? 'bg-red-950 text-red-300'
-                          : 'opacity-0 group-hover:opacity-100 hover:text-red-400 hover:bg-[#202020]'
+                          ? 'bg-red-950 text-red-300 opacity-100'
+                          : 'text-[#9C9C9C]/50 hover:text-red-400 hover:bg-[#202020]'
                       }`}
                     >
                       {isConfirming ? (

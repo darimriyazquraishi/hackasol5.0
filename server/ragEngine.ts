@@ -525,13 +525,25 @@ class RagKnowledgeEngine {
 
     const scored = this.chunks.map(chunk => {
       let termScore = 0;
+      let matchedTerms = 0;
       const lowerText = chunk.text.toLowerCase();
       const lowerFile = chunk.file.toLowerCase();
 
       for (const term of queryTerms) {
-        if (chunk.keywords.some(k => k.includes(term))) termScore += 0.35;
-        if (lowerText.includes(term)) termScore += 0.30;
-        if (lowerFile.includes(term)) termScore += 0.40;
+        let matched = false;
+        if (lowerText.includes(term)) {
+          termScore += 0.45;
+          matched = true;
+        }
+        if (chunk.keywords.some(k => k.includes(term))) {
+          termScore += 0.35;
+          matched = true;
+        }
+        if (lowerFile.includes(term)) {
+          termScore += 0.15;
+          matched = true;
+        }
+        if (matched) matchedTerms++;
       }
 
       const vector = this.vectors.find(v => v.chunkId === chunk.id);
@@ -543,7 +555,9 @@ class RagKnowledgeEngine {
         }
       }
 
-      const normalizedTermScore = queryTerms.length > 0 ? Math.min(1.0, termScore / (queryTerms.length * 0.75)) : 0;
+      // Saturated term coverage: 3-4 matching terms indicate strong relevance without query-length penalty
+      const termCoverage = queryTerms.length > 0 ? Math.min(1.0, matchedTerms / Math.min(queryTerms.length, 4)) : 0;
+      const normalizedTermScore = Math.min(1.0, termCoverage * 0.7 + Math.min(0.3, termScore * 0.05));
 
       // Dense cosine similarity (768 dimensions)
       let vectorScore = 0;
@@ -552,18 +566,18 @@ class RagKnowledgeEngine {
       }
 
       // Relevance Reranking: Blend semantic dense vector score (65%) with exact keyword alignment (35%)
-      const combinedScore = vectorScore > 0
-        ? +(vectorScore * 0.65 + normalizedTermScore * 0.35).toFixed(3)
-        : +(normalizedTermScore).toFixed(3);
+      // If a chunk lacks vector embeddings while embeddings are active, fallback baseline vector score is 0.25
+      const effectiveVectorScore = vectorScore > 0 ? vectorScore : (queryEmb.length > 0 ? 0.25 : 0.50);
+      const combinedScore = +(effectiveVectorScore * 0.65 + normalizedTermScore * 0.35).toFixed(3);
 
       return {
         chunk,
-        score: Math.min(0.99, Math.max(0.35, combinedScore))
+        score: Math.min(0.99, Math.max(0.20, combinedScore))
       };
     });
 
     return scored
-      .filter(s => s.score >= 0.45)
+      .filter(s => s.score >= 0.25)
       .sort((a, b) => b.score - a.score)
       .slice(0, topK);
   }
@@ -577,13 +591,16 @@ class RagKnowledgeEngine {
 
     const scored = this.chunks.map(chunk => {
       let score = 0;
+      let matchedTerms = 0;
       const lowerText = chunk.text.toLowerCase();
       const lowerFile = chunk.file.toLowerCase();
 
       for (const term of queryTerms) {
-        if (chunk.keywords.some(k => k.includes(term))) score += 0.45;
-        if (lowerText.includes(term)) score += 0.40;
-        if (lowerFile.includes(term)) score += 0.35;
+        let matched = false;
+        if (chunk.keywords.some(k => k.includes(term))) { score += 0.45; matched = true; }
+        if (lowerText.includes(term)) { score += 0.40; matched = true; }
+        if (lowerFile.includes(term)) { score += 0.35; matched = true; }
+        if (matched) matchedTerms++;
       }
 
       const vector = this.vectors.find(v => v.chunkId === chunk.id);
@@ -595,12 +612,13 @@ class RagKnowledgeEngine {
         }
       }
 
-      const confidence = Math.min(0.99, Math.max(0.35, +(score / (queryTerms.length * 0.75)).toFixed(3)));
+      const termCoverage = queryTerms.length > 0 ? Math.min(1.0, matchedTerms / Math.min(queryTerms.length, 4)) : 0;
+      const confidence = Math.min(0.99, Math.max(0.20, +(termCoverage * 0.7 + Math.min(0.3, score * 0.05)).toFixed(3)));
       return { chunk, score: confidence };
     });
 
     return scored
-      .filter(s => s.score >= 0.45)
+      .filter(s => s.score >= 0.25)
       .sort((a, b) => b.score - a.score)
       .slice(0, topK);
   }
@@ -615,7 +633,7 @@ class RagKnowledgeEngine {
     }
 
     const matches = this.searchSync(taskPrompt, 3);
-    const valid = matches.filter(m => m.score >= 0.55).map(m => m.chunk);
+    const valid = matches.filter(m => m.score >= 0.30).map(m => m.chunk);
 
     if (valid.length === 0) {
       return { guidelinesText: '', citations: [] };

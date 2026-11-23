@@ -58,5 +58,65 @@
     "status": "indexed",
     "extractedTextLength": 13905,
     "chunkCount": 37
+  },
+  {
+    "id": "doc-1795407986536-54kb",
+    "name": "ENG_STD_002_Technical_Report_Guideline.txt",
+    "extension": ".txt",
+    "sizeBytes": 547,
+    "size": "547 B",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795407986536-54kb_ENG_STD_002_Technical_Report_Guideline.txt",
+    "uploadedAt": "2026-11-23T04:26:26.719Z",
+    "status": "indexed",
+    "extractedTextLength": 547,
+    "chunkCount": 1
+  },
+  {
+    "id": "doc-1795409659650-hbs5",
+    "name": "ENG_STD_002_Technical_Report_Guideline.txt",
+    "extension": ".txt",
+    "sizeBytes": 547,
+    "size": "547 B",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795409659650-hbs5_ENG_STD_002_Technical_Report_Guideline.txt",
+    "uploadedAt": "2026-11-23T04:54:19.834Z",
+    "status": "indexed",
+    "extractedTextLength": 547,
+    "chunkCount": 1
+  },
+  {
+    "id": "doc-1795413461382-tkve",
+    "name": "ENG_STD_002_Technical_Report_Guideline.txt",
+    "extension": ".txt",
+    "sizeBytes": 547,
+    "size": "547 B",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795413461382-tkve_ENG_STD_002_Technical_Report_Guideline.txt",
+    "uploadedAt": "2026-11-23T05:57:41.623Z",
+    "status": "indexed",
+    "extractedTextLength": 547,
+    "chunkCount": 1
+  },
+  {
+    "id": "doc-1795414090215-xnhe",
+    "name": "ENG_STD_002_Technical_Report_Guideline.txt",
+    "extension": ".txt",
+    "sizeBytes": 547,
+    "size": "547 B",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795414090215-xnhe_ENG_STD_002_Technical_Report_Guideline.txt",
+    "uploadedAt": "2026-11-23T06:08:10.460Z",
+    "status": "indexed",
+    "extractedTextLength": 547,
+    "chunkCount": 1
+  },
+  {
+    "id": "doc-1795414426968-8d2l",
+    "name": "ENG_STD_002_Technical_Report_Guideline.txt",
+    "extension": ".txt",
+    "sizeBytes": 547,
+    "size": "547 B",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795414426968-8d2l_ENG_STD_002_Technical_Report_Guideline.txt",
+    "uploadedAt": "2026-11-23T06:13:47.149Z",
+    "status": "indexed",
+    "extractedTextLength": 547,
+    "chunkCount": 1
   }
 ]
