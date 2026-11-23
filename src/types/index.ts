@@ -246,12 +246,16 @@ export type AgentArchetype =
 
 export interface LumiWorkflowStep {
   id: string;
+  stageNumber?: number;
   agent: AgentArchetype;
   model: string;
   name: string;
   description: string;
+  actions?: string[];
+  inputs?: string;
   dependencies: string[]; // ids of prerequisite steps
   expectedOutput: string;
+  validationCriteria?: string;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
   durationMs?: number;
   outputData?: any;
@@ -261,6 +265,8 @@ export interface LumiWorkflowStep {
 export interface LumiWorkplan {
   id: string;
   taskInterpretation: string;
+  originalPrompt?: string;
+  decomposition?: any;
   requiredCapabilities: string[];
   selectedAgents: AgentArchetype[];
   selectedModels: Record<string, string>;

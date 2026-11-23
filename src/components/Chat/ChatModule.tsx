@@ -20,7 +20,13 @@ import {
   PanelLeft,
   Presentation,
   Sparkles,
-  Save
+  Save,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { APP_CONFIG } from '../../config';
@@ -30,6 +36,7 @@ import {
   ChatAttachment,
   GeneratedFilePreview,
   LumiWorkplan,
+  LumiWorkflowStep,
   CompilationResult
 } from '../../types';
 
@@ -55,6 +62,8 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
   const [editedInterpretation, setEditedInterpretation] = useState('');
   const [editedDeliverables, setEditedDeliverables] = useState('');
+  const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
+  const [editedSteps, setEditedSteps] = useState<LumiWorkflowStep[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -203,7 +212,7 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           workplan: plan,
-          prompt: plan.taskInterpretation,
+          prompt: plan.originalPrompt || plan.taskInterpretation,
           attachments
         }),
         signal: controller.signal
@@ -269,6 +278,51 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
     });
   };
 
+  const handleToggleStepExpand = (stepId: string) => {
+    setExpandedStepId(prev => (prev === stepId ? null : stepId));
+  };
+
+  const handleUpdateStep = (stepId: string, updates: Partial<any>) => {
+    setEditedSteps(prev => prev.map(s => (s.id === stepId ? { ...s, ...updates } : s)));
+  };
+
+  const handleAddStep = () => {
+    const newId = `step-${Date.now()}`;
+    setEditedSteps(prev => [
+      ...prev,
+      {
+        id: newId,
+        stageNumber: prev.length + 1,
+        name: 'Custom Inspection Stage',
+        agent: 'reasoning_synthesis',
+        model: 'qwen2.5:1.5b',
+        description: 'Execute custom verification and technical audit.',
+        actions: ['Execute specific user-defined validation criteria.'],
+        inputs: 'Preceding stage outputs.',
+        dependencies: prev.length > 0 ? [prev[prev.length - 1].id] : [],
+        expectedOutput: 'Verified operational deliverable.',
+        validationCriteria: 'Verification checks passed.',
+        status: 'pending'
+      }
+    ]);
+  };
+
+  const handleRemoveStep = (stepId: string) => {
+    setEditedSteps(prev => prev.filter(s => s.id !== stepId));
+  };
+
+  const handleMoveStep = (index: number, direction: 'up' | 'down') => {
+    setEditedSteps(prev => {
+      const copy = [...prev];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= copy.length) return prev;
+      const temp = copy[index];
+      copy[index] = copy[targetIndex];
+      copy[targetIndex] = temp;
+      return copy;
+    });
+  };
+
   /**
    * Action: Save In-Place Edited Workplan & Execute
    */
@@ -276,6 +330,7 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
     const modifiedPlan: LumiWorkplan = {
       ...originalPlan,
       taskInterpretation: editedInterpretation.trim() || originalPlan.taskInterpretation,
+      executionSequence: editedSteps.length > 0 ? editedSteps : originalPlan.executionSequence,
       expectedDeliverables: editedDeliverables.trim()
         ? editedDeliverables.split(',').map(d => d.trim()).filter(Boolean)
         : originalPlan.expectedDeliverables
@@ -592,6 +647,48 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                       </span>
                     </div>
 
+                    {/* Decomposed Task Intelligence Block */}
+                    {msg.lumiWorkplan.decomposition && (
+                      <div className="space-y-2 p-3 rounded-lg bg-[#111111] border border-[#262626]">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono uppercase text-[#987654] font-bold">
+                            Domain: {msg.lumiWorkplan.decomposition.domain?.replace('_', ' ')}
+                          </span>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#191919] text-[#A3E635] border border-[#2d4715]">
+                            Target Format: {msg.lumiWorkplan.decomposition.requestedOutputFormat?.toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="text-xs text-[#E2E8F0] font-sans">
+                          <span className="font-semibold text-[#9C9C9C]">Primary Objective: </span>
+                          {msg.lumiWorkplan.decomposition.primaryObjective}
+                        </div>
+                        {msg.lumiWorkplan.decomposition.parameters?.length > 0 && (
+                          <div className="space-y-1 pt-1">
+                            <div className="text-[10px] font-mono text-[#9C9C9C]">Extracted Design Parameters:</div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {msg.lumiWorkplan.decomposition.parameters.map((p: any, pIdx: number) => (
+                                <span key={pIdx} className="px-2 py-0.5 rounded bg-[#191919] border border-[#303030] text-[10px] font-mono text-[#F5F4F1]">
+                                  <span className="text-[#987654]">{p.name}:</span> {p.value} {p.unit}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {msg.lumiWorkplan.decomposition.applicableStandards?.length > 0 && (
+                          <div className="space-y-1 pt-1">
+                            <div className="text-[10px] font-mono text-[#9C9C9C]">Applicable Standards & Guidelines:</div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {msg.lumiWorkplan.decomposition.applicableStandards.slice(0, 4).map((std: string, sIdx: number) => (
+                                <span key={sIdx} className="px-2 py-0.5 rounded bg-[#141d26] border border-[#1e3a5f] text-[9.5px] font-mono text-[#38bdf8]">
+                                  {std}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Task Interpretation */}
                     <div className="space-y-1">
                       <div className="text-[10px] font-mono uppercase text-[#9C9C9C]">Task Interpretation</div>
@@ -622,28 +719,152 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                       </div>
                     </div>
 
-                    {/* Execution Sequence & Dependencies */}
+                    {/* Execution Sequence & In-Place Editor */}
                     <div className="space-y-1.5">
-                      <div className="text-[10px] font-mono uppercase text-[#9C9C9C]">Execution Sequence</div>
-                      <div className="space-y-1.5">
-                        {msg.lumiWorkplan.executionSequence.map((step, idx) => (
-                          <div key={step.id} className="p-2.5 rounded bg-[#141414] border border-[#222222] space-y-1 text-xs">
-                            <div className="flex items-center justify-between font-mono text-[11px]">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-[#987654]">0{idx + 1}.</span>
-                                <span className="font-semibold text-[#F5F4F1]">{step.name}</span>
-                              </div>
-                              <span className="text-[10px] text-[#9C9C9C] uppercase">{step.model}</span>
-                            </div>
-                            <p className="text-[11px] text-[#9C9C9C]">{step.description}</p>
-                            {step.dependencies.length > 0 && (
-                              <div className="text-[10px] font-mono text-[#987654]">
-                                Depends on: {step.dependencies.join(', ')}
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                      <div className="flex items-center justify-between text-[10px] font-mono uppercase text-[#9C9C9C]">
+                        <span>Execution Sequence ({editingPlanId === msg.lumiWorkplan.id ? editedSteps.length : msg.lumiWorkplan.executionSequence.length} Stages)</span>
+                        {editingPlanId === msg.lumiWorkplan.id && (
+                          <button
+                            onClick={handleAddStep}
+                            className="text-[#987654] hover:text-[#b8956e] flex items-center space-x-1 lowercase font-mono"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>add stage</span>
+                          </button>
+                        )}
                       </div>
+
+                      {editingPlanId === msg.lumiWorkplan.id ? (
+                        <div className="space-y-2.5">
+                          {editedSteps.map((step, idx) => (
+                            <div key={step.id} className="p-3 rounded bg-[#161616] border border-[#987654]/50 space-y-2 text-xs">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-mono text-[#987654] font-bold text-[11px]">0{idx + 1}.</span>
+                                <input
+                                  type="text"
+                                  value={step.name}
+                                  onChange={e => handleUpdateStep(step.id, { name: e.target.value })}
+                                  placeholder="Stage title"
+                                  className="flex-1 bg-[#0c0c0c] border border-[#303030] p-1.5 rounded text-xs text-[#F5F4F1] outline-none"
+                                />
+                                <input
+                                  type="text"
+                                  value={step.model}
+                                  onChange={e => handleUpdateStep(step.id, { model: e.target.value })}
+                                  placeholder="Model"
+                                  className="w-28 bg-[#0c0c0c] border border-[#303030] p-1.5 rounded text-[10px] font-mono text-[#987654] outline-none"
+                                />
+                                <div className="flex items-center space-x-1">
+                                  <button
+                                    onClick={() => handleMoveStep(idx, 'up')}
+                                    disabled={idx === 0}
+                                    className="p-1 rounded bg-[#202020] text-[#9C9C9C] hover:text-[#F5F4F1] disabled:opacity-30"
+                                  >
+                                    <ArrowUp className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleMoveStep(idx, 'down')}
+                                    disabled={idx === editedSteps.length - 1}
+                                    className="p-1 rounded bg-[#202020] text-[#9C9C9C] hover:text-[#F5F4F1] disabled:opacity-30"
+                                  >
+                                    <ArrowDown className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleRemoveStep(step.id)}
+                                    className="p-1 rounded bg-[#202020] text-red-400 hover:text-red-300"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+                              <input
+                                type="text"
+                                value={step.description}
+                                onChange={e => handleUpdateStep(step.id, { description: e.target.value })}
+                                placeholder="Stage description"
+                                className="w-full bg-[#0c0c0c] border border-[#303030] p-1.5 rounded text-[11px] text-[#A0A0A0] outline-none"
+                              />
+                              <div>
+                                <div className="text-[10px] font-mono text-[#987654] mb-0.5">Stage Actions (one per line):</div>
+                                <textarea
+                                  rows={2}
+                                  value={Array.isArray(step.actions) ? step.actions.join('\n') : ''}
+                                  onChange={e => handleUpdateStep(step.id, { actions: e.target.value.split('\n').filter(Boolean) })}
+                                  placeholder="Action 1\nAction 2"
+                                  className="w-full bg-[#0c0c0c] border border-[#303030] p-1.5 rounded text-[10.5px] font-mono text-[#D5D2CC] outline-none"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {msg.lumiWorkplan.executionSequence.map((step, idx) => (
+                            <div key={step.id} className="p-2.5 rounded bg-[#141414] border border-[#222222] space-y-1 text-xs">
+                              <div className="flex items-center justify-between font-mono text-[11px]">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-[#987654]">0{idx + 1}.</span>
+                                  <span className="font-semibold text-[#F5F4F1]">{step.name}</span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-[10px] text-[#9C9C9C] uppercase">{step.model}</span>
+                                  <button
+                                    onClick={() => handleToggleStepExpand(step.id)}
+                                    className="p-1 rounded hover:bg-[#202020] text-[#987654] transition-colors"
+                                    title="Toggle detailed stage actions and validation"
+                                  >
+                                    {expandedStepId === step.id ? (
+                                      <ChevronUp className="w-3.5 h-3.5" />
+                                    ) : (
+                                      <ChevronDown className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                              <p className="text-[11px] text-[#9C9C9C]">{step.description}</p>
+                              
+                              {/* Expandable Stage Details */}
+                              {expandedStepId === step.id && (
+                                <div className="mt-2 pt-2 border-t border-[#262626] space-y-2 font-mono text-[10.5px]">
+                                  {step.actions && step.actions.length > 0 && (
+                                    <div className="space-y-1">
+                                      <span className="text-[#987654] uppercase text-[10px] font-bold">Planned Stage Actions:</span>
+                                      <ul className="space-y-0.5 pl-3 list-disc text-[#D5D2CC]">
+                                        {step.actions.map((act, aIdx) => (
+                                          <li key={aIdx}>{act}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  {step.inputs && (
+                                    <div>
+                                      <span className="text-[#9C9C9C]">Inputs: </span>
+                                      <span className="text-[#E2E8F0]">{step.inputs}</span>
+                                    </div>
+                                  )}
+                                  {step.expectedOutput && (
+                                    <div>
+                                      <span className="text-[#9C9C9C]">Expected Output: </span>
+                                      <span className="text-[#A3E635]">{step.expectedOutput}</span>
+                                    </div>
+                                  )}
+                                  {step.validationCriteria && (
+                                    <div>
+                                      <span className="text-[#9C9C9C]">Validation Criteria: </span>
+                                      <span className="text-[#38BDF8]">{step.validationCriteria}</span>
+                                    </div>
+                                  )}
+                                  {step.dependencies.length > 0 && (
+                                    <div className="text-[10px] text-[#987654]">
+                                      Dependencies: {step.dependencies.join(', ')}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {/* Expected Deliverables */}
@@ -704,6 +925,7 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                                 setEditingPlanId(msg.lumiWorkplan!.id);
                                 setEditedInterpretation(msg.lumiWorkplan!.taskInterpretation);
                                 setEditedDeliverables(msg.lumiWorkplan!.expectedDeliverables.join(', '));
+                                setEditedSteps(JSON.parse(JSON.stringify(msg.lumiWorkplan!.executionSequence)));
                               }}
                               className="px-3 py-2 rounded bg-[#191919] hover:bg-[#202020] text-[#D5D2CC] border border-[#303030] font-mono text-xs flex items-center space-x-1 transition-colors"
                             >
