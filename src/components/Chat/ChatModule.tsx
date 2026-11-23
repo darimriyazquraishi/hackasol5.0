@@ -737,40 +737,29 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                       )}
                     </div>
 
-                    {/* Knowledge Base Matches (Pre-Approval RAG Grounding) */}
+                    {/* Knowledge Base Context */}
                     {msg.lumiWorkplan.knowledgeMatches && msg.lumiWorkplan.knowledgeMatches.length > 0 ? (
-                      <div className="space-y-2 p-3 rounded-lg bg-[#0e1726] border border-[#1e293b]">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-1.5 text-xs font-semibold text-sky-400 uppercase tracking-wider font-mono">
-                            <BookOpen className="w-3.5 h-3.5" />
-                            <span>Knowledge Base Matches (Retrieved Policy)</span>
-                          </div>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800">
-                            Pre-Approval RAG Grounded
-                          </span>
+                      <div className="space-y-2 p-3 rounded-lg bg-[#141414] border border-[#262626]">
+                        <div className="flex items-center space-x-1.5 text-xs font-medium text-[#D5D2CC]">
+                          <BookOpen className="w-3.5 h-3.5 text-[#987654]" />
+                          <span>Referenced Knowledge & Guidelines</span>
                         </div>
                         <div className="space-y-2">
                           {msg.lumiWorkplan.knowledgeMatches.map((km, kIdx) => (
-                            <div key={kIdx} className="p-2.5 rounded bg-[#0a0f14] border border-[#1e293b] text-xs space-y-1">
+                            <div key={kIdx} className="p-2.5 rounded bg-[#181818] border border-[#262626] text-xs space-y-1">
                               <div className="flex items-center justify-between">
-                                <span className="font-semibold text-slate-200">{km.docName}</span>
-                                <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800">
-                                  Score: {(km.relevanceScore * 100).toFixed(0)}% ({km.relevanceLevel})
-                                </span>
+                                <span className="font-medium text-[#F5F4F1]">{km.docName}</span>
+                                {km.versionDate && <span className="text-[11px] text-[#9C9C9C]">{km.versionDate}</span>}
                               </div>
-                              <div className="text-[11px] text-slate-400">
-                                <span className="text-slate-500 font-mono">Sections: </span>{km.sections}
-                                {km.versionDate && <span className="ml-2 text-slate-500 font-mono">• {km.versionDate}</span>}
-                              </div>
-                              <div className="text-[11px] text-emerald-400 font-mono flex items-center space-x-1">
-                                <span>✓</span>
-                                <span>{km.status}</span>
+                              <div className="text-[11px] text-[#9C9C9C]">
+                                <span className="text-[#6C6C6C]">Sections: </span>
+                                <span className="text-[#D5D2CC]">{km.sections}</span>
                               </div>
                               {km.keyRequirements && km.keyRequirements.length > 0 && (
-                                <div className="mt-1 pt-1 border-t border-slate-800/60 flex flex-wrap gap-1">
+                                <div className="mt-1.5 pt-1.5 border-t border-[#262626] flex flex-wrap gap-1.5">
                                   {km.keyRequirements.map((req, rIdx) => (
-                                    <span key={rIdx} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-300">
-                                      • {req}
+                                    <span key={rIdx} className="text-[11px] text-[#9C9C9C] bg-[#202020] px-2 py-0.5 rounded">
+                                      {req}
                                     </span>
                                   ))}
                                 </div>
@@ -779,19 +768,19 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                           ))}
                         </div>
                         {msg.lumiWorkplan.knowledgeContext?.conflictDetected && (
-                          <div className="p-2 rounded bg-amber-950/40 border border-amber-800/50 text-[11px] text-amber-300 flex items-start space-x-1.5">
-                            <span className="font-bold">⚠️</span>
+                          <div className="p-2 rounded bg-amber-950/30 border border-amber-800/40 text-xs text-amber-300 flex items-start space-x-1.5">
+                            <span className="font-bold">Notice:</span>
                             <span>{msg.lumiWorkplan.knowledgeContext.conflictDetails}</span>
                           </div>
                         )}
                       </div>
                     ) : msg.lumiWorkplan.policyNotice ? (
-                      <div className="p-2.5 rounded bg-amber-950/20 border border-amber-800/40 text-xs text-amber-300 space-y-1">
-                        <div className="font-semibold font-mono flex items-center space-x-1">
-                          <span>ℹ️</span>
-                          <span>Internal Policy Notice</span>
+                      <div className="p-2.5 rounded bg-[#141414] border border-[#262626] text-xs text-[#D5D2CC] space-y-1">
+                        <div className="font-medium flex items-center space-x-1.5 text-[#987654]">
+                          <BookOpen className="w-3.5 h-3.5" />
+                          <span>Policy Context</span>
                         </div>
-                        <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                        <p className="text-xs text-[#9C9C9C] leading-relaxed">
                           {msg.lumiWorkplan.policyNotice}
                         </p>
                       </div>
@@ -957,19 +946,17 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                 {/* Stage 6 & 7: Compilation Deliverables & Validation Output */}
                 {msg.compiledResult && (
                   <div className="mt-4 space-y-4">
-                    {/* Validation Report Banner */}
-                    <div className="p-3.5 rounded-xl bg-[#080808] border border-[#303030] space-y-2 font-mono text-xs">
+                    {/* Validation Report */}
+                    <div className="p-3 rounded-lg bg-[#141414] border border-[#262626] space-y-2 text-xs">
                       <div className="flex items-center justify-between border-b border-[#262626] pb-2">
                         <div className="flex items-center space-x-2">
                           <CheckCircle2 className={`w-4 h-4 ${msg.compiledResult.validation.passed ? 'text-emerald-400' : 'text-amber-400'}`} />
-                          <span className="font-semibold text-[#F5F4F1]">STAGE 7 VALIDATION REPORT</span>
+                          <span className="font-medium text-[#F5F4F1]">Quality & Fact Validation</span>
                         </div>
-                        <span className={`text-[10px] px-2 py-0.5 rounded border uppercase ${
-                          msg.compiledResult.validation.passed
-                            ? 'bg-emerald-950/60 text-emerald-400 border-emerald-800'
-                            : 'bg-amber-950/60 text-amber-400 border-amber-800'
+                        <span className={`text-xs font-medium ${
+                          msg.compiledResult.validation.passed ? 'text-emerald-400' : 'text-amber-400'
                         }`}>
-                          {msg.compiledResult.validation.passed ? 'Validation Passed' : 'Validation Warnings'}
+                          {msg.compiledResult.validation.passed ? 'Verified' : 'Warnings'}
                         </span>
                       </div>
 
