@@ -76,7 +76,7 @@ export interface DiffusionResult {
 /**
  * Executes local text-to-image diffusion via segmind/tiny-sd
  */
-export function runDiffusionEngine(prompt: string, outputPath: string, steps: number = 8): DiffusionResult {
+export function runDiffusionEngine(prompt: string, outputPath: string, steps: number = 12): DiffusionResult {
   const pythonBin = getPythonBin();
   const scriptPath = path.resolve(process.cwd(), 'server', 'diffusionEngine.py');
 
@@ -90,7 +90,7 @@ export function runDiffusionEngine(prompt: string, outputPath: string, steps: nu
       '--prompt', prompt,
       '--output', outputPath,
       '--steps', steps.toString(),
-      '--guidance', '7.0'
+      '--guidance', '7.5'
     ], { encoding: 'utf-8', timeout: 120000 });
 
     if (res.status === 0 && res.stdout) {
@@ -1615,10 +1615,10 @@ export async function executeImageGeneration(
   // 1. For subjects without a specialized artisanal vector scene, execute local diffusion (segmind/tiny-sd)
   if (!isArtisanal) {
     try {
-      const diffResult = runDiffusionEngine(intent.prompt || subject, filePath, 8);
+      const diffResult = runDiffusionEngine(intent.prompt || subject, filePath, 12);
       if (diffResult.success && fs.existsSync(filePath)) {
         pngBuffer = fs.readFileSync(filePath);
-        engineUsed = `segmind/tiny-sd (${diffResult.steps || 8} steps, DPM-Solver++)`;
+        engineUsed = `segmind/tiny-sd (${diffResult.steps || 12} steps, DPM-Solver++ with Negative Prompting)`;
       }
     } catch {
       pngBuffer = null;
