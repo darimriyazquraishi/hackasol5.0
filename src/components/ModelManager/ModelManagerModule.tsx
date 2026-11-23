@@ -87,7 +87,7 @@ export const ModelManagerModule: React.FC = () => {
       <div className="flex items-center justify-between border-b border-[#303030] pb-4">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-xl font-bold font-mono tracking-tight text-[#F5F4F1]">
+            <h1 className="text-2xl font-normal font-display tracking-tight text-[#F5F4F1]">
               MODEL MANAGER & AUDIT
             </h1>
             <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-[#191919] text-[#987654] border border-[#303030]">
@@ -128,6 +128,11 @@ export const ModelManagerModule: React.FC = () => {
                   : 'Local Service Unconnected'}
               </span>
               <span className={`w-2 h-2 rounded-full ${auditData?.runtimeOnline ? 'bg-[#987654]' : 'bg-amber-500'}`} />
+              {auditData?.runtimeOnline && (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#1e1b18] text-[#987654] border border-[#303030]">
+                  Zero-Timeout
+                </span>
+              )}
             </div>
             <div className="text-[11px] text-[#9C9C9C] mt-0.5">
               Endpoint: {auditData?.endpoint || 'Local Runtime'} • Tested: {auditData?.testedAt ? new Date(auditData.testedAt).toLocaleTimeString() : 'N/A'}
@@ -174,7 +179,7 @@ export const ModelManagerModule: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Layers className="w-4 h-4 text-[#987654]" />
-            <h2 className="text-xs font-mono uppercase tracking-wider text-[#F5F4F1] font-semibold">
+            <h2 className="text-sm font-normal font-display uppercase tracking-wide text-[#F5F4F1]">
               Model-to-Task Audit Matrix (10 Categories)
             </h2>
           </div>
@@ -252,7 +257,7 @@ export const ModelManagerModule: React.FC = () => {
       {/* Installed Models in Runtime */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-mono uppercase tracking-wider text-[#F5F4F1] font-semibold">
+          <h2 className="text-sm font-normal font-display uppercase tracking-wide text-[#F5F4F1]">
             Local Models in Inference Runtime ({auditData?.installedModels?.length || 0})
           </h2>
         </div>

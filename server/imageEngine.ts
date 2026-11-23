@@ -242,6 +242,7 @@ export async function validateImageWithVision(
         model: 'moondream:latest',
         prompt: 'Describe what you see in this image in detail. Identify the primary subject, colors, and key visual features.',
         stream: false,
+        keep_alive: -1,
         images: [b64]
       })
     });

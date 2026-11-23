@@ -31,6 +31,7 @@ export const CommandPalette: React.FC = () => {
     togglePanel,
     setPanelTab,
     setActiveBarTab,
+    setActiveModule,
     setTheme
   } = useWorkspace();
 
@@ -56,6 +57,18 @@ export const CommandPalette: React.FC = () => {
 
   const commands: CommandItem[] = useMemo(
     () => [
+      {
+        id: 'view.chat',
+        category: 'View',
+        title: 'Switch to Lumi Chat',
+        action: () => setActiveModule('chat')
+      },
+      {
+        id: 'view.ide',
+        category: 'View',
+        title: 'Switch to Workspace IDE',
+        action: () => setActiveModule('ide')
+      },
       {
         id: 'view.terminal',
         category: 'View',
@@ -198,6 +211,7 @@ export const CommandPalette: React.FC = () => {
       openFolderFromDisk,
       exportProjectZip,
       setActiveBarTab,
+      setActiveModule,
       activeTabId,
       closeTab,
       closeAllTabs,

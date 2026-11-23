@@ -154,7 +154,7 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
         deliverableFormat: m.lumiWorkplan?.decomposition?.requestedOutputFormat
       }));
 
-      const res = await fetch(APP_CONFIG.endpoints.orchestratePlan, {
+      const planPromise = fetch(APP_CONFIG.endpoints.orchestratePlan, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -166,6 +166,17 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
         signal: controller.signal
       });
 
+      // Deliberate 1.5s thinking delay to show "LUMI is thinking..." state before revealing workplan
+      const thinkingDelay = new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(resolve, 1500);
+        controller.signal.addEventListener('abort', () => {
+          clearTimeout(timer);
+          reject(new DOMException('Aborted', 'AbortError'));
+        });
+      });
+
+      const [res] = await Promise.all([planPromise, thinkingDelay]);
+
       if (res.ok) {
         const data = await res.json();
         const plan: LumiWorkplan = data.workplan;
@@ -174,7 +185,7 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
           id: `plan-msg-${Date.now()}`,
           sender: 'assistant',
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          content: 'LUMI has analyzed the capabilities required for this task and prepared a structured workplan for review.',
+          content: '**Workplan Summary** — Key objectives & execution points:',
           lumiWorkplan: plan,
           isApprovalPrompt: true
         };
@@ -484,7 +495,7 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
             <PanelLeft className="w-4 h-4" />
           </button>
           <div className="w-2 h-2 rounded-full bg-[#987654] shrink-0" />
-          <h1 className="text-xs font-mono font-semibold tracking-wide text-[#F5F4F1] truncate">
+          <h1 className="text-xs font-display font-normal tracking-wide text-[#F5F4F1] truncate">
             {activeConversation?.title || 'Intelligence Chat'}
           </h1>
         </div>
@@ -548,7 +559,7 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                 alt="LUMI"
                 className="h-44 sm:h-52 w-auto object-contain pointer-events-none select-none transition-transform"
               />
-              <h2 className="mt-4 text-xl font-mono tracking-widest text-[#F5F4F1] uppercase font-bold">
+              <h2 className="mt-4 text-2xl font-display font-normal tracking-widest text-[#F5F4F1] uppercase">
                 L U M I
               </h2>
               <p className="mt-1 text-xs text-[#9C9C9C] max-w-md">
@@ -712,11 +723,12 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
 
                 {/* Stage 3: Human Approval of Workplan Interface (Part 1) */}
                 {msg.lumiWorkplan && msg.isApprovalPrompt && (
-                  <div className="mt-3 p-4 rounded-xl bg-[#0c0c0c] border border-[#262626] space-y-4 font-sans text-sm">
-                    {/* Primary Objective */}
-                    <div className="space-y-1">
-                      <div className="text-xs font-semibold text-[#D5D2CC] uppercase tracking-wider font-mono">
-                        Primary Objective
+                  <div className="mt-3 p-4 rounded-xl bg-[#0c0c0c] border border-[#262626] space-y-3.5 font-sans text-xs">
+                    {/* Key Objectives & Scope in Points */}
+                    <div className="space-y-1.5">
+                      <div className="text-[11px] font-semibold text-[#D5D2CC] uppercase tracking-wider font-mono flex items-center justify-between">
+                        <span>Task Objective & Scope</span>
+                        <span className="text-[10px] text-[#987654] font-normal uppercase">Key Points</span>
                       </div>
                       {editingPlanId === msg.lumiWorkplan.id ? (
                         <textarea
@@ -726,65 +738,76 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                           className="w-full text-xs text-[#F5F4F1] bg-[#141414] p-2.5 rounded border border-[#987654] outline-none"
                         />
                       ) : (
-                        <p className="text-xs text-[#E2E8F0] leading-relaxed">
-                          {msg.lumiWorkplan.decomposition?.primaryObjective || msg.lumiWorkplan.taskInterpretation}
-                        </p>
+                        <div className="p-2.5 rounded-lg bg-[#141414] border border-[#262626] space-y-1.5 text-xs">
+                          <div className="flex items-start space-x-2">
+                            <span className="text-[#987654] font-bold">•</span>
+                            <span className="text-[#F5F4F1] font-medium shrink-0">Goal:</span>
+                            <span className="text-[#D5D2CC] flex-1">
+                              {msg.lumiWorkplan.decomposition?.primaryObjective || msg.lumiWorkplan.taskInterpretation}
+                            </span>
+                          </div>
+                          {msg.lumiWorkplan.decomposition?.parameters && msg.lumiWorkplan.decomposition.parameters.length > 0 && (
+                            <div className="flex items-start space-x-2">
+                              <span className="text-[#987654] font-bold">•</span>
+                              <span className="text-[#F5F4F1] font-medium shrink-0">Parameters:</span>
+                              <span className="text-[#9C9C9C] flex-1 font-mono text-[11px]">
+                                {msg.lumiWorkplan.decomposition.parameters.map((p: any) => `${p.key || p.name}: ${p.value} ${p.unit || ''}`.trim()).join(' | ')}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex items-start space-x-2">
+                            <span className="text-[#987654] font-bold">•</span>
+                            <span className="text-[#F5F4F1] font-medium shrink-0">Deliverable:</span>
+                            <span className="text-[#987654] font-mono text-[11px]">
+                              {msg.lumiWorkplan.expectedDeliverables?.[0] || msg.lumiWorkplan.decomposition?.requestedOutputFormat?.toUpperCase() || 'Verified Result'}
+                            </span>
+                          </div>
+                        </div>
                       )}
                     </div>
 
-                    {/* Knowledge Base Context */}
+                    {/* Knowledge Base Context in Points */}
                     {msg.lumiWorkplan.knowledgeMatches && msg.lumiWorkplan.knowledgeMatches.length > 0 ? (
-                      <div className="space-y-2 p-3 rounded-lg bg-[#141414] border border-[#262626]">
-                        <div className="flex items-center space-x-1.5 text-xs font-medium text-[#D5D2CC]">
-                          <BookOpen className="w-3.5 h-3.5 text-[#987654]" />
+                      <div className="p-2.5 rounded-lg bg-[#141414] border border-[#262626] space-y-1.5 text-xs">
+                        <div className="flex items-center space-x-1.5 text-[11px] font-semibold text-[#D5D2CC] uppercase tracking-wider font-mono">
+                          <BookOpen className="w-3 h-3 text-[#987654]" />
                           <span>Referenced Knowledge & Guidelines</span>
                         </div>
-                        <div className="space-y-2">
+                        <ul className="space-y-1 pt-1 text-[11px]">
                           {msg.lumiWorkplan.knowledgeMatches.map((km, kIdx) => (
-                            <div key={kIdx} className="p-2.5 rounded bg-[#181818] border border-[#262626] text-xs space-y-1">
-                              <div className="flex items-center justify-between">
-                                <span className="font-medium text-[#F5F4F1]">{km.docName}</span>
-                                {km.versionDate && <span className="text-[11px] text-[#9C9C9C]">{km.versionDate}</span>}
-                              </div>
-                              <div className="text-[11px] text-[#9C9C9C]">
-                                <span className="text-[#6C6C6C]">Sections: </span>
-                                <span className="text-[#D5D2CC]">{km.sections}</span>
-                              </div>
-                              {km.keyRequirements && km.keyRequirements.length > 0 && (
-                                <div className="mt-1.5 pt-1.5 border-t border-[#262626] flex flex-wrap gap-1.5">
-                                  {km.keyRequirements.map((req, rIdx) => (
-                                    <span key={rIdx} className="text-[11px] text-[#9C9C9C] bg-[#202020] px-2 py-0.5 rounded">
-                                      {req}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
+                            <li key={kIdx} className="flex items-start space-x-2 text-[#D5D2CC]">
+                              <span className="text-[#987654] font-bold">•</span>
+                              <span>
+                                <strong className="text-[#F5F4F1]">{km.docName}:</strong> {km.sections}
+                                {km.keyRequirements && km.keyRequirements.length > 0 && ` (${km.keyRequirements.slice(0, 2).join('; ')})`}
+                              </span>
+                            </li>
                           ))}
-                        </div>
+                        </ul>
                         {msg.lumiWorkplan.knowledgeContext?.conflictDetected && (
-                          <div className="p-2 rounded bg-amber-950/30 border border-amber-800/40 text-xs text-amber-300 flex items-start space-x-1.5">
-                            <span className="font-bold">Notice:</span>
+                          <div className="p-2 rounded bg-amber-950/30 border border-amber-800/40 text-[11px] text-amber-300 flex items-start space-x-1.5">
+                            <span className="font-bold">• Note:</span>
                             <span>{msg.lumiWorkplan.knowledgeContext.conflictDetails}</span>
                           </div>
                         )}
                       </div>
                     ) : msg.lumiWorkplan.policyNotice ? (
-                      <div className="p-2.5 rounded bg-[#141414] border border-[#262626] text-xs text-[#D5D2CC] space-y-1">
-                        <div className="font-medium flex items-center space-x-1.5 text-[#987654]">
-                          <BookOpen className="w-3.5 h-3.5" />
+                      <div className="p-2.5 rounded-lg bg-[#141414] border border-[#262626] text-xs space-y-1">
+                        <div className="flex items-center space-x-1.5 text-[11px] font-semibold text-[#987654] uppercase tracking-wider font-mono">
+                          <BookOpen className="w-3 h-3" />
                           <span>Policy Context</span>
                         </div>
-                        <p className="text-xs text-[#9C9C9C] leading-relaxed">
-                          {msg.lumiWorkplan.policyNotice}
-                        </p>
+                        <div className="flex items-start space-x-2 text-[11px] text-[#9C9C9C]">
+                          <span className="text-[#987654] font-bold">•</span>
+                          <span>{msg.lumiWorkplan.policyNotice}</span>
+                        </div>
                       </div>
                     ) : null}
 
-                    {/* Execution Sequence */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs font-semibold text-[#D5D2CC] uppercase tracking-wider font-mono">
-                        <span>Execution Sequence</span>
+                    {/* Execution Sequence in Points */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-[#D5D2CC] uppercase tracking-wider font-mono">
+                        <span>Execution Sequence ({msg.lumiWorkplan.executionSequence.length} Steps)</span>
                         {editingPlanId === msg.lumiWorkplan.id && (
                           <button
                             onClick={handleAddStep}
@@ -843,13 +866,13 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                           ))}
                         </div>
                       ) : (
-                        <div className="space-y-1.5">
+                        <div className="space-y-1">
                           {msg.lumiWorkplan.executionSequence.map((step, idx) => (
-                            <div key={step.id} className="p-2.5 rounded bg-[#141414] border border-[#222222] flex items-start space-x-2.5 text-xs">
-                              <span className="font-mono text-[#987654] font-semibold">{idx + 1}.</span>
-                              <div className="flex-1 min-w-0">
-                                <span className="font-medium text-[#F5F4F1]">{step.name}: </span>
-                                <span className="text-[#9C9C9C]">{step.description}</span>
+                            <div key={step.id} className="p-2 rounded-lg bg-[#141414] border border-[#222222] flex items-center space-x-2.5 text-xs">
+                              <span className="font-mono text-[#987654] font-semibold w-4 text-right shrink-0">{idx + 1}.</span>
+                              <div className="flex-1 min-w-0 flex items-center space-x-1.5 truncate">
+                                <span className="font-medium text-[#F5F4F1] shrink-0">{step.name}:</span>
+                                <span className="text-[#9C9C9C] truncate text-[11px]">{step.description}</span>
                               </div>
                             </div>
                           ))}
@@ -858,9 +881,9 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                     </div>
 
                     {/* Expected Deliverables */}
-                    <div className="space-y-1">
-                      <div className="text-xs font-semibold text-[#D5D2CC] uppercase tracking-wider font-mono">
-                        Expected Deliverables
+                    <div className="space-y-1 pt-1">
+                      <div className="text-[11px] font-semibold text-[#D5D2CC] uppercase tracking-wider font-mono">
+                        Deliverables
                       </div>
                       {editingPlanId === msg.lumiWorkplan.id ? (
                         <input
@@ -873,7 +896,7 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                       ) : (
                         <div className="flex flex-wrap gap-1.5">
                           {msg.lumiWorkplan.expectedDeliverables.map(deliv => (
-                            <span key={deliv} className="px-2.5 py-1 rounded bg-[#191919] border border-[#303030] text-xs font-sans text-[#E2E8F0]">
+                            <span key={deliv} className="px-2.5 py-0.5 rounded bg-[#191919] border border-[#303030] text-[11px] font-mono text-[#E2E8F0]">
                               {deliv}
                             </span>
                           ))}
@@ -1018,16 +1041,27 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
             </div>
           ))}
 
-          {/* Real-time Generating Indicator with Stop Button */}
+          {/* Real-time Generating & Thinking Indicator */}
           {isGenerating && (
-            <div className="flex items-center justify-between p-3 rounded-xl bg-[#141414] border border-[#303030] text-xs font-mono text-[#987654] max-w-sm">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-3.5 h-3.5 rounded-full border border-[#987654] border-t-transparent animate-spin" />
-                <span>Processing with LUMI...</span>
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#141414] border border-[#303030] text-xs font-mono text-[#D5D2CC] max-w-md shadow-lg">
+              <div className="flex items-center space-x-3">
+                <div className="relative flex items-center justify-center w-4 h-4">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#987654] opacity-50" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#987654]" />
+                </div>
+                <div>
+                  <div className="text-[#F5F4F1] font-semibold flex items-center space-x-2">
+                    <span>LUMI is thinking...</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#987654] animate-pulse" />
+                  </div>
+                  <div className="text-[10px] text-[#9C9C9C] mt-0.5">
+                    {executingPlanId ? 'Executing approved workplan & compiling results' : 'Analyzing task requirements & structuring workplan'}
+                  </div>
+                </div>
               </div>
               <button
                 onClick={handleStopGeneration}
-                className="px-2.5 py-1 rounded bg-[#080808] hover:bg-[#202020] text-red-400 border border-[#303030] text-[11px] flex items-center space-x-1"
+                className="px-2.5 py-1 rounded bg-[#080808] hover:bg-[#202020] text-red-400 border border-[#303030] text-[11px] flex items-center space-x-1 transition-colors"
               >
                 <Square className="w-3 h-3 fill-current" />
                 <span>Stop</span>

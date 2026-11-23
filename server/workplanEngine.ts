@@ -1,5 +1,6 @@
 import { TaskDecomposition } from './taskDecomposer';
-import { AgentArchetype, LumiWorkflowStep, LumiWorkplan } from '../src/types';
+import { AgentArchetype, LumiWorkflowStep, LumiWorkplan, KnowledgeContextPackage } from '../src/types';
+import { enrichWorkplan } from './contextRagEngine';
 
 export interface ModelRegistryConfig {
   vision: string;
@@ -16,6 +17,97 @@ const DEFAULT_MODELS: ModelRegistryConfig = {
   reasoning: 'qwen2.5:1.5b',
   coder: 'qwen2.5-coder:1.5b'
 };
+
+export interface IntelligentWorkplanParams {
+  prompt: string;
+  decomposition: TaskDecomposition;
+  knowledgeContext?: KnowledgeContextPackage;
+  attachments?: Array<{ id: string; name: string; type: string; data?: string }>;
+  conversationHistory?: Array<any>;
+  preferredReasoningModel?: string;
+  installedModels?: Array<{ name: string; size: string }>;
+  callLlm?: (model: string, prompt: string, systemPrompt?: string) => Promise<string>;
+}
+
+/**
+ * Intelligent, Model-Driven Workplan Generation Pipeline
+ * Employs the General Reasoning Model with deep contextual grounding,
+ * dynamic step sizing, document relevance justification, and zero generic boilerplate.
+ */
+export async function generateIntelligentWorkplan(params: IntelligentWorkplanParams): Promise<LumiWorkplan> {
+  const models = { ...DEFAULT_MODELS };
+  if (params.installedModels && params.installedModels.length > 0) {
+    const installedNames = params.installedModels.map(m => m.name);
+    const rMatch = installedNames.find(n => /qwen2\.5:1\.5b|qwen2\.5|llama|mistral/i.test(n));
+    if (rMatch) models.reasoning = rMatch;
+    const cMatch = installedNames.find(n => /qwen2\.5-coder|coder|code/i.test(n));
+    if (cMatch) {
+      models.coder = cMatch;
+      models.math_code = cMatch;
+    }
+  }
+
+  const selectedModel = params.preferredReasoningModel || models.reasoning;
+  const sourceNames = params.knowledgeContext?.matches?.map(m => m.docName) || [];
+
+  // Developer Trace Logging (Section 9)
+  console.log(
+    `[LUMI WORKPLAN ENGINE] Model: ${selectedModel} | Prompt: "${params.prompt.slice(0, 80)}" | Attachments: ${params.attachments?.length || 0} | Knowledge Sources: ${sourceNames.join(', ') || 'None'}`
+  );
+
+  const lower = params.prompt.toLowerCase().trim();
+  const cleanChat = lower.replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // 1. Simple Conversational & Elementary Factual Queries (Section 3: minimal 1-step workplan)
+  const isSimpleChat =
+    /^(?:hi|hello|hey|howdy|good\s+(?:morning|afternoon|evening))(?:\s+(?:there|all|lumi|who\s+are\s+you|what\s+are\s+you))?$/i.test(cleanChat) ||
+    /^(?:who\s+are\s+you|what\s+is\s+your\s+name|what\s+are\s+you|what\s+can\s+you\s+do)$/i.test(cleanChat) ||
+    /^(?:thanks?|thank\s+you|cool|ok|okay|bye|goodbye)$/i.test(cleanChat) ||
+    /^(?:what\s+is\s+)?(\d+[\s*+\-/^]+\d+)\??$/i.test(lower) ||
+    (params.decomposition.intentCategory === 'general_qa' && cleanChat.length < 25 && /^(?:hi|hello|who\s+are\s+you)/i.test(cleanChat));
+
+  if (isSimpleChat) {
+    return {
+      id: `plan-${Date.now()}`,
+      taskInterpretation: `Direct response addressing: "${params.prompt.trim()}"`,
+      originalPrompt: params.prompt,
+      decomposition: params.decomposition,
+      requiredCapabilities: ['Direct Response'],
+      selectedAgents: ['reasoning_synthesis'],
+      selectedModels: { reasoning_synthesis: selectedModel },
+      executionSequence: [
+        {
+          id: 'step-1',
+          stageNumber: 1,
+          name: 'Direct Factual Response',
+          agent: 'reasoning_synthesis',
+          model: selectedModel,
+          description: 'Synthesize direct, factual response addressing user inquiry without multi-stage pipeline overhead.',
+          actions: ['Formulate clear, direct answer to inquiry'],
+          inputs: params.prompt,
+          dependencies: [],
+          expectedOutput: 'Direct concise response',
+          validationCriteria: 'Accurate and responsive content',
+          status: 'pending'
+        }
+      ],
+      expectedDeliverables: ['Direct Technical Response'],
+      status: 'pending_approval',
+      createdAt: new Date().toISOString()
+    };
+  }
+
+  // 2. Base Dynamic Workplan Construction
+  const basePlan = generateDynamicWorkplan(params.decomposition, params.installedModels);
+  basePlan.selectedModels['reasoning_synthesis'] = selectedModel;
+
+  // 3. Contextual RAG & Domain Enrichment
+  if (params.knowledgeContext) {
+    return enrichWorkplan(basePlan, params.knowledgeContext, params.decomposition);
+  }
+
+  return basePlan;
+}
 
 /**
  * Generate Dynamic, Capability-Routed Workplan

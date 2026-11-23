@@ -27,6 +27,72 @@
 
   --font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
   --font-body: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Domaine Display', serif;
+}
+
+/* ==========================================================================
+   Domaine Display (Klim Type Foundry) Web Font Registration
+   Primary display typeface for headings throughout LUMI (Regular 400 default)
+   Supports standard retail webfont files as well as official Klim test files
+   ========================================================================== */
+@font-face {
+  font-family: 'Domaine Display';
+  src: url('/fonts/DomaineDisplay-Regular.woff2') format('woff2'),
+       url('/fonts/DomaineDisplay-Regular.woff') format('woff'),
+       url('/fonts/TestDomaineDisplay-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Domaine Display';
+  src: url('/fonts/DomaineDisplay-RegularItalic.woff2') format('woff2'),
+       url('/fonts/DomaineDisplay-RegularItalic.woff') format('woff'),
+       url('/fonts/TestDomaineDisplay-RegularItalic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Domaine Display';
+  src: url('/fonts/DomaineDisplay-Medium.woff2') format('woff2'),
+       url('/fonts/DomaineDisplay-Medium.woff') format('woff'),
+       url('/fonts/TestDomaineDisplay-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Domaine Display';
+  src: url('/fonts/DomaineDisplay-Bold.woff2') format('woff2'),
+       url('/fonts/DomaineDisplay-Bold.woff') format('woff'),
+       url('/fonts/TestDomaineDisplay-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Headings Typography Hierarchy - Domaine Display 400 Regular */
+h1, h2, h3, h4, h5, h6,
+.font-display,
+.heading-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  text-rendering: optimizeLegibility;
+}
+
+/* Preserve body font for general UI elements */
+p, span, button, input, textarea, select, table, th, td, nav, a {
+  font-family: var(--font-body);
+}
+
+/* Preserve monospace for code and technical specs */
+code, pre, kbd, samp, .font-mono {
+  font-family: var(--font-mono) !important;
 }
 
 html, body {

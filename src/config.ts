@@ -19,13 +19,15 @@ export const APP_CONFIG = {
     diagnostics: '/api/diagnostics',
     chat: '/api/chat',
     health: '/api/health',
-    executionHistory: '/api/orchestrate/history'
+    executionHistory: '/api/orchestrate/history',
+    serversStatus: '/api/servers/status',
+    serversRefresh: '/api/servers/refresh'
   },
   timeouts: {
-    planTimeoutMs: 180000,
-    executeTimeoutMs: 360000,
-    codeExecutionTimeoutMs: 30000,
-    probeTimeoutMs: 5000
+    planTimeoutMs: 600000, // 10 minutes zero-timeout buffer
+    executeTimeoutMs: 1800000, // 30 minutes zero-timeout buffer
+    codeExecutionTimeoutMs: 120000, // 2 minutes execution buffer
+    probeTimeoutMs: 15000 // Resilient probe timeout
   },
   vramCeilings: {
     gtx1650MB: 4096,

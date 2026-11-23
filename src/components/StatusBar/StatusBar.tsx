@@ -17,6 +17,9 @@ export const StatusBar: React.FC = () => {
     activeFile,
     problems,
     isBackendOnline,
+    refreshAllServers,
+    isRefreshingServers,
+    serverSupervisionStatus,
     setPanelVisible,
     setPanelTab,
     setCommandPaletteMode,
@@ -76,16 +79,23 @@ export const StatusBar: React.FC = () => {
           <RefreshCw className={`w-2.5 h-2.5 ml-0.5 text-[#9C9C9C] ${isSyncing ? 'animate-spin' : ''}`} />
         </button>
 
-        {/* Backend Heartbeat */}
-        <div
-          title={isBackendOnline ? 'LUMI Core Online' : 'Reconnecting to LUMI Core...'}
-          className="flex items-center space-x-1.5 px-2 h-full cursor-default"
+        {/* Backend Heartbeat & Zero-Timeout Auto-Refresh */}
+        <button
+          onClick={() => refreshAllServers()}
+          disabled={isRefreshingServers}
+          title={
+            isBackendOnline
+              ? `LUMI Servers Active (Zero-Timeout Always-On)\nOllama Runtime: ${serverSupervisionStatus?.servers?.ollama?.status || 'Active'} (keep_alive: -1)\nAuto-Supervisor: Active (20s cycle)\nClick to force-refresh all runtimes now`
+              : 'Reconnecting to LUMI Core... Click to revive all servers'
+          }
+          className="flex items-center space-x-1.5 px-2 h-full hover:bg-[#202020] hover:text-[#F5F4F1] transition-colors group cursor-pointer"
         >
           <span className={`w-1.5 h-1.5 rounded-full ${isBackendOnline ? 'bg-[#987654]' : 'bg-amber-400 animate-ping'}`} />
-          <span className="text-[10px] text-[#9C9C9C]">
-            {isBackendOnline ? 'LUMI Online' : 'Reconnecting...'}
+          <span className="text-[10px] text-[#9C9C9C] group-hover:text-[#F5F4F1] transition-colors">
+            {isBackendOnline ? 'Zero-Timeout Active' : 'Reconnecting...'}
           </span>
-        </div>
+          <RefreshCw className={`w-2.5 h-2.5 ml-0.5 text-[#9C9C9C] group-hover:text-[#987654] ${isRefreshingServers ? 'animate-spin text-[#987654]' : ''}`} />
+        </button>
 
         {/* Problems counter */}
         <button

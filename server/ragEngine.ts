@@ -146,6 +146,28 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+// Standard English stopwords for BM25 keyword discrimination
+const STOP_WORDS = new Set([
+  'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', 'as', 'at',
+  'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', 'can', 'could',
+  'did', 'do', 'does', 'doing', 'down', 'during', 'each', 'few', 'for', 'from', 'further', 'had', 'has',
+  'have', 'having', 'he', 'her', 'here', 'hers', 'herself', 'him', 'himself', 'his', 'how', 'i', 'if',
+  'in', 'into', 'is', 'it', 'its', 'itself', 'just', 'me', 'more', 'most', 'my', 'myself', 'no', 'nor',
+  'not', 'now', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'our', 'ours', 'ourselves', 'out', 'over',
+  'own', 'same', 'she', 'should', 'so', 'some', 'such', 'than', 'that', 'the', 'their', 'theirs', 'them',
+  'themselves', 'then', 'there', 'these', 'they', 'this', 'those', 'through', 'to', 'too', 'under', 'until',
+  'up', 'very', 'was', 'we', 'were', 'what', 'when', 'where', 'which', 'while', 'who', 'whom', 'why',
+  'with', 'would', 'you', 'your', 'yours', 'yourself', 'yourselves', 'tell', 'show', 'give', 'prepare',
+  'create', 'make', 'generate', 'please'
+]);
+
+function tokenizeQuery(text: string): string[] {
+  return text
+    .toLowerCase()
+    .split(/[^a-z0-9_]+/)
+    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
+}
+
 class RagKnowledgeEngine {
   private documents: StoredDocument[] = [];
   private chunks: KnowledgeChunk[] = [];
@@ -223,7 +245,8 @@ class RagKnowledgeEngine {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'nomic-embed-text:latest',
-          prompt: text.slice(0, 1500)
+          prompt: text.slice(0, 1500),
+          keep_alive: -1
         })
       });
       if (res.ok) {
@@ -508,12 +531,11 @@ class RagKnowledgeEngine {
   }
 
   /**
-   * Semantic Retrieval against user-uploaded persistent chunks.
-   * Derives query embeddings via nomic-embed-text:latest, performs dense cosine similarity,
-   * applies relevance reranking with keyword alignment, and selects top-K chunks.
+   * Hybrid Relevance Retrieval: BM25 Lexical Keyword Search + Dense Semantic Vector Search
+   * Combines term frequency saturation, inverse document frequency (IDF), document length normalization,
+   * exact phrase bonus, filename/title matching bonus, and dense cosine similarity.
    */
   public async search(query: string, topK: number = 3): Promise<Array<{ chunk: KnowledgeChunk; score: number }>> {
-    const queryTerms = query.toLowerCase().split(/\W+/).filter(t => t.length > 2);
     if (this.chunks.length === 0) return [];
 
     let queryEmb: number[] = [];
@@ -523,102 +545,141 @@ class RagKnowledgeEngine {
       queryEmb = [];
     }
 
-    const scored = this.chunks.map(chunk => {
-      let termScore = 0;
-      let matchedTerms = 0;
-      const lowerText = chunk.text.toLowerCase();
-      const lowerFile = chunk.file.toLowerCase();
-
-      for (const term of queryTerms) {
-        let matched = false;
-        if (lowerText.includes(term)) {
-          termScore += 0.45;
-          matched = true;
-        }
-        if (chunk.keywords.some(k => k.includes(term))) {
-          termScore += 0.35;
-          matched = true;
-        }
-        if (lowerFile.includes(term)) {
-          termScore += 0.15;
-          matched = true;
-        }
-        if (matched) matchedTerms++;
-      }
-
-      const vector = this.vectors.find(v => v.chunkId === chunk.id);
-      if (vector && vector.terms) {
-        for (const term of queryTerms) {
-          if (vector.terms[term]) {
-            termScore += Math.min(0.3, vector.terms[term] * 0.1);
-          }
-        }
-      }
-
-      // Saturated term coverage: 3-4 matching terms indicate strong relevance without query-length penalty
-      const termCoverage = queryTerms.length > 0 ? Math.min(1.0, matchedTerms / Math.min(queryTerms.length, 4)) : 0;
-      const normalizedTermScore = Math.min(1.0, termCoverage * 0.7 + Math.min(0.3, termScore * 0.05));
-
-      // Dense cosine similarity (768 dimensions)
-      let vectorScore = 0;
-      if (queryEmb.length > 0 && vector && Array.isArray(vector.embedding) && vector.embedding.length > 0) {
-        vectorScore = Math.max(0, this.cosineSimilarity(queryEmb, vector.embedding));
-      }
-
-      // Relevance Reranking: Blend semantic dense vector score (65%) with exact keyword alignment (35%)
-      // If a chunk lacks vector embeddings while embeddings are active, fallback baseline vector score is 0.25
-      const effectiveVectorScore = vectorScore > 0 ? vectorScore : (queryEmb.length > 0 ? 0.25 : 0.50);
-      const combinedScore = +(effectiveVectorScore * 0.65 + normalizedTermScore * 0.35).toFixed(3);
-
-      return {
-        chunk,
-        score: Math.min(0.99, Math.max(0.20, combinedScore))
-      };
-    });
-
-    return scored
-      .filter(s => s.score >= 0.25)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, topK);
+    return this.executeHybridSearch(query, queryEmb, topK);
   }
 
   /**
-   * Synchronous fallback for components requiring immediate evaluation
+   * Synchronous Hybrid Search (uses pre-stored vectors and BM25)
    */
   public searchSync(query: string, topK: number = 3): Array<{ chunk: KnowledgeChunk; score: number }> {
-    const queryTerms = query.toLowerCase().split(/\W+/).filter(t => t.length > 2);
     if (this.chunks.length === 0) return [];
+    return this.executeHybridSearch(query, [], topK);
+  }
 
-    const scored = this.chunks.map(chunk => {
-      let score = 0;
-      let matchedTerms = 0;
+  /**
+   * Core Hybrid Search Execution Engine
+   */
+  private executeHybridSearch(
+    query: string,
+    queryEmb: number[] = [],
+    topK: number = 3
+  ): Array<{ chunk: KnowledgeChunk; score: number }> {
+    const queryTerms = tokenizeQuery(query);
+    if (queryTerms.length === 0) return [];
+
+    const N = this.chunks.length;
+    const rawQuery = query.toLowerCase().trim();
+    const k1 = 1.2;
+    const b = 0.75;
+
+    // 1. Calculate corpus statistics for BM25
+    const docTokens = this.chunks.map(c => tokenizeQuery(c.text + ' ' + (c.file || '') + ' ' + (c.section || '')));
+    const docLengths = docTokens.map(t => t.length);
+    const avgdl = docLengths.reduce((a, b) => a + b, 0) / (N || 1);
+
+    const docTermFreqs = docTokens.map(tokens => {
+      const map = new Map<string, number>();
+      for (const t of tokens) map.set(t, (map.get(t) || 0) + 1);
+      return map;
+    });
+
+    const termDocFreq = new Map<string, number>();
+    for (const tokens of docTokens) {
+      const unique = new Set(tokens);
+      for (const t of unique) termDocFreq.set(t, (termDocFreq.get(t) || 0) + 1);
+    }
+
+    const scored: Array<{ chunk: KnowledgeChunk; score: number }> = [];
+
+    for (let i = 0; i < N; i++) {
+      const chunk = this.chunks[i];
+      const dl = docLengths[i];
+      const tfMap = docTermFreqs[i];
+      const lowerFile = (chunk.file || '').toLowerCase();
       const lowerText = chunk.text.toLowerCase();
-      const lowerFile = chunk.file.toLowerCase();
+
+      let matchedTerms = 0;
+      let bm25Sum = 0;
+      let maxMatchedSum = 0;
+      let fileMatches = 0;
 
       for (const term of queryTerms) {
-        let matched = false;
-        if (chunk.keywords.some(k => k.includes(term))) { score += 0.45; matched = true; }
-        if (lowerText.includes(term)) { score += 0.40; matched = true; }
-        if (lowerFile.includes(term)) { score += 0.35; matched = true; }
-        if (matched) matchedTerms++;
-      }
+        const df = termDocFreq.get(term) || 0;
+        const idf = Math.log((N - df + 0.5) / (df + 0.5) + 1);
+        const maxTermScore = Math.max(0.5, idf) * (k1 + 1);
 
-      const vector = this.vectors.find(v => v.chunkId === chunk.id);
-      if (vector && vector.terms) {
-        for (const term of queryTerms) {
-          if (vector.terms[term]) {
-            score += Math.min(0.5, vector.terms[term] * 0.15);
-          }
+        const f = tfMap.get(term) || 0;
+        const inText = lowerText.includes(term);
+        const inFile = lowerFile.includes(term);
+
+        if (inFile) fileMatches++;
+
+        if (f > 0 || inText || inFile) {
+          matchedTerms++;
+          maxMatchedSum += maxTermScore;
+          const actualF = Math.max(f, inFile ? 2 : 1);
+          const num = actualF * (k1 + 1);
+          const denom = actualF + k1 * (1 - b + b * (dl / avgdl));
+          bm25Sum += Math.max(0.5, idf) * (num / denom);
         }
       }
 
-      const termCoverage = queryTerms.length > 0 ? Math.min(1.0, matchedTerms / Math.min(queryTerms.length, 4)) : 0;
-      const confidence = Math.min(0.99, Math.max(0.20, +(termCoverage * 0.7 + Math.min(0.3, score * 0.05)).toFixed(3)));
-      return { chunk, score: confidence };
-    });
+      // If no query terms matched at all
+      let bm25Score = 0;
+      if (matchedTerms > 0 && maxMatchedSum > 0) {
+        const termCoverage = matchedTerms / queryTerms.length;
+        const bm25Quality = Math.min(1.0, bm25Sum / maxMatchedSum);
+        const fileBonus = fileMatches > 0 ? (fileMatches / queryTerms.length) * 0.35 : 0;
+        const phraseBonus = rawQuery.length > 5 && lowerText.includes(rawQuery) ? 0.25 : 0;
+
+        let rawScore = termCoverage * (bm25Quality * 0.65 + 0.35) + fileBonus + phraseBonus;
+
+        // Multi-term coverage penalty: downweight accidental single-word overlap when user asked multi-term query
+        if (queryTerms.length >= 3 && matchedTerms === 1 && fileMatches === 0) {
+          rawScore *= 0.3;
+        } else if (queryTerms.length >= 2 && matchedTerms === 1 && fileMatches === 0) {
+          rawScore *= 0.45;
+        }
+
+        bm25Score = Math.min(0.99, Math.max(0, rawScore));
+      }
+
+      // 2. Dense Semantic Vector Retrieval (when embeddings exist)
+      let denseScore: number | null = null;
+      const vector = this.vectors.find(v => v.chunkId === chunk.id);
+      if (
+        queryEmb.length > 0 &&
+        vector &&
+        Array.isArray(vector.embedding) &&
+        vector.embedding.length > 0
+      ) {
+        denseScore = Math.max(0, this.cosineSimilarity(queryEmb, vector.embedding));
+      }
+
+      // 3. Hybrid Fusion: Convex combination when both modalities exist
+      let finalScore = bm25Score;
+      if (denseScore !== null) {
+        if (bm25Score > 0) {
+          finalScore = bm25Score * 0.5 + denseScore * 0.5;
+          // Reciprocal Rank Agreement Bonus if both indicate relevance
+          if (bm25Score >= 0.40 && denseScore >= 0.40) {
+            finalScore = Math.min(0.99, finalScore + 0.05);
+          }
+        } else {
+          // Conceptual match found by dense embeddings even if no literal keyword overlapped
+          finalScore = denseScore * 0.8;
+        }
+      }
+
+      if (finalScore >= 0.25) {
+        scored.push({
+          chunk,
+          score: Math.min(0.99, +finalScore.toFixed(3))
+        });
+      }
+    }
 
     return scored
-      .filter(s => s.score >= 0.25)
       .sort((a, b) => b.score - a.score)
       .slice(0, topK);
   }

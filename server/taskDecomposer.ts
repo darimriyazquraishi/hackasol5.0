@@ -250,7 +250,11 @@ export function decomposeUserTask(
 
   // 1. Output Format Detection
   let requestedOutputFormat: TaskDecomposition['requestedOutputFormat'] = 'markdown';
-  if (/(?:export\s*to\s*pdf|\bpdf\b|printable\s*report)/i.test(lower)) {
+  const isDirectInquiry = /^(?:what\s+(?:is|are)|tell\s+me\s+about|show\s+me|explain|describe|list|how\s+does|summarize|give\s+me)\s+(?:the\s+|our\s+)?.*?(?:guidelines?|policies|policy|standards?|procedures?|sop|manual|rules?|production|data|status|report|expenditure|maintenance|safety|project)/i.test(lower);
+
+  if (isDirectInquiry) {
+    requestedOutputFormat = 'markdown';
+  } else if (/(?:export\s*to\s*pdf|\bpdf\b|printable\s*report)/i.test(lower)) {
     requestedOutputFormat = 'pdf';
   } else if (/(?:\bdocx?\b|word\s*doc(?:ument)?)/i.test(lower)) {
     requestedOutputFormat = 'docx';
@@ -490,7 +494,8 @@ export function decomposeUserTask(
   }
   // 8. Document Analysis: Compliance vs Summary
   else if (
-    /(?:knowledge\s*base|uploaded\s*documents?|reference\s*documents?|guidelines?|sop|standard|compliance|iso\s*\d+|iec\s*\d+)/i.test(lower)
+    isDirectInquiry ||
+    /(?:knowledge\s*base|uploaded\s*documents?|reference\s*documents?|guidelines?|sop|standard|compliance|iso\s*\d+|iec\s*\d+|policy|policies|corporate\s*standard)/i.test(lower)
   ) {
     domain = 'document_analysis';
     operation = 'document_compliance';
@@ -510,7 +515,10 @@ export function decomposeUserTask(
   // Capability Requirements (strict - no unnecessary RAG or models)
   const requiresRAG =
     operation === 'document_compliance' ||
-    /(?:knowledge\s*base|uploaded\s*documents?|reference\s*documents?|guidelines?|sop|per\s+our\s+manual|standards?)/i.test(lower) ||
+    operation === 'document_summary' ||
+    isDirectInquiry ||
+    operation === 'deliverable_pptx' ||
+    /(?:knowledge\s*base|uploaded\s*documents?|reference\s*documents?|guidelines?|sop|per\s+our\s+manual|standards?|policy|policies|company|internal|production\s*data|project\s*status|maintenance|safety|expenditure|report)/i.test(lower) ||
     (domain === 'engineering_calculation' && requestedOutputFormat === 'pdf');
 
   const requiresVision = domain === 'vision_analysis' || imageAttachments.length > 0;
@@ -576,23 +584,25 @@ export function decomposeUserTask(
     const flowParam = parameters.find(param => param.key.includes('flow'));
     const headParam = parameters.find(param => param.key.includes('head'));
     const contextStr = flowParam && headParam ? ` (${flowParam.value} ${flowParam.unit}, ${headParam.value} ${headParam.unit})` : '';
-    primaryObjective = `Execute comprehensive engineering analysis for industrial water pumping system${contextStr}: evaluate governing formulas, compute power requirements, size electrical drives with verified safety margins, project operating costs, and generate formal ${requestedOutputFormat.toUpperCase()} deliverable.`;
+    primaryObjective = `Engineering sizing and hydrodynamic analysis for industrial water pumping system${contextStr} to evaluate motor safety margins and operating costs.`;
   } else if (operation === 'engineering_compressed_air') {
-    primaryObjective = `Execute comprehensive engineering audit for facility compressed-air system: evaluate active power, air demand, specific energy consumption, and quantify leakage reduction scenarios.`;
+    primaryObjective = `Thermodynamic and electrical energy audit for compressed-air station to evaluate SEC and leakage reduction scenarios.`;
   } else if (operation === 'engineering_general') {
-    primaryObjective = `Execute deterministic physical calculations, verify dimensional boundaries, and synthesize engineering evaluation.`;
+    primaryObjective = `Deterministic physical calculations and verified engineering evaluation.`;
   } else if (operation === 'math_problem') {
-    primaryObjective = `Solve mathematical problem deterministically, show step-by-step algebraic derivations, and verify boundary conditions.`;
+    primaryObjective = `Deterministic mathematical solution with step-by-step algebraic derivations.`;
   } else if (operation === 'data_csv_analysis') {
-    primaryObjective = `Ingest dataset, compute descriptive statistical distributions, analyze metrics, and synthesize analytical summary.`;
+    primaryObjective = `Statistical distribution analysis and analytical metric synthesis.`;
   } else if (operation === 'deliverable_pptx') {
-    primaryObjective = `Compile comprehensive presentation slides for ${contextTopic || 'topic'} with thematic structure, domain evidence, and native PPTX formatting.`;
+    primaryObjective = `Presentation slide deck for ${contextTopic || 'the requested topic'} with thematic structure and native formatting.`;
   } else if (operation === 'deliverable_xlsx') {
-    primaryObjective = `Create an Excel workbook spreadsheet on ${contextTopic || 'topic'} with data tables, metrics, and structured formulas.`;
+    primaryObjective = `Excel workbook for ${contextTopic || 'the requested topic'} with data tables and verified formulas.`;
   } else if (operation === 'document_summary') {
-    primaryObjective = `Ingest document artifact, extract core principles and key findings, and synthesize structured executive summary.`;
+    primaryObjective = `Structured executive summary extracting core principles and key findings.`;
   } else if (operation === 'document_compliance') {
-    primaryObjective = `Ingest knowledge artifacts, extract grounded technical evidence, and synthesize cited findings per organizational guidelines.`;
+    primaryObjective = isDirectInquiry
+      ? `Retrieve and analyze official organizational guidelines and standards for ${contextTopic || 'the requested subject'}.`
+      : `Grounded technical evaluation citing guidelines and compliance evidence.`;
   } else if (operation === 'image_generation') {
     primaryObjective = `Synthesize high-fidelity visual asset using authentic local diffusion pipeline.`;
   } else {

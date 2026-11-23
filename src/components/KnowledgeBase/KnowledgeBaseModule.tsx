@@ -151,7 +151,7 @@ export const KnowledgeBaseModule: React.FC = () => {
 
       {/* Top Header Bar */}
       <div className="flex items-center justify-between pb-6 border-b border-[#222222] shrink-0">
-        <h1 className="text-xl font-medium tracking-tight text-[#F5F4F1]">
+        <h1 className="text-2xl font-normal font-display tracking-tight text-[#F5F4F1]">
           Knowledge Base
         </h1>
 

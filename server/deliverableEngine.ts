@@ -54,6 +54,9 @@ export interface DeliverableContext {
   agentOutputs?: Record<string, string>;
   citations?: any[];
   calculationData?: any;
+  guidelineRules?: string[];
+  primarySource?: string;
+  knowledgeContext?: any;
 }
 
 /**
@@ -137,9 +140,13 @@ export async function buildPptxFile(
   const pptx = new pptxgen();
   pptx.layout = 'LAYOUT_16x9';
 
-  // 1. Title Slide (Deep Black & Warm Taupe LUMI Palette)
+  // 1. Title Slide (Governed by Corporate Presentation Guidelines if present)
+  const isGroundedInGuidelines = !!(context?.primarySource || (context?.guidelineRules && context.guidelineRules.length > 0));
+  const primaryBg = isGroundedInGuidelines ? '0B1626' : '080808'; // Corporate Navy or Dark Charcoal
+  const accentColor = isGroundedInGuidelines ? '005A9C' : '987654'; // Corporate Blue or Warm Taupe
+
   const titleSlide = pptx.addSlide();
-  titleSlide.background = { color: '080808' };
+  titleSlide.background = { color: primaryBg };
 
   titleSlide.addText(title, {
     x: 1.0,
@@ -152,23 +159,27 @@ export async function buildPptxFile(
     fontFace: 'Arial'
   });
 
-  titleSlide.addText('Prepared with LUMI Sovereign AI Intelligence', {
+  const subtitle = isGroundedInGuidelines
+    ? `Compliant with ${context?.primarySource || 'Corporate Presentation Guidelines'} • Decision-Oriented Standard`
+    : 'Prepared with LUMI Sovereign AI Intelligence';
+
+  titleSlide.addText(subtitle, {
     x: 1.0,
     y: 3.6,
     w: 8.5,
     h: 0.6,
-    fontSize: 16,
-    color: '987654',
+    fontSize: 15,
+    color: isGroundedInGuidelines ? '90CDF4' : '987654',
     fontFace: 'Arial'
   });
 
-  titleSlide.addText(`Date: ${new Date().toLocaleDateString()} | Local Unified Multimodal Intelligence`, {
+  titleSlide.addText(`Date: ${new Date().toLocaleDateString()} | Local Unified Multimodal Intelligence • Evidence-Anchored`, {
     x: 1.0,
     y: 4.8,
     w: 8.5,
     h: 0.4,
     fontSize: 11,
-    color: '9C9C9C',
+    color: 'A0AEC0',
     fontFace: 'Arial'
   });
 
@@ -299,7 +310,7 @@ export async function buildPptxFile(
   for (let i = 0; i < slidesData.length; i++) {
     const sData = slidesData[i];
     const slide = pptx.addSlide();
-    slide.background = { color: '080808' };
+    slide.background = { color: primaryBg };
 
     // Slide Header
     slide.addText(sData.heading, {
@@ -319,8 +330,8 @@ export async function buildPptxFile(
       y: 1.35,
       w: 8.4,
       h: 0.02,
-      fill: { color: '987654' },
-      line: { color: '987654', width: 0 }
+      fill: { color: accentColor },
+      line: { color: accentColor, width: 0 }
     });
 
     // Content Bullets
@@ -344,8 +355,12 @@ export async function buildPptxFile(
       lineSpacing: 26
     });
 
-    // Slide Footer
-    slide.addText(`LUMI AI Workbench • Slide ${i + 2} of ${slidesData.length + 1}`, {
+    // Slide Footer (Anchored in Corporate Standard when present)
+    const footerLabel = isGroundedInGuidelines && context?.primarySource
+      ? `LUMI AI • ${context.primarySource.replace(/\.pdf$/i, '')} • Slide ${i + 2} of ${slidesData.length + 1}`
+      : `LUMI AI Workbench • Slide ${i + 2} of ${slidesData.length + 1}`;
+
+    slide.addText(footerLabel, {
       x: 0.8,
       y: 5.1,
       w: 8.4,
@@ -1082,98 +1097,37 @@ export function buildDeterministicEngineeringText(prompt: string, calcData?: any
 
     return `# Industrial Water Pumping System Performance & Engineering Analysis
 
-## 1. Executive Summary
-This technical engineering report establishes the complete hydrodynamic, mechanical, and electrical design specifications for an industrial water pumping installation delivering a design flow rate of ${p.flow_rate_m3_h.toFixed(1)} m³/h at a total dynamic head (TDH) of ${p.head_m.toFixed(1)} metres. Under standard operating conditions (water density ${p.density_kg_m3.toFixed(1)} kg/m³, g = ${p.gravity_m_s2.toFixed(2)} m/s²), the net hydraulic power required by the fluid column is **${p.p_hyd_kw.toFixed(3)} kW**. Accounting for the specified pump hydraulic efficiency of ${(p.pump_eff * 100).toFixed(1)}%, the brake shaft power required at the pump coupling is **${p.p_shaft_kw.toFixed(3)} kW**. Incorporating an electric motor efficiency of ${(p.motor_eff * 100).toFixed(1)}%, the continuous active electrical input power demand is **${p.p_elec_kw.toFixed(3)} kW**.
+### 1. Key Performance Metrics & Power Ratings
+- **Volumetric Flow Rate:** ${p.flow_rate_m3_h.toFixed(1)} m³/h (${p.q_m3_s.toFixed(5)} m³/s)
+- **Total Dynamic Head (TDH):** ${p.head_m.toFixed(1)} m fluid column
+- **Hydraulic Fluid Power (P_hyd):** **${p.p_hyd_kw.toFixed(3)} kW** — computed via $(ρ \cdot g \cdot Q \cdot H) / 1000$
+- **Pump Shaft Brake Power (P_shaft):** **${p.p_shaft_kw.toFixed(3)} kW** — factoring ${(p.pump_eff * 100).toFixed(1)}% pump hydraulic efficiency
+- **Electrical Input Demand (P_elec):** **${p.p_elec_kw.toFixed(3)} kW** — factoring ${(p.motor_eff * 100).toFixed(1)}% premium motor efficiency (IE3)
 
-To provide adequate operational resilience against hydraulic transients and transient head variations without motor thermal overload, a standard **${p.recommended_motor_kw.toFixed(1)} kW** three-phase squirrel-cage induction motor (IEC 60034-1 frame) is recommended, yielding a verified safety margin of **${p.safety_margin_recommended_pct.toFixed(1)}%** over shaft demand. Operating at ${p.hours_per_day.toFixed(1)} hours/day for ${p.days_per_month.toFixed(0)} monthly operational days, daily electricity consumption is **${p.daily_kwh.toFixed(2)} kWh/day**, monthly electricity consumption is **${p.monthly_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month**, and monthly operational expenditure is **₹${p.monthly_cost_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/month** at the governing tariff of ₹${p.tariff_inr_kwh.toFixed(2)}/kWh.
+### 2. Motor Selection & Safety Margin
+- **Recommended Motor:** **${p.recommended_motor_kw.toFixed(1)} kW** Three-Phase Induction Motor (IEC 60034-1 standard frame)
+- **Verified Safety Margin:** **${p.safety_margin_recommended_pct.toFixed(1)}%** above shaft demand (HI 14.3 standard mandates 15%–35%)
+- **Operating Load Factor:** **${((p.p_shaft_kw / p.recommended_motor_kw) * 100).toFixed(1)}%** of rated nameplate capacity (optimum efficiency window)
+- **Alternate Standard Frame:** **${p.alt_motor_kw.toFixed(1)} kW** (+${p.safety_margin_alt_pct.toFixed(1)}% margin for high head-rise systems)
 
-## 2. Input Design Parameters Table
-| Parameter Description | Symbol | Value | Standard Units | Engineering Source / Basis |
-| :--- | :--- | :--- | :--- | :--- |
-| Volumetric Water Flow Rate | Q | ${p.flow_rate_m3_h.toFixed(2)} | m³/hour (${p.q_m3_s.toFixed(5)} m³/s) | Facility Process Sizing Requirement |
-| Total Dynamic Head | H | ${p.head_m.toFixed(2)} | metres (m fluid column) | Static Lift + Piping Friction Analysis |
-| Fluid Density (Water at 20°C) | ρ | ${p.density_kg_m3.toFixed(1)} | kg/m³ | Standard Thermodynamic Properties |
-| Gravitational Acceleration | g | ${p.gravity_m_s2.toFixed(2)} | m/s² | Standard Terrestrial Gravity Constant |
-| Pump Hydraulic Efficiency | η_pump | ${(p.pump_eff * 100).toFixed(1)}% | fraction (${p.pump_eff.toFixed(2)}) | Vendor Impeller Curve at Design Duty |
-| Electric Motor Efficiency | η_motor | ${(p.motor_eff * 100).toFixed(1)}% | fraction (${p.motor_eff.toFixed(2)}) | IEC 60034-30-1 Premium Efficiency (IE3) |
-| Operating Schedule | t_day | ${p.hours_per_day.toFixed(1)} | hours/day (${p.days_per_month.toFixed(0)} days/month) | Facility Shift Operating Model |
-| Commercial Electricity Tariff | Tariff | ₹${p.tariff_inr_kwh.toFixed(2)} | ₹/kWh (INR/unit) | Local Industrial Power Tariff Schedule |
+### 3. Operational Energy & Cost Breakdown
+- **Duty Schedule:** ${p.hours_per_day.toFixed(0)} hours/day, ${p.days_per_month.toFixed(0)} days/month (${(p.hours_per_day * p.days_per_month).toFixed(0)} operating hours/month)
+- **Daily Electricity Demand:** **${p.daily_kwh.toFixed(2)} kWh/day** (₹${p.daily_cost_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/day)
+- **Monthly Electricity Demand:** **${p.monthly_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month**
+- **Monthly Expenditure:** **₹${p.monthly_cost_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/month** (at ₹${p.tariff_inr_kwh.toFixed(2)}/kWh tariff)
+- **Annual Expenditure:** **₹${p.annual_cost_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/year** (${p.annual_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/year)
 
-## 3. Step-by-Step Engineering Calculations & Formulas
-### Step 1: Volumetric Flow Rate Unit Conversion
-To perform dimensionally consistent SI calculations, volumetric flow rate is converted from m³/h to m³/s:
-- **Formula:** Q = ${p.flow_rate_m3_h.toFixed(2)} m³/h ÷ 3600 s/h = ${p.q_m3_s.toFixed(7)} m³/s
+### 4. Sensitivity Scenario (+${p.flow_increase_pct.toFixed(0)}% Flow Excursion to ${p.flow_rate_sens_m3_h.toFixed(1)} m³/h)
+- **Revised Shaft Power:** Increases from ${p.p_shaft_kw.toFixed(3)} kW to **${p.p_shaft_sens_kw.toFixed(3)} kW** (+${p.flow_increase_pct.toFixed(0)}% increase)
+- **Motor Sizing Validation:** Recommended ${p.recommended_motor_kw.toFixed(1)} kW motor operates at **${p.motor_load_recommended_pct.toFixed(1)}%** load (${p.motor_load_recommended_pct <= 100 ? 'safe continuous operation within thermal envelope' : 'upgrade to alternate frame required'})
+- **Monthly Cost Impact:** **+₹${p.monthly_cost_increase_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/month** (revised total: ₹${p.monthly_cost_sens_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/mo)
 
-### Step 2: Hydraulic Power Required (P_hyd)
-The hydraulic power transferred directly to the liquid column by the pump impeller is defined by:
-- **Formula:** P_hyd = (ρ · g · Q · H) / 1000
-- **Substitution:** P_hyd = (${p.density_kg_m3.toFixed(1)} kg/m³ × ${p.gravity_m_s2.toFixed(2)} m/s² × ${p.q_m3_s.toFixed(7)} m³/s × ${p.head_m.toFixed(2)} m) / 1000
-- **Computed Result:** P_hyd = **${p.p_hyd_kw.toFixed(3)} kW** (${(p.p_hyd_kw * 1000).toFixed(2)} W)
+### 5. Hydrodynamic Reliability & Best Practices
+- **Best Efficiency Point (BEP):** Continuous duty must remain within 70%–120% of BEP (ISO 9906) to prevent radial thrust imbalance and premature seal face wear.
+- **Cavitation Protection:** Ensure Net Positive Suction Head Available (NPSHa) exceeds NPSHr across all operating flow rates.
 
-### Step 3: Actual Shaft Brake Power (P_shaft)
-Accounting for internal disk friction, volumetric leakage past wear rings, and hydraulic friction losses inside the impeller:
-- **Formula:** P_shaft = P_hyd / η_pump
-- **Substitution:** P_shaft = ${p.p_hyd_kw.toFixed(3)} kW ÷ ${p.pump_eff.toFixed(2)}
-- **Computed Result:** P_shaft = **${p.p_shaft_kw.toFixed(3)} kW** (${(p.p_shaft_kw * 1000).toFixed(2)} W)
-
-### Step 4: Electrical Input Power (P_elec)
-Accounting for electrical copper, iron, windage, and rotor slip losses across the drive motor:
-- **Formula:** P_elec = P_shaft / η_motor
-- **Substitution:** P_elec = ${p.p_shaft_kw.toFixed(3)} kW ÷ ${p.motor_eff.toFixed(2)}
-- **Computed Result:** P_elec = **${p.p_elec_kw.toFixed(3)} kW** (${(p.p_elec_kw * 1000).toFixed(2)} W)
-
-## 4. Motor Selection Recommendation & Sizing Rationale
-Under standard IEC 60034-1 frame ratings, nominal 3-phase motor sizes in this power class are 0.75, 1.1, 1.5, 2.2, 3.0, 3.7, 4.0, 5.5, 7.5, 11.0, and 15.0 kW.
-
-### Primary Recommendation: ${p.recommended_motor_kw.toFixed(1)} kW Motor
-- **Sizing Safety Margin:** ((${p.recommended_motor_kw.toFixed(2)} kW - ${p.p_shaft_kw.toFixed(3)} kW) ÷ ${p.p_shaft_kw.toFixed(3)} kW) × 100% = **${p.safety_margin_recommended_pct.toFixed(1)}%**
-- **Engineering Rationale:** Conforms to Hydraulic Institute (HI 14.3) motor sizing margin guidelines (which mandate 15% to 35% safety margin for pump shaft power). Operates the motor at ${((p.p_shaft_kw / p.recommended_motor_kw) * 100).toFixed(1)}% loading, within its peak electrical efficiency band.
-
-### Alternative Recommendation: ${p.alt_motor_kw.toFixed(1)} kW Motor
-- **Sizing Safety Margin:** ((${p.alt_motor_kw.toFixed(2)} kW - ${p.p_shaft_kw.toFixed(3)} kW) ÷ ${p.p_shaft_kw.toFixed(3)} kW) × 100% = **${p.safety_margin_alt_pct.toFixed(1)}%**
-- **Engineering Rationale:** Provides expanded margin if future piping scaling, encrustation, or valve throttling increases system dynamic head.
-
-## 5. Operational Electricity Consumption & Cost Analysis
-Energy accounting for ${p.hours_per_day.toFixed(1)} operating hours/day across a standard ${p.days_per_month.toFixed(0)}-day operating calendar:
-- **Daily Electricity Consumption:** P_elec × t_day = ${p.p_elec_kw.toFixed(3)} kW × ${p.hours_per_day.toFixed(1)} h = **${p.daily_kwh.toFixed(2)} kWh/day**
-- **Monthly Electricity Consumption (${p.days_per_month.toFixed(0)} days):** ${p.daily_kwh.toFixed(2)} kWh/day × ${p.days_per_month.toFixed(0)} days = **${p.monthly_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month**
-- **Annual Electricity Consumption:** ${p.monthly_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month × 12 months = **${p.annual_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/year**
-- **Monthly Electricity Cost:** ${p.monthly_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month × ₹${p.tariff_inr_kwh.toFixed(2)}/kWh = **₹${p.monthly_cost_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/month**
-- **Annual Electricity Cost:** ${p.annual_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/year × ₹${p.tariff_inr_kwh.toFixed(2)}/kWh = **₹${p.annual_cost_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/year**
-
-## 6. Sensitivity & Scenario Analysis: +${p.flow_increase_pct.toFixed(0)}% Flow Rate Excursion
-If process expansion demands a ${p.flow_increase_pct.toFixed(0)}% increase in water flow rate from ${p.flow_rate_m3_h.toFixed(1)} m³/h to **${p.flow_rate_sens_m3_h.toFixed(1)} m³/h** while head remains ${p.head_m.toFixed(1)} m:
-- **Revised Hydraulic Power:** P_hyd = (${p.density_kg_m3.toFixed(1)} × ${p.gravity_m_s2.toFixed(2)} × (${p.flow_rate_sens_m3_h.toFixed(2)}/3600) × ${p.head_m.toFixed(2)}) / 1000 = **${p.p_hyd_sens_kw.toFixed(3)} kW** (+${p.flow_increase_pct.toFixed(1)}%)
-- **Revised Shaft Power:** P_shaft = ${p.p_hyd_sens_kw.toFixed(3)} kW ÷ ${p.pump_eff.toFixed(2)} = **${p.p_shaft_sens_kw.toFixed(3)} kW** (+${p.flow_increase_pct.toFixed(1)}%)
-- **Revised Electrical Input:** P_elec = ${p.p_shaft_sens_kw.toFixed(3)} kW ÷ ${p.motor_eff.toFixed(2)} = **${p.p_elec_sens_kw.toFixed(3)} kW** (+${p.flow_increase_pct.toFixed(1)}%)
-- **Revised Monthly Energy:** ${p.p_elec_sens_kw.toFixed(3)} kW × ${p.hours_per_day.toFixed(1)} h × ${p.days_per_month.toFixed(0)} days = **${p.monthly_kwh_sens.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month**
-- **Revised Monthly Cost:** ${p.monthly_kwh_sens.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/mo × ₹${p.tariff_inr_kwh.toFixed(2)}/kWh = **₹${p.monthly_cost_sens_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/month**
-- **Operational Cost Delta:** **+₹${p.monthly_cost_increase_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/month** (+${p.flow_increase_pct.toFixed(1)}% expenditure increase).
-
-### Motor Loading Evaluation
-At ${p.p_shaft_sens_kw.toFixed(3)} kW shaft power, the recommended ${p.recommended_motor_kw.toFixed(1)} kW motor operates at **${p.motor_load_recommended_pct.toFixed(1)}%** of nameplate capacity. ${p.motor_load_recommended_pct <= 100 ? 'Continuous operation remains within thermal limits.' : `Exceeds 100% capacity; upgrade to ${p.alt_motor_kw.toFixed(1)} kW motor is mandatory.`}
-
-## 7. Hydrodynamic Significance of Best Efficiency Point (BEP)
-Operating a centrifugal pump close to its design Best Efficiency Point (BEP) is vital to mechanical reliability and lifecycle economics:
-- **Hydraulic Shock & Turbulence Minimization:** At BEP, fluid incidence angles align perfectly with impeller blade leading edges, minimizing fluid separation, recirculation vortices, and shock losses.
-- **Radial Thrust Balance:** Far from BEP, asymmetric volute pressure distributions generate extreme unbalanced radial forces on the impeller, causing shaft deflection, premature mechanical seal face wear, and catastrophic bearing failure.
-- **Cavitation Protection:** Operating at excessive flows (right of BEP) drastically increases Net Positive Suction Head Required (NPSHr), triggering vapor bubble collapse and acoustic cavitation pitting.
-- **Standards Compliance:** Per Hydraulic Institute (HI 14.3) and ISO 9906, continuous duty must remain within the Preferred Operating Region (POR: 70% to 120% of BEP).
-
-## 8. Standards, Codes & Grounded Knowledge Base Sources
+### 6. Referenced Standards & Codes
 ${citationsSection}
-
-## 9. Summary Table of Computed Engineering Results
-| Computed Metric | Baseline Value (${p.flow_rate_m3_h.toFixed(1)} m³/h) | Sensitivity Value (+${p.flow_increase_pct.toFixed(0)}% Q: ${p.flow_rate_sens_m3_h.toFixed(1)} m³/h) | Engineering Status |
-| :--- | :--- | :--- | :--- |
-| Hydraulic Fluid Power (P_hyd) | ${p.p_hyd_kw.toFixed(3)} kW | ${p.p_hyd_sens_kw.toFixed(3)} kW | Verified Deterministic |
-| Pump Shaft Brake Power (P_shaft) | ${p.p_shaft_kw.toFixed(3)} kW | ${p.p_shaft_sens_kw.toFixed(3)} kW | Verified Deterministic |
-| Electrical Input Power (P_elec) | ${p.p_elec_kw.toFixed(3)} kW | ${p.p_elec_sens_kw.toFixed(3)} kW | Verified Deterministic |
-| Recommended Standard Motor | ${p.recommended_motor_kw.toFixed(1)} kW | ${p.alt_motor_kw.toFixed(1)} kW | IEC 60034-1 Compliant |
-| Motor Safety Margin | ${p.safety_margin_recommended_pct.toFixed(1)}% | ${p.recommended_motor_kw.toFixed(1)} kW: ${p.motor_load_recommended_pct.toFixed(1)}% load | HI 14.3 Compliant |
-| Daily Electricity Consumption | ${p.daily_kwh.toFixed(2)} kWh/day | ${p.daily_kwh_sens.toFixed(2)} kWh/day | ${p.hours_per_day.toFixed(0)} Hours/Day Duty |
-| Monthly Electricity Consumption | ${p.monthly_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month | ${p.monthly_kwh_sens.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month | ${p.days_per_month.toFixed(0)} Days Calendar |
-| Monthly Electricity Cost | ₹${p.monthly_cost_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ₹${p.monthly_cost_sens_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ₹${p.tariff_inr_kwh.toFixed(2)}/kWh Tariff |
 `;
   }
 
@@ -1334,23 +1288,27 @@ export async function generateDeliverable(
     createdAt: new Date().toISOString()
   };
 
-  // Register in memory
+  // Register in memory with bounded size (max 100 items)
+  if (DELIVERABLE_REGISTRY.size >= 100) {
+    const oldestKey = DELIVERABLE_REGISTRY.keys().next().value;
+    if (oldestKey) DELIVERABLE_REGISTRY.delete(oldestKey);
+  }
   DELIVERABLE_REGISTRY.set(fileId, deliverable);
 
-  // Summary message for chat
+  // Summary message for chat in concise bullet points
   let summary = '';
   if (type === 'pptx') {
-    summary = `I have generated your native PowerPoint presentation **"${suggestedFilename}"** (${sizeStr}). It includes a custom LUMI title slide, formatted thematic sections, and structured bullet points based on your request.`;
+    summary = `**Deliverable Ready: PowerPoint Presentation**\n• File: **\`${suggestedFilename}\`** (${sizeStr})\n• Slides: LUMI title deck, formatted thematic sections, key data points\n• Verification: ${verification.status}`;
   } else if (type === 'xlsx') {
-    summary = `I have created your native Excel workbook **"${suggestedFilename}"** (${sizeStr}). It features styled header rows, formatted numerical columns, alternating grid lines, and data metrics ready for analysis.`;
+    summary = `**Deliverable Ready: Excel Workbook**\n• File: **\`${suggestedFilename}\`** (${sizeStr})\n• Structure: Formatted header rows, numerical metrics, alternating data grid\n• Verification: ${verification.status}`;
   } else if (type === 'docx') {
-    summary = `I have prepared your formal Word document **"${suggestedFilename}"** (${sizeStr}) with complete typographic hierarchy, executive summary, calculations, and structured analytical sections. [Completeness Audit: ${verification.status}]`;
+    summary = `**Deliverable Ready: Word Document**\n• File: **\`${suggestedFilename}\`** (${sizeStr})\n• Contents: Executive summary, quantitative calculations, analytical sections\n• Verification: ${verification.status}`;
   } else if (type === 'pdf') {
-    summary = `I have compiled your executive PDF report **"${suggestedFilename}"** (${sizeStr}) with headers, formatted sections, and page numbering. [Completeness Audit: ${verification.status}]`;
+    summary = `**Deliverable Ready: Executive PDF**\n• File: **\`${suggestedFilename}\`** (${sizeStr})\n• Format: Formatted headers, structured metric sections, page numbering\n• Verification: ${verification.status}`;
   } else if (type === 'csv') {
-    summary = `I have generated your CSV data export **"${suggestedFilename}"** (${sizeStr}) containing structured tabular records.`;
+    summary = `**Deliverable Ready: CSV Export**\n• File: **\`${suggestedFilename}\`** (${sizeStr})\n• Contents: Clean tabular records with standardized data columns`;
   } else {
-    summary = `I have generated your deliverable file **"${suggestedFilename}"** (${sizeStr}).`;
+    summary = `**Deliverable Ready**\n• File: **\`${suggestedFilename}\`** (${sizeStr})\n• Status: Ready for download`;
   }
 
   return { deliverable, summary, verification };

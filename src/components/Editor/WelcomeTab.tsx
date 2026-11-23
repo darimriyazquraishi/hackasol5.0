@@ -35,7 +35,7 @@ export const WelcomeTab: React.FC = () => {
             </svg>
           </div>
           <div>
-            <h1 className="text-3xl font-light text-white tracking-wide">
+            <h1 className="text-3xl font-normal font-display text-white tracking-tight">
               Visual Studio Code
             </h1>
             <p className="text-sm text-[#858585] mt-1">
@@ -48,7 +48,7 @@ export const WelcomeTab: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Start column */}
           <div>
-            <h2 className="text-sm font-semibold text-[#858585] uppercase tracking-wider mb-3">
+            <h2 className="text-sm font-normal font-display text-[#858585] uppercase tracking-wider mb-3">
               Start
             </h2>
             <div className="space-y-2">

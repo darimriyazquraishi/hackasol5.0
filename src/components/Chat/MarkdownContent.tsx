@@ -346,7 +346,7 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
               return (
                 <h1
                   key={idx}
-                  className="text-base font-bold text-[#F5F4F1] font-mono tracking-tight pt-2 pb-1 border-b border-[#262626]"
+                  className="text-lg font-normal font-display text-[#F5F4F1] tracking-tight pt-2 pb-1 border-b border-[#262626]"
                 >
                   {formatInline(block.content || '')}
                 </h1>
@@ -356,7 +356,7 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
               return (
                 <h2
                   key={idx}
-                  className="text-sm font-semibold text-[#F5F4F1] font-mono tracking-tight pt-1.5 pb-0.5"
+                  className="text-base font-normal font-display text-[#F5F4F1] tracking-tight pt-1.5 pb-0.5"
                 >
                   {formatInline(block.content || '')}
                 </h2>
@@ -364,13 +364,13 @@ export const MarkdownContent: React.FC<MarkdownContentProps> = ({
             }
             if (block.level === 3) {
               return (
-                <h3 key={idx} className="text-xs font-semibold text-[#F5F4F1] font-mono pt-1">
+                <h3 key={idx} className="text-sm font-normal font-display text-[#F5F4F1] pt-1">
                   {formatInline(block.content || '')}
                 </h3>
               );
             }
             return (
-              <h4 key={idx} className="text-xs font-medium text-[#D5D2CC] font-mono">
+              <h4 key={idx} className="text-xs font-normal font-display text-[#D5D2CC]">
                 {formatInline(block.content || '')}
               </h4>
             );

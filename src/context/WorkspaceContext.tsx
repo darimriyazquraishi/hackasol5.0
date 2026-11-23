@@ -103,6 +103,9 @@ interface WorkspaceContextType {
   workflowNodes: WorkflowNode[];
   systemMetrics: SystemMetrics;
   isBackendOnline: boolean;
+  refreshAllServers: () => Promise<void>;
+  isRefreshingServers: boolean;
+  serverSupervisionStatus: any | null;
 
   // Conversation Threads & Chat-First Orchestration
   conversations: ConversationThread[];
@@ -287,6 +290,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (hash === 'ide') {
         return { module: 'ide', cat: 'workbench', sub: 'model-manager' };
       }
+      if (hash === 'knowledge') {
+        return { module: 'knowledge', cat: 'workbench', sub: 'model-manager' };
+      }
       if (hash.startsWith('settings')) {
         const parts = hash.split('/');
         const cat = (parts[1] as SettingsCategory) || 'workbench';
@@ -334,6 +340,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       window.location.hash = 'chat';
     } else if (mod === 'ide') {
       window.location.hash = 'ide';
+    } else if (mod === 'knowledge') {
+      window.location.hash = 'knowledge';
     } else if (mod === 'settings') {
       window.location.hash = `settings/${settingsCategory}/${settingsSubSection}`;
     }
@@ -367,23 +375,14 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     window.location.hash = `settings/${targetCat}/${targetSub}`;
   }, []);
 
-  // Conversations State: Ensure initial launch opens to a fresh clean conversation
+  // Conversations State: Persist user conversation history without wiping active sessions
   const [conversations, setConversations] = useState<ConversationThread[]>(() => {
     try {
       const saved = localStorage.getItem('lumi_conversations');
       if (saved) {
         const parsed: ConversationThread[] = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          if (parsed[0].messages.length === 0) {
-            return parsed;
-          }
-          const freshConv: ConversationThread = {
-            id: `conv-${Date.now()}`,
-            title: 'New Conversation',
-            lastUpdated: 'Just now',
-            messages: []
-          };
-          return [freshConv, ...parsed];
+          return parsed;
         }
       }
     } catch (e) {
@@ -394,10 +393,17 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const [activeConversationId, setActiveConversationId] = useState<string>(() => {
     try {
-      const saved = localStorage.getItem('lumi_conversations');
-      if (saved) {
-        const parsed: ConversationThread[] = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].messages.length === 0) {
+      const savedActiveId = localStorage.getItem('lumi_active_conv_id');
+      const savedConvs = localStorage.getItem('lumi_conversations');
+      if (savedActiveId && savedConvs) {
+        const parsed: ConversationThread[] = JSON.parse(savedConvs);
+        if (Array.isArray(parsed) && parsed.some(c => c.id === savedActiveId)) {
+          return savedActiveId;
+        }
+      }
+      if (savedConvs) {
+        const parsed: ConversationThread[] = JSON.parse(savedConvs);
+        if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed[0].id;
         }
       }
@@ -410,10 +416,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   useEffect(() => {
     try {
       localStorage.setItem('lumi_conversations', JSON.stringify(conversations));
+      if (activeConversationId) {
+        localStorage.setItem('lumi_active_conv_id', activeConversationId);
+      }
     } catch (e) {
       // ignore
     }
-  }, [conversations]);
+  }, [conversations, activeConversationId]);
 
   const activeConversation = conversations.find(c => c.id === activeConversationId) || conversations[0];
 
@@ -638,6 +647,8 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   });
 
   const [isBackendOnline, setIsBackendOnline] = useState<boolean>(true);
+  const [isRefreshingServers, setIsRefreshingServers] = useState<boolean>(false);
+  const [serverSupervisionStatus, setServerSupervisionStatus] = useState<any | null>(null);
 
   const refreshModels = useCallback(async () => {
     try {
@@ -746,41 +757,83 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     await refreshModels();
   }, [refreshModels]);
 
+  const refreshAllServers = useCallback(async () => {
+    setIsRefreshingServers(true);
+    try {
+      const res = await fetch('/api/servers/refresh', { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status) {
+          setServerSupervisionStatus(data.status);
+        }
+      }
+      await refreshHardware();
+      setIsBackendOnline(true);
+    } catch {
+      // fallback
+    } finally {
+      setIsRefreshingServers(false);
+    }
+  }, [refreshHardware]);
+
   useEffect(() => {
     refreshHardware();
   }, [refreshHardware]);
 
-  // Heartbeat & Auto-reconnect: pings /api/health periodically and auto-refreshes state upon recovery
+  // Heartbeat & Auto-reconnect: pings /api/health with multi-attempt zero-timeout supervisor resilience
   useEffect(() => {
     let timer: NodeJS.Timeout;
     let cancelled = false;
+    let failureCount = 0;
 
     const checkHeartbeat = async () => {
       try {
         const res = await fetch('/api/health');
         if (res.ok) {
-          if (!isBackendOnline && !cancelled) {
+          const data = await res.json().catch(() => null);
+          if (data && data.servers) {
+            setServerSupervisionStatus(data.servers);
+          }
+          if (failureCount > 0 && !cancelled) {
             refreshHardware();
           }
+          failureCount = 0;
           if (!cancelled) setIsBackendOnline(true);
         } else {
-          if (!cancelled) setIsBackendOnline(false);
+          failureCount++;
+          if (failureCount >= 3 && !cancelled) {
+            setIsBackendOnline(false);
+          }
         }
       } catch {
-        if (!cancelled) setIsBackendOnline(false);
+        failureCount++;
+        if (failureCount >= 3 && !cancelled) {
+          setIsBackendOnline(false);
+        }
       } finally {
         if (!cancelled) {
-          timer = setTimeout(checkHeartbeat, isBackendOnline ? 10000 : 3000);
+          timer = setTimeout(checkHeartbeat, failureCount >= 3 ? 3000 : 12000);
         }
       }
     };
 
     checkHeartbeat();
+
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible') {
+        checkHeartbeat();
+      }
+    };
+    document.addEventListener('visibilitychange', handleFocus);
+    window.addEventListener('focus', handleFocus);
+
     return () => {
       cancelled = true;
       clearTimeout(timer);
+      document.removeEventListener('visibilitychange', handleFocus);
+      window.removeEventListener('focus', handleFocus);
     };
-  }, [isBackendOnline, refreshHardware]);
+  }, [refreshHardware]);
 
   const loadModel = (id: string) => {
     const target = models.find(m => m.id === id);
@@ -1414,6 +1467,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         workflowNodes,
         systemMetrics,
         isBackendOnline,
+        refreshAllServers,
+        isRefreshingServers,
+        serverSupervisionStatus,
 
         conversations,
         activeConversationId,

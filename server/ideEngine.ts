@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 
 export interface UserProject {
   id: string;
@@ -388,16 +388,26 @@ export function runUserProject(
         args = [entryFullPath];
         displayCmd = `node ${targetEntry}`;
       } else if (ext === '.c') {
-        // Compile with gcc if available, else explain
-        runner = 'gcc';
-        const binOut = path.resolve(projectRoot, 'a.exe');
-        args = [entryFullPath, '-o', binOut];
+        // Compile with gcc, then run executable
+        const binOut = path.resolve(projectRoot, process.platform === 'win32' ? 'a.exe' : 'a.out');
+        const compileRes = spawnSync('gcc', [entryFullPath, '-o', binOut], { cwd: projectRoot, timeout: 30000 });
+        if (compileRes.status !== 0) {
+          return resolve({
+            stdout: compileRes.stdout ? compileRes.stdout.toString().trim() : '',
+            stderr: compileRes.stderr ? compileRes.stderr.toString().trim() : 'GCC compilation failed.',
+            exitCode: compileRes.status ?? 1,
+            durationMs: Date.now() - startTime,
+            command: `gcc ${targetEntry} -o a.exe`
+          });
+        }
+        runner = binOut;
+        args = [];
         displayCmd = `gcc ${targetEntry} -o a.exe && .\\a.exe`;
       }
 
       const child = spawn(runner, args, {
         cwd: projectRoot,
-        timeout: 10000,
+        timeout: 120000,
         env: {
           ...process.env,
           PYTHONUNBUFFERED: '1'

@@ -19,6 +19,7 @@ export default {
         }
       },
       fontFamily: {
+        display: ['var(--font-display)', 'serif'],
         mono: ['"JetBrains Mono"', '"Cascadia Code"', 'Consolas', 'monospace'],
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
       }
