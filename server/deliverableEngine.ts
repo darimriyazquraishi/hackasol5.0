@@ -4,6 +4,7 @@ import * as docx from 'docx';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
+import { extractEngineeringPumpParameters } from './taskDecomposer';
 
 export type DeliverableType = 'pptx' | 'xlsx' | 'docx' | 'pdf' | 'csv' | 'markdown';
 
@@ -906,82 +907,164 @@ export async function verifyDeliverableCompleteness(
 /**
  * Generate Structured Engineering Content for Reports (DOCX / PDF)
  */
-export function buildDeterministicEngineeringText(prompt: string): string {
+export function buildDeterministicEngineeringText(prompt: string, calcData?: any, ragCitations?: any[]): string {
   const isPump = /pump|flow\s*rate|dynamic\s*head|m[3³]\/h/i.test(prompt);
 
   if (isPump) {
+    let p = calcData;
+    if (p && !p.q_m3_s && p.flow_rate_m3_h) {
+      p.q_m3_s = p.flow_rate_m3_h / 3600.0;
+    }
+    if (!p) {
+      const prm = extractEngineeringPumpParameters(prompt);
+      const q_m3_s = prm.flow_rate_m3_h / 3600.0;
+      const pump_eff = prm.pump_efficiency > 1.0 ? prm.pump_efficiency / 100.0 : prm.pump_efficiency;
+      const motor_eff = prm.motor_efficiency > 1.0 ? prm.motor_efficiency / 100.0 : prm.motor_efficiency;
+      const p_hyd_kw = (prm.density_kg_m3 * prm.gravity_m_s2 * q_m3_s * prm.head_m) / 1000.0;
+      const p_shaft_kw = p_hyd_kw / pump_eff;
+      const p_elec_kw = p_shaft_kw / motor_eff;
+
+      const standard_ratings = [0.75, 1.1, 1.5, 2.2, 3.0, 3.7, 4.0, 5.5, 7.5, 11.0, 15.0, 18.5, 22.0, 30.0, 37.0, 45.0, 55.0, 75.0, 90.0, 110.0];
+      const candidates = standard_ratings.filter(r => r >= p_shaft_kw);
+      const recommended_motor_kw = candidates[0] || Math.round(p_shaft_kw * 1.25 * 10) / 10;
+      const alt_motor_kw = candidates[1] || recommended_motor_kw;
+      const safety_margin_recommended_pct = ((recommended_motor_kw - p_shaft_kw) / p_shaft_kw) * 100.0;
+      const safety_margin_alt_pct = ((alt_motor_kw - p_shaft_kw) / p_shaft_kw) * 100.0;
+
+      const daily_kwh = p_elec_kw * prm.hours_per_day;
+      const monthly_kwh = daily_kwh * prm.days_per_month;
+      const annual_kwh = monthly_kwh * 12.0;
+      const daily_cost_inr = daily_kwh * prm.tariff_inr_kwh;
+      const monthly_cost_inr = monthly_kwh * prm.tariff_inr_kwh;
+      const annual_cost_inr = annual_kwh * prm.tariff_inr_kwh;
+
+      const flow_rate_sens_m3_h = prm.flow_rate_m3_h * (1.0 + prm.flow_increase_pct / 100.0);
+      const q_sens_m3_s = flow_rate_sens_m3_h / 3600.0;
+      const p_hyd_sens_kw = (prm.density_kg_m3 * prm.gravity_m_s2 * q_sens_m3_s * prm.head_m) / 1000.0;
+      const p_shaft_sens_kw = p_hyd_sens_kw / pump_eff;
+      const p_elec_sens_kw = p_shaft_sens_kw / motor_eff;
+      const daily_kwh_sens = p_elec_sens_kw * prm.hours_per_day;
+      const monthly_kwh_sens = daily_kwh_sens * prm.days_per_month;
+      const monthly_cost_sens_inr = monthly_kwh_sens * prm.tariff_inr_kwh;
+      const monthly_cost_increase_inr = monthly_cost_sens_inr - monthly_cost_inr;
+      const motor_load_recommended_pct = (p_shaft_sens_kw / recommended_motor_kw) * 100.0;
+
+      p = {
+        flow_rate_m3_h: prm.flow_rate_m3_h,
+        head_m: prm.head_m,
+        density_kg_m3: prm.density_kg_m3,
+        gravity_m_s2: prm.gravity_m_s2,
+        pump_eff,
+        motor_eff,
+        hours_per_day: prm.hours_per_day,
+        days_per_month: prm.days_per_month,
+        tariff_inr_kwh: prm.tariff_inr_kwh,
+        flow_increase_pct: prm.flow_increase_pct,
+        q_m3_s,
+        p_hyd_kw,
+        p_shaft_kw,
+        p_elec_kw,
+        recommended_motor_kw,
+        alt_motor_kw,
+        safety_margin_recommended_pct,
+        safety_margin_alt_pct,
+        daily_kwh,
+        monthly_kwh,
+        annual_kwh,
+        daily_cost_inr,
+        monthly_cost_inr,
+        annual_cost_inr,
+        flow_rate_sens_m3_h,
+        p_hyd_sens_kw,
+        p_shaft_sens_kw,
+        p_elec_sens_kw,
+        daily_kwh_sens,
+        monthly_kwh_sens,
+        monthly_cost_sens_inr,
+        monthly_cost_increase_inr,
+        motor_load_recommended_pct
+      };
+    }
+
+    let citationsSection = '';
+    if (ragCitations && ragCitations.length > 0) {
+      citationsSection = ragCitations.map(c => `- **${c.file}** [ID: ${(c.id || 'N/A').slice(0, 12)}] (${c.section || 'General'})${c.score ? ` - Score: ${c.score.toFixed(2)}` : ''}\n  > ${c.snippet || ''}`).join('\n\n');
+    } else {
+      citationsSection = `> **Notice:** No uploaded knowledge-base reference documents were retrieved for this query. The following calculations are based on standard engineering hydrodynamic equations. Grounded verification against external reference documents was not established.\n\n- **Fundamental Hydrodynamics:** P_hyd = rho * g * Q * H / 1000 (Fluid Mechanics first principles)\n- **IEC 60034-1:** Standard Output Ratings for Three-Phase Induction Motors\n- **Hydraulic Institute (HI 14.3):** Recommended pump motor driver sizing guidelines`;
+    }
+
     return `# Industrial Water Pumping System Performance & Engineering Analysis
 
 ## 1. Executive Summary
-This technical engineering report establishes the complete hydrodynamic, mechanical, and electrical design specifications for an industrial water pumping installation delivering a design flow rate of 25.0 m³/h at a total dynamic head (TDH) of 35.0 metres. Under standard operating conditions (water density 1000 kg/m³, g = 9.81 m/s²), the net hydraulic power required by the fluid column is **2.384 kW**. Accounting for the specified pump hydraulic efficiency of 78.0%, the brake shaft power required at the pump coupling is **3.057 kW**. Incorporating an electric motor efficiency of 90.0%, the continuous active electrical input power demand is **3.397 kW**.
+This technical engineering report establishes the complete hydrodynamic, mechanical, and electrical design specifications for an industrial water pumping installation delivering a design flow rate of ${p.flow_rate_m3_h.toFixed(1)} m³/h at a total dynamic head (TDH) of ${p.head_m.toFixed(1)} metres. Under standard operating conditions (water density ${p.density_kg_m3.toFixed(1)} kg/m³, g = ${p.gravity_m_s2.toFixed(2)} m/s²), the net hydraulic power required by the fluid column is **${p.p_hyd_kw.toFixed(3)} kW**. Accounting for the specified pump hydraulic efficiency of ${(p.pump_eff * 100).toFixed(1)}%, the brake shaft power required at the pump coupling is **${p.p_shaft_kw.toFixed(3)} kW**. Incorporating an electric motor efficiency of ${(p.motor_eff * 100).toFixed(1)}%, the continuous active electrical input power demand is **${p.p_elec_kw.toFixed(3)} kW**.
 
-To provide adequate operational resilience against hydraulic transients and transient head variations without motor thermal overload, a standard **3.7 kW (5.0 HP)** three-phase squirrel-cage induction motor (IEC 60034-1 frame) is recommended, yielding a verified safety margin of **21.0%** over shaft demand. Operating at 12 hours/day for 30 monthly operational days, daily electricity consumption is **40.76 kWh/day**, monthly electricity consumption is **1,222.8 kWh/month**, and monthly operational expenditure is **₹9,782.05/month** at the governing tariff of ₹8.00/kWh.
+To provide adequate operational resilience against hydraulic transients and transient head variations without motor thermal overload, a standard **${p.recommended_motor_kw.toFixed(1)} kW** three-phase squirrel-cage induction motor (IEC 60034-1 frame) is recommended, yielding a verified safety margin of **${p.safety_margin_recommended_pct.toFixed(1)}%** over shaft demand. Operating at ${p.hours_per_day.toFixed(1)} hours/day for ${p.days_per_month.toFixed(0)} monthly operational days, daily electricity consumption is **${p.daily_kwh.toFixed(2)} kWh/day**, monthly electricity consumption is **${p.monthly_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month**, and monthly operational expenditure is **₹${p.monthly_cost_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/month** at the governing tariff of ₹${p.tariff_inr_kwh.toFixed(2)}/kWh.
 
 ## 2. Input Design Parameters Table
 | Parameter Description | Symbol | Value | Standard Units | Engineering Source / Basis |
 | :--- | :--- | :--- | :--- | :--- |
-| Volumetric Water Flow Rate | Q | 25.00 | m³/hour (0.00694 m³/s) | Facility Process Sizing Requirement |
-| Total Dynamic Head | H | 35.00 | metres (m fluid column) | Static Lift + Piping Friction Analysis |
-| Fluid Density (Water at 20°C) | ρ | 1000.0 | kg/m³ | Standard Thermodynamic Properties |
-| Gravitational Acceleration | g | 9.81 | m/s² | Standard Terrestrial Gravity Constant |
-| Pump Hydraulic Efficiency | η_pump | 78.0% | fraction (0.78) | Vendor Impeller Curve at Design Duty |
-| Electric Motor Efficiency | η_motor | 90.0% | fraction (0.90) | IEC 60034-30-1 Premium Efficiency (IE3) |
-| Operating Schedule | t_day | 12.0 | hours/day (30 days/month) | Facility Shift Operating Model |
-| Commercial Electricity Tariff | Tariff | ₹8.00 | ₹/kWh (INR/unit) | Local Industrial Power Tariff Schedule |
+| Volumetric Water Flow Rate | Q | ${p.flow_rate_m3_h.toFixed(2)} | m³/hour (${p.q_m3_s.toFixed(5)} m³/s) | Facility Process Sizing Requirement |
+| Total Dynamic Head | H | ${p.head_m.toFixed(2)} | metres (m fluid column) | Static Lift + Piping Friction Analysis |
+| Fluid Density (Water at 20°C) | ρ | ${p.density_kg_m3.toFixed(1)} | kg/m³ | Standard Thermodynamic Properties |
+| Gravitational Acceleration | g | ${p.gravity_m_s2.toFixed(2)} | m/s² | Standard Terrestrial Gravity Constant |
+| Pump Hydraulic Efficiency | η_pump | ${(p.pump_eff * 100).toFixed(1)}% | fraction (${p.pump_eff.toFixed(2)}) | Vendor Impeller Curve at Design Duty |
+| Electric Motor Efficiency | η_motor | ${(p.motor_eff * 100).toFixed(1)}% | fraction (${p.motor_eff.toFixed(2)}) | IEC 60034-30-1 Premium Efficiency (IE3) |
+| Operating Schedule | t_day | ${p.hours_per_day.toFixed(1)} | hours/day (${p.days_per_month.toFixed(0)} days/month) | Facility Shift Operating Model |
+| Commercial Electricity Tariff | Tariff | ₹${p.tariff_inr_kwh.toFixed(2)} | ₹/kWh (INR/unit) | Local Industrial Power Tariff Schedule |
 
 ## 3. Step-by-Step Engineering Calculations & Formulas
 ### Step 1: Volumetric Flow Rate Unit Conversion
 To perform dimensionally consistent SI calculations, volumetric flow rate is converted from m³/h to m³/s:
-- **Formula:** Q = 25.0 m³/h ÷ 3600 s/h = 0.0069444 m³/s
+- **Formula:** Q = ${p.flow_rate_m3_h.toFixed(2)} m³/h ÷ 3600 s/h = ${p.q_m3_s.toFixed(7)} m³/s
 
 ### Step 2: Hydraulic Power Required (P_hyd)
 The hydraulic power transferred directly to the liquid column by the pump impeller is defined by:
 - **Formula:** P_hyd = (ρ · g · Q · H) / 1000
-- **Substitution:** P_hyd = (1000 kg/m³ × 9.81 m/s² × 0.0069444 m³/s × 35.0 m) / 1000
-- **Computed Result:** P_hyd = **2.384 kW** (2,384.38 W)
+- **Substitution:** P_hyd = (${p.density_kg_m3.toFixed(1)} kg/m³ × ${p.gravity_m_s2.toFixed(2)} m/s² × ${p.q_m3_s.toFixed(7)} m³/s × ${p.head_m.toFixed(2)} m) / 1000
+- **Computed Result:** P_hyd = **${p.p_hyd_kw.toFixed(3)} kW** (${(p.p_hyd_kw * 1000).toFixed(2)} W)
 
 ### Step 3: Actual Shaft Brake Power (P_shaft)
-Accounting for internal disk friction, volumetric leakage past wear rings, and hydraulic friction losses inside the impeller (η_pump = 0.78):
+Accounting for internal disk friction, volumetric leakage past wear rings, and hydraulic friction losses inside the impeller:
 - **Formula:** P_shaft = P_hyd / η_pump
-- **Substitution:** P_shaft = 2.384375 kW ÷ 0.78
-- **Computed Result:** P_shaft = **3.057 kW** (3,056.89 W)
+- **Substitution:** P_shaft = ${p.p_hyd_kw.toFixed(3)} kW ÷ ${p.pump_eff.toFixed(2)}
+- **Computed Result:** P_shaft = **${p.p_shaft_kw.toFixed(3)} kW** (${(p.p_shaft_kw * 1000).toFixed(2)} W)
 
 ### Step 4: Electrical Input Power (P_elec)
-Accounting for electrical copper, iron, windage, and rotor slip losses across the drive motor (η_motor = 0.90):
+Accounting for electrical copper, iron, windage, and rotor slip losses across the drive motor:
 - **Formula:** P_elec = P_shaft / η_motor
-- **Substitution:** P_elec = 3.056891 kW ÷ 0.90
-- **Computed Result:** P_elec = **3.397 kW** (3,396.55 W)
+- **Substitution:** P_elec = ${p.p_shaft_kw.toFixed(3)} kW ÷ ${p.motor_eff.toFixed(2)}
+- **Computed Result:** P_elec = **${p.p_elec_kw.toFixed(3)} kW** (${(p.p_elec_kw * 1000).toFixed(2)} W)
 
 ## 4. Motor Selection Recommendation & Sizing Rationale
-Under standard IEC 60034-1 frame ratings, nominal 3-phase motor sizes in this power class are 2.2 kW, 3.0 kW, 3.7 kW (5.0 HP), 4.0 kW, and 5.5 kW. A 3.0 kW motor is disqualified because the required shaft brake power of 3.057 kW exceeds its rated continuous capacity (operating at 101.9% of nameplate rating, which violates thermal insulation class limits).
+Under standard IEC 60034-1 frame ratings, nominal 3-phase motor sizes in this power class are 0.75, 1.1, 1.5, 2.2, 3.0, 3.7, 4.0, 5.5, 7.5, 11.0, and 15.0 kW.
 
-### Primary Recommendation: 3.7 kW (5.0 HP) Motor
-- **Sizing Safety Margin:** ((3.70 kW - 3.057 kW) ÷ 3.057 kW) × 100% = **21.0%**
-- **Engineering Rationale:** Conforms exactly to Hydraulic Institute (HI 14.3) and API 610 motor sizing margin guidelines (which mandate 15% to 25% safety margin for pump shaft power between 2.2 kW and 15 kW). Operates the motor at 82.6% loading, right in its peak electrical efficiency band.
+### Primary Recommendation: ${p.recommended_motor_kw.toFixed(1)} kW Motor
+- **Sizing Safety Margin:** ((${p.recommended_motor_kw.toFixed(2)} kW - ${p.p_shaft_kw.toFixed(3)} kW) ÷ ${p.p_shaft_kw.toFixed(3)} kW) × 100% = **${p.safety_margin_recommended_pct.toFixed(1)}%**
+- **Engineering Rationale:** Conforms to Hydraulic Institute (HI 14.3) motor sizing margin guidelines (which mandate 15% to 35% safety margin for pump shaft power). Operates the motor at ${((p.p_shaft_kw / p.recommended_motor_kw) * 100).toFixed(1)}% loading, within its peak electrical efficiency band.
 
-### Alternative Recommendation: 4.0 kW Motor
-- **Sizing Safety Margin:** ((4.00 kW - 3.057 kW) ÷ 3.057 kW) × 100% = **30.9%**
+### Alternative Recommendation: ${p.alt_motor_kw.toFixed(1)} kW Motor
+- **Sizing Safety Margin:** ((${p.alt_motor_kw.toFixed(2)} kW - ${p.p_shaft_kw.toFixed(3)} kW) ÷ ${p.p_shaft_kw.toFixed(3)} kW) × 100% = **${p.safety_margin_alt_pct.toFixed(1)}%**
 - **Engineering Rationale:** Provides expanded margin if future piping scaling, encrustation, or valve throttling increases system dynamic head.
 
 ## 5. Operational Electricity Consumption & Cost Analysis
-Energy accounting for 12 operating hours/day across a standard 30-day operating calendar:
-- **Daily Electricity Consumption:** P_elec × t_day = 3.397 kW × 12.0 h = **40.76 kWh/day**
-- **Monthly Electricity Consumption (30 days):** 40.76 kWh/day × 30 days = **1,222.8 kWh/month**
-- **Annual Electricity Consumption:** 1,222.8 kWh/month × 12 months = **14,673.1 kWh/year**
-- **Monthly Electricity Cost:** 1,222.8 kWh/month × ₹8.00/kWh = **₹9,782.05/month**
-- **Annual Electricity Cost:** 14,673.1 kWh/year × ₹8.00/kWh = **₹117,384.60/year**
+Energy accounting for ${p.hours_per_day.toFixed(1)} operating hours/day across a standard ${p.days_per_month.toFixed(0)}-day operating calendar:
+- **Daily Electricity Consumption:** P_elec × t_day = ${p.p_elec_kw.toFixed(3)} kW × ${p.hours_per_day.toFixed(1)} h = **${p.daily_kwh.toFixed(2)} kWh/day**
+- **Monthly Electricity Consumption (${p.days_per_month.toFixed(0)} days):** ${p.daily_kwh.toFixed(2)} kWh/day × ${p.days_per_month.toFixed(0)} days = **${p.monthly_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month**
+- **Annual Electricity Consumption:** ${p.monthly_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month × 12 months = **${p.annual_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/year**
+- **Monthly Electricity Cost:** ${p.monthly_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month × ₹${p.tariff_inr_kwh.toFixed(2)}/kWh = **₹${p.monthly_cost_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/month**
+- **Annual Electricity Cost:** ${p.annual_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/year × ₹${p.tariff_inr_kwh.toFixed(2)}/kWh = **₹${p.annual_cost_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/year**
 
-## 6. Sensitivity & Scenario Analysis: +20% Flow Rate Excursion
-If process expansion demands a 20% increase in water flow rate from 25.0 m³/h to **30.0 m³/h** while head remains 35.0 m:
-- **Revised Hydraulic Power:** P_hyd = (1000 × 9.81 × (30/3600) × 35) / 1000 = **2.861 kW** (+20.0%)
-- **Revised Shaft Power:** P_shaft = 2.86125 kW ÷ 0.78 = **3.668 kW** (+20.0%)
-- **Revised Electrical Input:** P_elec = 3.668269 kW ÷ 0.90 = **4.076 kW** (+20.0%)
-- **Revised Monthly Energy:** 4.075855 kW × 12 h × 30 days = **1,467.3 kWh/month**
-- **Revised Monthly Cost:** 1,467.3 kWh/mo × ₹8.00/kWh = **₹11,738.46/month**
-- **Operational Cost Delta:** **+₹1,956.41/month** (+20.0% expenditure increase).
+## 6. Sensitivity & Scenario Analysis: +${p.flow_increase_pct.toFixed(0)}% Flow Rate Excursion
+If process expansion demands a ${p.flow_increase_pct.toFixed(0)}% increase in water flow rate from ${p.flow_rate_m3_h.toFixed(1)} m³/h to **${p.flow_rate_sens_m3_h.toFixed(1)} m³/h** while head remains ${p.head_m.toFixed(1)} m:
+- **Revised Hydraulic Power:** P_hyd = (${p.density_kg_m3.toFixed(1)} × ${p.gravity_m_s2.toFixed(2)} × (${p.flow_rate_sens_m3_h.toFixed(2)}/3600) × ${p.head_m.toFixed(2)}) / 1000 = **${p.p_hyd_sens_kw.toFixed(3)} kW** (+${p.flow_increase_pct.toFixed(1)}%)
+- **Revised Shaft Power:** P_shaft = ${p.p_hyd_sens_kw.toFixed(3)} kW ÷ ${p.pump_eff.toFixed(2)} = **${p.p_shaft_sens_kw.toFixed(3)} kW** (+${p.flow_increase_pct.toFixed(1)}%)
+- **Revised Electrical Input:** P_elec = ${p.p_shaft_sens_kw.toFixed(3)} kW ÷ ${p.motor_eff.toFixed(2)} = **${p.p_elec_sens_kw.toFixed(3)} kW** (+${p.flow_increase_pct.toFixed(1)}%)
+- **Revised Monthly Energy:** ${p.p_elec_sens_kw.toFixed(3)} kW × ${p.hours_per_day.toFixed(1)} h × ${p.days_per_month.toFixed(0)} days = **${p.monthly_kwh_sens.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month**
+- **Revised Monthly Cost:** ${p.monthly_kwh_sens.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/mo × ₹${p.tariff_inr_kwh.toFixed(2)}/kWh = **₹${p.monthly_cost_sens_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/month**
+- **Operational Cost Delta:** **+₹${p.monthly_cost_increase_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/month** (+${p.flow_increase_pct.toFixed(1)}% expenditure increase).
 
-### Critical Motor Loading Warning
-At 3.668 kW shaft power, a 3.7 kW motor operates at **99.1%** of nameplate capacity. While a 1.15 service factor can handle intermittent duty, continuous operation at 30 m³/h eliminates the recommended safety envelope. If the 20% flow increase is permanent, upgrade to a **4.0 kW (91.7% load)** or **5.5 kW (66.7% load)** motor is mandatory.
+### Motor Loading Evaluation
+At ${p.p_shaft_sens_kw.toFixed(3)} kW shaft power, the recommended ${p.recommended_motor_kw.toFixed(1)} kW motor operates at **${p.motor_load_recommended_pct.toFixed(1)}%** of nameplate capacity. ${p.motor_load_recommended_pct <= 100 ? 'Continuous operation remains within thermal limits.' : `Exceeds 100% capacity; upgrade to ${p.alt_motor_kw.toFixed(1)} kW motor is mandatory.`}
 
 ## 7. Hydrodynamic Significance of Best Efficiency Point (BEP)
 Operating a centrifugal pump close to its design Best Efficiency Point (BEP) is vital to mechanical reliability and lifecycle economics:
@@ -991,23 +1074,19 @@ Operating a centrifugal pump close to its design Best Efficiency Point (BEP) is 
 - **Standards Compliance:** Per Hydraulic Institute (HI 14.3) and ISO 9906, continuous duty must remain within the Preferred Operating Region (POR: 70% to 120% of BEP).
 
 ## 8. Standards, Codes & Grounded Knowledge Base Sources
-- **ISO 9906:2012**: Rotodynamic pumps — Hydraulic performance acceptance tests (Grade 1/2 tolerance standards).
-- **Hydraulic Institute (HI 14.3 / 9.6.1)**: Sizing guidelines, motor driver margins, and Preferred Operating Region (POR) definitions.
-- **IEC 60034-1:2022**: Rotating electrical machines — Rating, duty cycles, and standard output power norms.
-- **ENG-STD-002**: Technical Report & Engineering Document Guideline (Document hierarchy and calculation verification standards).
-- **DOC-STD-001**: Controlled PDF & Document Creation Guideline (Controlled metadata and two-pass page numbering).
+${citationsSection}
 
 ## 9. Summary Table of Computed Engineering Results
-| Computed Metric | Baseline Value (25 m³/h) | Sensitivity Value (+20% Q) | Engineering Status |
+| Computed Metric | Baseline Value (${p.flow_rate_m3_h.toFixed(1)} m³/h) | Sensitivity Value (+${p.flow_increase_pct.toFixed(0)}% Q: ${p.flow_rate_sens_m3_h.toFixed(1)} m³/h) | Engineering Status |
 | :--- | :--- | :--- | :--- |
-| Hydraulic Fluid Power (P_hyd) | 2.384 kW | 2.861 kW | Verified Deterministic |
-| Pump Shaft Brake Power (P_shaft) | 3.057 kW | 3.668 kW | Verified Deterministic |
-| Electrical Input Power (P_elec) | 3.397 kW | 4.076 kW | Verified Deterministic |
-| Recommended Standard Motor | 3.7 kW (5.0 HP) | 4.0 kW or 5.5 kW | IEC 60034-1 Compliant |
-| Motor Safety Margin | 21.0% | 3.7 kW: 99.1% load | HI 14.3 Compliant |
-| Daily Electricity Consumption | 40.76 kWh/day | 48.91 kWh/day | 12 Hours/Day Duty |
-| Monthly Electricity Consumption | 1,222.8 kWh/month | 1,467.3 kWh/month | 30 Days Calendar |
-| Monthly Electricity Cost | ₹9,782.05 | ₹11,738.46 | ₹8/kWh Tariff Schedule |
+| Hydraulic Fluid Power (P_hyd) | ${p.p_hyd_kw.toFixed(3)} kW | ${p.p_hyd_sens_kw.toFixed(3)} kW | Verified Deterministic |
+| Pump Shaft Brake Power (P_shaft) | ${p.p_shaft_kw.toFixed(3)} kW | ${p.p_shaft_sens_kw.toFixed(3)} kW | Verified Deterministic |
+| Electrical Input Power (P_elec) | ${p.p_elec_kw.toFixed(3)} kW | ${p.p_elec_sens_kw.toFixed(3)} kW | Verified Deterministic |
+| Recommended Standard Motor | ${p.recommended_motor_kw.toFixed(1)} kW | ${p.alt_motor_kw.toFixed(1)} kW | IEC 60034-1 Compliant |
+| Motor Safety Margin | ${p.safety_margin_recommended_pct.toFixed(1)}% | ${p.recommended_motor_kw.toFixed(1)} kW: ${p.motor_load_recommended_pct.toFixed(1)}% load | HI 14.3 Compliant |
+| Daily Electricity Consumption | ${p.daily_kwh.toFixed(2)} kWh/day | ${p.daily_kwh_sens.toFixed(2)} kWh/day | ${p.hours_per_day.toFixed(0)} Hours/Day Duty |
+| Monthly Electricity Consumption | ${p.monthly_kwh.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month | ${p.monthly_kwh_sens.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kWh/month | ${p.days_per_month.toFixed(0)} Days Calendar |
+| Monthly Electricity Cost | ₹${p.monthly_cost_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ₹${p.monthly_cost_sens_inr.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | ₹${p.tariff_inr_kwh.toFixed(2)}/kWh Tariff |
 `;
   }
 

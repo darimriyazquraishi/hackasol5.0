@@ -28,6 +28,7 @@ export interface KnowledgeChunk {
 export interface StoredVector {
   chunkId: string;
   docId: string;
+  embedding?: number[];
   terms: Record<string, number>;
 }
 
@@ -213,6 +214,48 @@ class RagKnowledgeEngine {
   }
 
   /**
+   * Compute dense semantic embedding vector using local nomic-embed-text:latest (768 dimensions)
+   */
+  public async getEmbedding(text: string): Promise<number[]> {
+    try {
+      const res = await fetch('http://127.0.0.1:11434/api/embeddings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'nomic-embed-text:latest',
+          prompt: text.slice(0, 1500)
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.embedding) && data.embedding.length > 0) {
+          return data.embedding;
+        }
+      }
+    } catch {
+      // runtime offline or fallback
+    }
+    return [];
+  }
+
+  /**
+   * Exact cosine similarity between two float vectors
+   */
+  public cosineSimilarity(a: number[], b: number[]): number {
+    if (!a || !b || a.length === 0 || b.length === 0 || a.length !== b.length) return 0;
+    let dot = 0;
+    let normA = 0;
+    let normB = 0;
+    for (let i = 0; i < a.length; i++) {
+      dot += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+    if (normA === 0 || normB === 0) return 0;
+    return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+
+  /**
    * Ingest an authentic user-uploaded document:
    * 1. Validate file
    * 2. Retain original file on persistent disk
@@ -347,6 +390,14 @@ class RagKnowledgeEngine {
           termFreq[t] = (termFreq[t] || 0) + 1;
         }
 
+        // Generate semantic vector embedding via nomic-embed-text:latest (768 dimensions)
+        let emb: number[] = [];
+        try {
+          emb = await this.getEmbedding(seg);
+        } catch {
+          emb = [];
+        }
+
         newChunks.push({
           id: chunkId,
           docId,
@@ -360,6 +411,7 @@ class RagKnowledgeEngine {
         newVectors.push({
           chunkId,
           docId,
+          embedding: emb,
           terms: termFreq
         });
       }
@@ -369,6 +421,13 @@ class RagKnowledgeEngine {
     if (newChunks.length === 0) {
       const chunkId = `k-${docId}-1`;
       const terms = extractedText.toLowerCase().split(/\W+/).filter(t => t.length > 2);
+      let emb: number[] = [];
+      try {
+        emb = await this.getEmbedding(extractedText);
+      } catch {
+        emb = [];
+      }
+
       newChunks.push({
         id: chunkId,
         docId,
@@ -381,6 +440,7 @@ class RagKnowledgeEngine {
       newVectors.push({
         chunkId,
         docId,
+        embedding: emb,
         terms: terms.reduce((acc, t) => { acc[t] = (acc[t] || 0) + 1; return acc; }, {} as Record<string, number>)
       });
     }
@@ -448,11 +508,72 @@ class RagKnowledgeEngine {
   }
 
   /**
-   * Semantic Retrieval against user-uploaded persistent chunks
+   * Semantic Retrieval against user-uploaded persistent chunks.
+   * Derives query embeddings via nomic-embed-text:latest, performs dense cosine similarity,
+   * applies relevance reranking with keyword alignment, and selects top-K chunks.
    */
-  public search(query: string, topK: number = 3): Array<{ chunk: KnowledgeChunk; score: number }> {
+  public async search(query: string, topK: number = 3): Promise<Array<{ chunk: KnowledgeChunk; score: number }>> {
     const queryTerms = query.toLowerCase().split(/\W+/).filter(t => t.length > 2);
-    if (queryTerms.length === 0 || this.chunks.length === 0) return [];
+    if (this.chunks.length === 0) return [];
+
+    let queryEmb: number[] = [];
+    try {
+      queryEmb = await this.getEmbedding(query);
+    } catch {
+      queryEmb = [];
+    }
+
+    const scored = this.chunks.map(chunk => {
+      let termScore = 0;
+      const lowerText = chunk.text.toLowerCase();
+      const lowerFile = chunk.file.toLowerCase();
+
+      for (const term of queryTerms) {
+        if (chunk.keywords.some(k => k.includes(term))) termScore += 0.35;
+        if (lowerText.includes(term)) termScore += 0.30;
+        if (lowerFile.includes(term)) termScore += 0.40;
+      }
+
+      const vector = this.vectors.find(v => v.chunkId === chunk.id);
+      if (vector && vector.terms) {
+        for (const term of queryTerms) {
+          if (vector.terms[term]) {
+            termScore += Math.min(0.3, vector.terms[term] * 0.1);
+          }
+        }
+      }
+
+      const normalizedTermScore = queryTerms.length > 0 ? Math.min(1.0, termScore / (queryTerms.length * 0.75)) : 0;
+
+      // Dense cosine similarity (768 dimensions)
+      let vectorScore = 0;
+      if (queryEmb.length > 0 && vector && Array.isArray(vector.embedding) && vector.embedding.length > 0) {
+        vectorScore = Math.max(0, this.cosineSimilarity(queryEmb, vector.embedding));
+      }
+
+      // Relevance Reranking: Blend semantic dense vector score (65%) with exact keyword alignment (35%)
+      const combinedScore = vectorScore > 0
+        ? +(vectorScore * 0.65 + normalizedTermScore * 0.35).toFixed(3)
+        : +(normalizedTermScore).toFixed(3);
+
+      return {
+        chunk,
+        score: Math.min(0.99, Math.max(0.35, combinedScore))
+      };
+    });
+
+    return scored
+      .filter(s => s.score >= 0.45)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, topK);
+  }
+
+  /**
+   * Synchronous fallback for components requiring immediate evaluation
+   */
+  public searchSync(query: string, topK: number = 3): Array<{ chunk: KnowledgeChunk; score: number }> {
+    const queryTerms = query.toLowerCase().split(/\W+/).filter(t => t.length > 2);
+    if (this.chunks.length === 0) return [];
 
     const scored = this.chunks.map(chunk => {
       let score = 0;
@@ -466,7 +587,7 @@ class RagKnowledgeEngine {
       }
 
       const vector = this.vectors.find(v => v.chunkId === chunk.id);
-      if (vector) {
+      if (vector && vector.terms) {
         for (const term of queryTerms) {
           if (vector.terms[term]) {
             score += Math.min(0.5, vector.terms[term] * 0.15);
@@ -475,14 +596,11 @@ class RagKnowledgeEngine {
       }
 
       const confidence = Math.min(0.99, Math.max(0.35, +(score / (queryTerms.length * 0.75)).toFixed(3)));
-      return {
-        chunk,
-        score: confidence
-      };
+      return { chunk, score: confidence };
     });
 
     return scored
-      .filter(s => s.score >= 0.50)
+      .filter(s => s.score >= 0.45)
       .sort((a, b) => b.score - a.score)
       .slice(0, topK);
   }
@@ -496,8 +614,8 @@ class RagKnowledgeEngine {
       return { guidelinesText: '', citations: [] };
     }
 
-    const matches = this.search(taskPrompt, 3);
-    const valid = matches.filter(m => m.score >= 0.60).map(m => m.chunk);
+    const matches = this.searchSync(taskPrompt, 3);
+    const valid = matches.filter(m => m.score >= 0.55).map(m => m.chunk);
 
     if (valid.length === 0) {
       return { guidelinesText: '', citations: [] };

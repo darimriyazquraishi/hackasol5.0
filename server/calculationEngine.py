@@ -47,8 +47,8 @@ class NumberedCanvas(canvas.Canvas):
         self.setFillColor(colors.HexColor("#737373"))
 
         # Running Header
-        self.drawString(54, 750, "LUMI Engineering & Technical Review | Confidential")
-        self.drawRightString(558, 750, "Doc ID: ENG-RPT-2026-CA01 | Rev 1.0")
+        self.drawString(54, 750, "LUMI Engineering & Technical Review | Draft - For Technical Review")
+        self.drawRightString(558, 750, "Doc ID: ENG-RPT-2026-WP01 | Rev: Draft")
         self.setStrokeColor(colors.HexColor("#262626"))
         self.setLineWidth(0.5)
         self.line(54, 744, 558, 744)
@@ -66,16 +66,34 @@ class NumberedCanvas(canvas.Canvas):
 # Deterministic Compressed-Air Engineering Calculations
 # ----------------------------------------------------------------------
 def calculate_compressed_air(params):
+    if isinstance(params, list):
+        param_dict = {}
+        for item in params:
+            if isinstance(item, dict):
+                k = item.get("name") or item.get("key")
+                v = item.get("value")
+                if k is not None:
+                    param_dict[k] = v
+        params = param_dict
+    elif not isinstance(params, dict):
+        params = {}
+
     num_compressors = params.get("num_compressors", 3)
     rated_kw = params.get("rated_kw_per_compressor", 250.0)
     operating_compressors = params.get("operating_compressors", 2)
-    avg_power_kw = params.get("avg_combined_power_kw", 400.0)
-    hours_per_day = params.get("hours_per_day", 24.0)
-    days_per_month = params.get("days_per_month", 30.0)
-    demand_flow_nm3h = params.get("air_demand_nm3_h", 18000.0)
-    pressure_barg = params.get("discharge_pressure_barg", 7.0)
-    leakage_pct = params.get("leakage_pct", 20.0)
-    target_reduction_pct = params.get("leakage_reduction_target_pct", 10.0)
+    avg_power_kw = float(params.get("avg_combined_power_kw", 400.0))
+    hours_per_day = float(params.get("hours_per_day", 24.0))
+    days_per_month = float(params.get("days_per_month", 30.0))
+    demand_flow_nm3h = float(params.get("air_demand_nm3_h", 18000.0))
+    pressure_barg = float(params.get("discharge_pressure_barg", 7.0))
+    leakage_pct = float(params.get("leakage_pct", 20.0))
+    target_reduction_pct = float(params.get("leakage_reduction_target_pct", 10.0))
+
+    # Dimensional & Boundary Validation (Part 5.4)
+    if avg_power_kw <= 0 or demand_flow_nm3h <= 0 or hours_per_day <= 0 or days_per_month <= 0:
+        raise ValueError("Invalid physical condition: compressor power, air demand, and operating schedule must be positive non-zero values.")
+    if hours_per_day > 24.0 or days_per_month > 31.0:
+        raise ValueError("Invalid operating schedule: cannot exceed 24 hours/day or 31 days/month.")
 
     # 1. Operating Hours
     monthly_hours = hours_per_day * days_per_month  # 720 h
@@ -534,6 +552,18 @@ def generate_technical_pdf(calc, chart1_path, chart2_path, output_pdf_path, rag_
 # Deterministic Industrial Water Pumping System Calculations
 # ----------------------------------------------------------------------
 def calculate_water_pump(params):
+    if isinstance(params, list):
+        param_dict = {}
+        for item in params:
+            if isinstance(item, dict):
+                k = item.get("name") or item.get("key")
+                v = item.get("value")
+                if k is not None:
+                    param_dict[k] = v
+        params = param_dict
+    elif not isinstance(params, dict):
+        params = {}
+
     flow_rate_m3_h = float(params.get("flow_rate_m3_h", params.get("flow_rate", 25.0)))
     head_m = float(params.get("head_m", params.get("head", 35.0)))
     density_kg_m3 = float(params.get("density_kg_m3", params.get("density", 1000.0)))
@@ -555,6 +585,16 @@ def calculate_water_pump(params):
     tariff_inr_kwh = float(params.get("tariff_inr_kwh", params.get("electricity_tariff", 8.0)))
     flow_increase_pct = float(params.get("flow_increase_pct", 20.0))
 
+    # Dimensional & Boundary Validation (Part 5.4)
+    if flow_rate_m3_h <= 0 or head_m <= 0 or density_kg_m3 <= 0 or gravity_m_s2 <= 0:
+        raise ValueError("Invalid physical condition: flow rate, head, density, and gravitational acceleration must be positive non-zero values.")
+    if hours_per_day <= 0 or hours_per_day > 24.0:
+        raise ValueError(f"Invalid operating duration: {hours_per_day} hours/day must be between 0 and 24.")
+    if days_per_month <= 0 or days_per_month > 31.0:
+        raise ValueError(f"Invalid monthly operating days: {days_per_month} must be between 1 and 31.")
+    if tariff_inr_kwh < 0:
+        raise ValueError(f"Invalid electricity tariff: cannot be negative.")
+
     # 1. Flow conversion to m3/s
     q_m3_s = flow_rate_m3_h / 3600.0  # 25 / 3600 = 0.0069444 m3/s
 
@@ -568,112 +608,112 @@ def calculate_water_pump(params):
     p_elec_kw = p_shaft_kw / motor_eff  # 3.056891 / 0.90 = 3.3965456 kW
 
     # 5. Motor Sizing Recommendations (Standard IEC 60034-1 ratings)
-    standard_ratings = [0.75, 1.1, 1.5, 2.2, 3.0, 3.7, 4.0, 5.5, 7.5, 11.0, 15.0]
+    standard_ratings = [0.75, 1.1, 1.5, 2.2, 3.0, 3.7, 4.0, 5.5, 7.5, 11.0, 15.0, 18.5, 22.0, 30.0, 37.0, 45.0, 55.0, 75.0, 90.0, 110.0]
     candidate_ratings = [r for r in standard_ratings if r >= p_shaft_kw]
-    recommended_motor_kw = candidate_ratings[0] if candidate_ratings else round(p_shaft_kw * 1.25, 1) # 3.7 kW
-    alt_motor_kw = candidate_ratings[1] if len(candidate_ratings) > 1 else recommended_motor_kw # 4.0 kW
+    recommended_motor_kw = candidate_ratings[0] if candidate_ratings else round(p_shaft_kw * 1.25, 1)
+    alt_motor_kw = candidate_ratings[1] if len(candidate_ratings) > 1 else recommended_motor_kw
 
-    safety_margin_3_7_pct = ((recommended_motor_kw - p_shaft_kw) / p_shaft_kw) * 100.0  # 21.04%
-    safety_margin_4_0_pct = ((alt_motor_kw - p_shaft_kw) / p_shaft_kw) * 100.0          # 30.85%
+    safety_margin_recommended_pct = ((recommended_motor_kw - p_shaft_kw) / p_shaft_kw) * 100.0
+    safety_margin_alt_pct = ((alt_motor_kw - p_shaft_kw) / p_shaft_kw) * 100.0
 
     # 6. Daily & Monthly Electricity Consumption
-    daily_kwh = p_elec_kw * hours_per_day      # 3.3965 * 12 = 40.7585 kWh/day
-    monthly_kwh = daily_kwh * days_per_month   # 40.7585 * 30 = 1222.756 kWh/month
-    annual_kwh = monthly_kwh * 12.0            # 14673.08 kWh/year
+    daily_kwh = p_elec_kw * hours_per_day
+    monthly_kwh = daily_kwh * days_per_month
+    annual_kwh = monthly_kwh * 12.0
 
     # 7. Electricity Cost
-    daily_cost_inr = daily_kwh * tariff_inr_kwh     # 40.7585 * 8 = 326.07 INR/day
-    monthly_cost_inr = monthly_kwh * tariff_inr_kwh # 1222.756 * 8 = 9782.05 INR/month
-    annual_cost_inr = annual_kwh * tariff_inr_kwh   # 117384.6 INR/year
+    daily_cost_inr = daily_kwh * tariff_inr_kwh
+    monthly_cost_inr = monthly_kwh * tariff_inr_kwh
+    annual_cost_inr = annual_kwh * tariff_inr_kwh
 
-    # 8. Sensitivity Analysis: 20% Flow Rate Increase (Constant Head = 35m)
-    flow_rate_sens_m3_h = flow_rate_m3_h * (1.0 + flow_increase_pct / 100.0) # 30.0 m3/h
+    # 8. Sensitivity Analysis: Custom Flow Rate Increase
+    flow_rate_sens_m3_h = flow_rate_m3_h * (1.0 + flow_increase_pct / 100.0)
     q_sens_m3_s = flow_rate_sens_m3_h / 3600.0
-    p_hyd_sens_kw = (density_kg_m3 * gravity_m_s2 * q_sens_m3_s * head_m) / 1000.0 # 2.86125 kW (+20%)
-    p_shaft_sens_kw = p_hyd_sens_kw / pump_eff # 3.668269 kW (+20%)
-    p_elec_sens_kw = p_shaft_sens_kw / motor_eff # 4.075855 kW (+20%)
+    p_hyd_sens_kw = (density_kg_m3 * gravity_m_s2 * q_sens_m3_s * head_m) / 1000.0
+    p_shaft_sens_kw = p_hyd_sens_kw / pump_eff
+    p_elec_sens_kw = p_shaft_sens_kw / motor_eff
     
-    daily_kwh_sens = p_elec_sens_kw * hours_per_day # 48.910 kWh/day
-    monthly_kwh_sens = daily_kwh_sens * days_per_month # 1467.308 kWh/month
-    monthly_cost_sens_inr = monthly_kwh_sens * tariff_inr_kwh # 11738.46 INR/month
-    monthly_cost_increase_inr = monthly_cost_sens_inr - monthly_cost_inr # 1956.41 INR/month (+20%)
-    motor_load_3_7_pct = (p_shaft_sens_kw / recommended_motor_kw) * 100.0 # 99.14%
+    daily_kwh_sens = p_elec_sens_kw * hours_per_day
+    monthly_kwh_sens = daily_kwh_sens * days_per_month
+    monthly_cost_sens_inr = monthly_kwh_sens * tariff_inr_kwh
+    monthly_cost_increase_inr = monthly_cost_sens_inr - monthly_cost_inr
+    motor_load_recommended_pct = (p_shaft_sens_kw / recommended_motor_kw) * 100.0
 
     calculation_records = [
         {
             "parameter": "Hydraulic Power Required (P_hyd)",
-            "formula": "P_hyd = (rho * g * Q * H) / 1000 = (1000 * 9.81 * (25/3600) * 35) / 1000",
+            "formula": f"P_hyd = (rho * g * Q * H) / 1000 = ({density_kg_m3:.1f} * {gravity_m_s2:.2f} * ({flow_rate_m3_h:.2f}/3600) * {head_m:.2f}) / 1000",
             "value": round(p_hyd_kw, 3),
             "unit": "kW",
             "status": "VERIFIED_DETERMINISTIC"
         },
         {
             "parameter": "Actual Shaft Power Required (P_shaft)",
-            "formula": "P_shaft = P_hyd / eta_pump = 2.384 / 0.78",
+            "formula": f"P_shaft = P_hyd / eta_pump = {p_hyd_kw:.3f} / {pump_eff:.2f}",
             "value": round(p_shaft_kw, 3),
             "unit": "kW",
             "status": "VERIFIED_DETERMINISTIC"
         },
         {
             "parameter": "Electrical Input Power (P_elec)",
-            "formula": "P_elec = P_shaft / eta_motor = 3.057 / 0.90",
+            "formula": f"P_elec = P_shaft / eta_motor = {p_shaft_kw:.3f} / {motor_eff:.2f}",
             "value": round(p_elec_kw, 3),
             "unit": "kW",
             "status": "VERIFIED_DETERMINISTIC"
         },
         {
             "parameter": "Recommended Standard Motor Rating",
-            "formula": "Next standard IEC 60034-1 rating above 3.057 kW shaft power (3.7 kW / 5 HP)",
+            "formula": f"Next standard IEC 60034-1 rating above {p_shaft_kw:.3f} kW shaft power ({recommended_motor_kw:.1f} kW)",
             "value": recommended_motor_kw,
             "unit": "kW",
             "status": "VERIFIED_DETERMINISTIC"
         },
         {
-            "parameter": "Motor Safety Margin (3.7 kW Rating)",
-            "formula": "((3.7 kW - 3.057 kW) / 3.057 kW) * 100%",
-            "value": round(safety_margin_3_7_pct, 1),
+            "parameter": f"Motor Safety Margin ({recommended_motor_kw:.1f} kW Rating)",
+            "formula": f"(({recommended_motor_kw:.1f} kW - {p_shaft_kw:.3f} kW) / {p_shaft_kw:.3f} kW) * 100%",
+            "value": round(safety_margin_recommended_pct, 1),
             "unit": "%",
             "status": "VERIFIED_DETERMINISTIC"
         },
         {
             "parameter": "Daily Electricity Consumption",
-            "formula": "P_elec * Operating_Hours = 3.397 kW * 12 h/day",
+            "formula": f"P_elec * Operating_Hours = {p_elec_kw:.3f} kW * {hours_per_day:.1f} h/day",
             "value": round(daily_kwh, 2),
             "unit": "kWh/day",
             "status": "VERIFIED_DETERMINISTIC"
         },
         {
-            "parameter": "Monthly Electricity Consumption (30 Operating Days)",
-            "formula": "Daily_kWh * 30 days = 40.76 * 30",
+            "parameter": f"Monthly Electricity Consumption ({days_per_month:.0f} Operating Days)",
+            "formula": f"Daily_kWh * {days_per_month:.0f} days = {daily_kwh:.2f} * {days_per_month:.0f}",
             "value": round(monthly_kwh, 1),
             "unit": "kWh/month",
             "status": "VERIFIED_DETERMINISTIC"
         },
         {
             "parameter": "Monthly Electricity Cost",
-            "formula": "Monthly_kWh * Tariff = 1,222.8 kWh * ₹8/kWh",
+            "formula": f"Monthly_kWh * Tariff = {monthly_kwh:,.1f} kWh * ₹{tariff_inr_kwh:.2f}/kWh",
             "value": round(monthly_cost_inr, 2),
             "unit": "₹/month",
             "status": "VERIFIED_DETERMINISTIC"
         },
         {
-            "parameter": "Sensitivity (+20% Flow: 30 m3/h) Electrical Power",
-            "formula": "P_elec (+20% Q) = (1000 * 9.81 * (30/3600) * 35 / 1000) / (0.78 * 0.90)",
+            "parameter": f"Sensitivity (+{flow_increase_pct:.0f}% Flow: {flow_rate_sens_m3_h:.1f} m3/h) Electrical Power",
+            "formula": f"P_elec (+{flow_increase_pct:.0f}% Q) = ({density_kg_m3:.1f} * {gravity_m_s2:.2f} * ({flow_rate_sens_m3_h:.2f}/3600) * {head_m:.2f} / 1000) / ({pump_eff:.2f} * {motor_eff:.2f})",
             "value": round(p_elec_sens_kw, 3),
             "unit": "kW",
             "status": "VERIFIED_DETERMINISTIC"
         },
         {
-            "parameter": "Sensitivity (+20% Flow) Monthly Cost & Delta",
-            "formula": "1,467.3 kWh/mo * ₹8/kWh = ₹11,738.46/mo (+₹1,956.41/mo, +20.0%)",
+            "parameter": f"Sensitivity (+{flow_increase_pct:.0f}% Flow) Monthly Cost & Delta",
+            "formula": f"{monthly_kwh_sens:,.1f} kWh/mo * ₹{tariff_inr_kwh:.2f}/kWh = ₹{monthly_cost_sens_inr:,.2f}/mo (+₹{monthly_cost_increase_inr:,.2f}/mo, +{flow_increase_pct:.1f}%)",
             "value": round(monthly_cost_sens_inr, 2),
             "unit": "₹/month",
             "status": "VERIFIED_DETERMINISTIC"
         },
         {
-            "parameter": "Sensitivity (+20% Flow) Motor Loading Check",
-            "formula": "P_shaft_sens / 3.7 kW = 3.668 kW / 3.7 kW = 99.14% Load",
-            "value": round(motor_load_3_7_pct, 1),
+            "parameter": f"Sensitivity (+{flow_increase_pct:.0f}% Flow) Motor Loading Check",
+            "formula": f"P_shaft_sens / {recommended_motor_kw:.1f} kW = {p_shaft_sens_kw:.3f} kW / {recommended_motor_kw:.1f} kW = {motor_load_recommended_pct:.1f}% Load",
+            "value": round(motor_load_recommended_pct, 1),
             "unit": "% load",
             "status": "VERIFIED_DETERMINISTIC"
         }
@@ -690,14 +730,17 @@ def calculate_water_pump(params):
         "hours_per_day": hours_per_day,
         "days_per_month": days_per_month,
         "tariff_inr_kwh": tariff_inr_kwh,
+        "flow_increase_pct": flow_increase_pct,
         "q_m3_s": q_m3_s,
         "p_hyd_kw": p_hyd_kw,
         "p_shaft_kw": p_shaft_kw,
         "p_elec_kw": p_elec_kw,
         "recommended_motor_kw": recommended_motor_kw,
         "alt_motor_kw": alt_motor_kw,
-        "safety_margin_3_7_pct": safety_margin_3_7_pct,
-        "safety_margin_4_0_pct": safety_margin_4_0_pct,
+        "safety_margin_recommended_pct": safety_margin_recommended_pct,
+        "safety_margin_alt_pct": safety_margin_alt_pct,
+        "safety_margin_3_7_pct": safety_margin_recommended_pct,
+        "safety_margin_4_0_pct": safety_margin_alt_pct,
         "daily_kwh": daily_kwh,
         "monthly_kwh": monthly_kwh,
         "annual_kwh": annual_kwh,
@@ -712,7 +755,8 @@ def calculate_water_pump(params):
         "monthly_kwh_sens": monthly_kwh_sens,
         "monthly_cost_sens_inr": monthly_cost_sens_inr,
         "monthly_cost_increase_inr": monthly_cost_increase_inr,
-        "motor_load_3_7_pct": motor_load_3_7_pct,
+        "motor_load_recommended_pct": motor_load_recommended_pct,
+        "motor_load_3_7_pct": motor_load_recommended_pct,
         "records": calculation_records,
         "inputs": params
     }
@@ -751,10 +795,10 @@ def generate_water_pump_charts(calc, output_dir):
 
     x = [0, 1]
     width = 0.35
-    plt.bar([i - width/2 for i in x], baseline_vals, width, label='Baseline (25 m³/h)', color='#3b82f6')
-    plt.bar([i + width/2 for i in x], sens_vals, width, label='+20% Flow (30 m³/h)', color='#f59e0b')
+    plt.bar([i - width/2 for i in x], baseline_vals, width, label=f"Baseline ({calc['flow_rate_m3_h']:.1f} m³/h)", color='#3b82f6')
+    plt.bar([i + width/2 for i in x], sens_vals, width, label=f"+{calc['flow_increase_pct']:.0f}% Flow ({calc['flow_rate_sens_m3_h']:.1f} m³/h)", color='#f59e0b')
 
-    plt.title("Baseline vs +20% Flow Excursion Impact", fontsize=10, fontweight='bold')
+    plt.title(f"Baseline vs +{calc['flow_increase_pct']:.0f}% Flow Excursion Impact", fontsize=10, fontweight='bold')
     plt.xticks(x, categories, fontsize=8)
     plt.legend(fontsize=8)
     plt.grid(axis='y', linestyle='--', alpha=0.4)
@@ -833,11 +877,11 @@ def generate_water_pump_pdf(calc, chart1_path, chart2_path, output_pdf_path, rag
 
     doc_control_data = [
         [Paragraph("Document ID:", table_cell_bold), Paragraph("ENG-RPT-2026-WP01", table_cell),
-         Paragraph("Revision:", table_cell_bold), Paragraph("1.0 (Final Approved)", table_cell)],
+         Paragraph("Revision:", table_cell_bold), Paragraph("Draft - For Technical Review", table_cell)],
         [Paragraph("Date of Issue:", table_cell_bold), Paragraph(datetime.now().strftime("%B %d, %Y"), table_cell),
-         Paragraph("Classification:", table_cell_bold), Paragraph("Confidential / Engineering Audit", table_cell)],
-        [Paragraph("Authoring Standard:", table_cell_bold), Paragraph("ENG-STD-002 & DOC-STD-001", table_cell),
-         Paragraph("Design Codes:", table_cell_bold), Paragraph("ISO 9906:2012, HI 14.3, IEC 60034-1", table_cell)]
+         Paragraph("Classification:", table_cell_bold), Paragraph("Internal Engineering Review", table_cell)],
+        [Paragraph("Authoring Standard:", table_cell_bold), Paragraph("Engineering Guidelines & First Principles", table_cell),
+         Paragraph("Design Codes:", table_cell_bold), Paragraph("ISO 9906, HI 14.3, IEC 60034-1 (Reference Guidelines)", table_cell)]
     ]
     t_control = Table(doc_control_data, colWidths=[110, 140, 110, 144])
     t_control.setStyle(TableStyle([
@@ -856,15 +900,15 @@ def generate_water_pump_pdf(calc, chart1_path, chart2_path, output_pdf_path, rag
         f"This technical report establishes the complete hydrodynamic, mechanical, and electrical design specifications "
         f"for an industrial water pumping installation delivering a design flow rate of {calc['flow_rate_m3_h']:.1f} m³/h "
         f"at a total dynamic head (TDH) of {calc['head_m']:.1f} metres. Under standard operating conditions (water density "
-        f"1000 kg/m³, g = 9.81 m/s²), the net hydraulic power required by the fluid column is <b>{calc['p_hyd_kw']:.3f} kW</b>. "
+        f"{calc['density_kg_m3']:.1f} kg/m³, g = {calc['gravity_m_s2']:.2f} m/s²), the net hydraulic power required by the fluid column is <b>{calc['p_hyd_kw']:.3f} kW</b>. "
         f"Accounting for the specified pump hydraulic efficiency of {calc['pump_eff']*100:.1f}%, the brake shaft power required "
         f"at the pump coupling is <b>{calc['p_shaft_kw']:.3f} kW</b>. Incorporating an electric motor efficiency of "
         f"{calc['motor_eff']*100:.1f}%, the continuous active electrical input power demand is <b>{calc['p_elec_kw']:.3f} kW</b>.<br/><br/>"
         f"To provide adequate operational resilience against hydraulic transients and transient head variations without motor thermal "
-        f"overload, a standard <b>{calc['recommended_motor_kw']:.1f} kW (5.0 HP)</b> three-phase squirrel-cage induction motor (IEC 60034-1 frame) "
-        f"is recommended, yielding a verified safety margin of <b>{calc['safety_margin_3_7_pct']:.1f}%</b> over shaft demand. Operating "
-        f"at {calc['hours_per_day']:.0f} hours/day for 30 monthly operational days, daily electricity consumption is <b>{calc['daily_kwh']:.2f} kWh/day</b>, "
-        f"monthly electricity consumption is <b>{calc['monthly_kwh']:.1f} kWh/month</b>, and monthly operational expenditure is "
+        f"overload, a standard <b>{calc['recommended_motor_kw']:.1f} kW</b> three-phase squirrel-cage induction motor (IEC 60034-1 frame) "
+        f"is recommended, yielding a verified safety margin of <b>{calc['safety_margin_recommended_pct']:.1f}%</b> over shaft demand. Operating "
+        f"at {calc['hours_per_day']:.0f} hours/day for {calc['days_per_month']:.0f} monthly operational days, daily electricity consumption is <b>{calc['daily_kwh']:.2f} kWh/day</b>, "
+        f"monthly electricity consumption is <b>{calc['monthly_kwh']:,.1f} kWh/month</b>, and monthly operational expenditure is "
         f"<b>₹{calc['monthly_cost_inr']:,.2f}/month</b> at the governing tariff of ₹{calc['tariff_inr_kwh']:.2f}/kWh."
     )
     story.append(Paragraph(exec_summary, body_style))
@@ -875,13 +919,13 @@ def generate_water_pump_pdf(calc, chart1_path, chart2_path, output_pdf_path, rag
     params_data = [
         [Paragraph("Parameter Description", table_header), Paragraph("Symbol", table_header),
          Paragraph("Value", table_header), Paragraph("Standard Units", table_header), Paragraph("Engineering Source / Basis", table_header)],
-        [Paragraph("Volumetric Water Flow Rate", table_cell_bold), Paragraph("Q", table_cell), Paragraph(f"{calc['flow_rate_m3_h']:.2f}", table_cell), Paragraph("m³/hour (0.00694 m³/s)", table_cell), Paragraph("Facility Process Sizing Requirement", table_cell)],
+        [Paragraph("Volumetric Water Flow Rate", table_cell_bold), Paragraph("Q", table_cell), Paragraph(f"{calc['flow_rate_m3_h']:.2f}", table_cell), Paragraph(f"m³/hour ({calc['q_m3_s']:.5f} m³/s)", table_cell), Paragraph("Facility Process Sizing Requirement", table_cell)],
         [Paragraph("Total Dynamic Head", table_cell_bold), Paragraph("H", table_cell), Paragraph(f"{calc['head_m']:.2f}", table_cell), Paragraph("metres (m fluid column)", table_cell), Paragraph("Static Lift + Piping Friction Analysis", table_cell)],
         [Paragraph("Fluid Density (Water at 20°C)", table_cell_bold), Paragraph("ρ", table_cell), Paragraph(f"{calc['density_kg_m3']:.1f}", table_cell), Paragraph("kg/m³", table_cell), Paragraph("Standard Thermodynamic Properties", table_cell)],
         [Paragraph("Gravitational Acceleration", table_cell_bold), Paragraph("g", table_cell), Paragraph(f"{calc['gravity_m_s2']:.2f}", table_cell), Paragraph("m/s²", table_cell), Paragraph("Standard Terrestrial Gravity Constant", table_cell)],
-        [Paragraph("Pump Hydraulic Efficiency", table_cell_bold), Paragraph("η_pump", table_cell), Paragraph(f"{calc['pump_eff']*100:.1f}%", table_cell), Paragraph("fraction (0.78)", table_cell), Paragraph("Vendor Impeller Curve at Design Duty", table_cell)],
-        [Paragraph("Electric Motor Efficiency", table_cell_bold), Paragraph("η_motor", table_cell), Paragraph(f"{calc['motor_eff']*100:.1f}%", table_cell), Paragraph("fraction (0.90)", table_cell), Paragraph("IEC 60034-30-1 Premium Efficiency (IE3)", table_cell)],
-        [Paragraph("Operating Schedule", table_cell_bold), Paragraph("t_day", table_cell), Paragraph(f"{calc['hours_per_day']:.1f}", table_cell), Paragraph("hours/day (30 days/month)", table_cell), Paragraph("Facility Shift Operating Model", table_cell)],
+        [Paragraph("Pump Hydraulic Efficiency", table_cell_bold), Paragraph("η_pump", table_cell), Paragraph(f"{calc['pump_eff']*100:.1f}%", table_cell), Paragraph(f"fraction ({calc['pump_eff']:.2f})", table_cell), Paragraph("Vendor Impeller Curve at Design Duty", table_cell)],
+        [Paragraph("Electric Motor Efficiency", table_cell_bold), Paragraph("η_motor", table_cell), Paragraph(f"{calc['motor_eff']*100:.1f}%", table_cell), Paragraph(f"fraction ({calc['motor_eff']:.2f})", table_cell), Paragraph("IEC 60034-30-1 Premium Efficiency (IE3)", table_cell)],
+        [Paragraph("Operating Schedule", table_cell_bold), Paragraph("t_day", table_cell), Paragraph(f"{calc['hours_per_day']:.1f}", table_cell), Paragraph(f"hours/day ({calc['days_per_month']:.0f} days/month)", table_cell), Paragraph("Facility Shift Operating Model", table_cell)],
         [Paragraph("Commercial Electricity Tariff", table_cell_bold), Paragraph("Tariff", table_cell), Paragraph(f"₹{calc['tariff_inr_kwh']:.2f}", table_cell), Paragraph("₹/kWh (INR/unit)", table_cell), Paragraph("Local Industrial Power Tariff Schedule", table_cell)],
     ]
     t_params = Table(params_data, colWidths=[150, 45, 65, 115, 129])
@@ -901,19 +945,19 @@ def generate_water_pump_pdf(calc, chart1_path, chart2_path, output_pdf_path, rag
     calc_body = (
         "<b>Step 1: Volumetric Flow Rate Unit Conversion</b><br/>"
         "To perform dimensionally consistent SI calculations, volumetric flow rate is converted from m³/h to m³/s:<br/>"
-        "&nbsp;&nbsp;&nbsp;&nbsp;<i>Q = 25.0 m³/h ÷ 3600 s/h = 0.0069444 m³/s</i><br/><br/>"
+        f"&nbsp;&nbsp;&nbsp;&nbsp;<i>Q = {calc['flow_rate_m3_h']:.2f} m³/h ÷ 3600 s/h = {calc['q_m3_s']:.7f} m³/s</i><br/><br/>"
         "<b>Step 2: Hydraulic Power Required (P_hyd)</b><br/>"
         "The hydraulic power transferred directly to the liquid column by the pump impeller is defined by:<br/>"
         "&nbsp;&nbsp;&nbsp;&nbsp;<i>P_hyd = (ρ · g · Q · H) / 1000</i><br/>"
-        f"&nbsp;&nbsp;&nbsp;&nbsp;<i>P_hyd = (1000 kg/m³ × 9.81 m/s² × 0.0069444 m³/s × 35.0 m) / 1000 = <b>{calc['p_hyd_kw']:.3f} kW</b></i><br/><br/>"
+        f"&nbsp;&nbsp;&nbsp;&nbsp;<i>P_hyd = ({calc['density_kg_m3']:.1f} kg/m³ × {calc['gravity_m_s2']:.2f} m/s² × {calc['q_m3_s']:.7f} m³/s × {calc['head_m']:.2f} m) / 1000 = <b>{calc['p_hyd_kw']:.3f} kW</b></i><br/><br/>"
         "<b>Step 3: Actual Shaft Brake Power (P_shaft)</b><br/>"
-        "Accounting for internal disk friction, volumetric leakage past wear rings, and hydraulic friction losses inside the impeller (η_pump = 0.78):<br/>"
+        "Accounting for internal disk friction, volumetric leakage past wear rings, and hydraulic friction losses inside the impeller:<br/>"
         "&nbsp;&nbsp;&nbsp;&nbsp;<i>P_shaft = P_hyd / η_pump</i><br/>"
-        f"&nbsp;&nbsp;&nbsp;&nbsp;<i>P_shaft = {calc['p_hyd_kw']:.3f} kW ÷ 0.78 = <b>{calc['p_shaft_kw']:.3f} kW</b></i><br/><br/>"
+        f"&nbsp;&nbsp;&nbsp;&nbsp;<i>P_shaft = {calc['p_hyd_kw']:.3f} kW ÷ {calc['pump_eff']:.2f} = <b>{calc['p_shaft_kw']:.3f} kW</b></i><br/><br/>"
         "<b>Step 4: Electrical Input Power (P_elec)</b><br/>"
-        "Accounting for electrical copper, iron, windage, and rotor slip losses across the drive motor (η_motor = 0.90):<br/>"
+        "Accounting for electrical copper, iron, windage, and rotor slip losses across the drive motor:<br/>"
         "&nbsp;&nbsp;&nbsp;&nbsp;<i>P_elec = P_shaft / η_motor</i><br/>"
-        f"&nbsp;&nbsp;&nbsp;&nbsp;<i>P_elec = {calc['p_shaft_kw']:.3f} kW ÷ 0.90 = <b>{calc['p_elec_kw']:.3f} kW</b></i>"
+        f"&nbsp;&nbsp;&nbsp;&nbsp;<i>P_elec = {calc['p_shaft_kw']:.3f} kW ÷ {calc['motor_eff']:.2f} = <b>{calc['p_elec_kw']:.3f} kW</b></i>"
     )
     story.append(Paragraph(calc_body, body_style))
     story.append(Spacer(1, 10))
@@ -921,16 +965,14 @@ def generate_water_pump_pdf(calc, chart1_path, chart2_path, output_pdf_path, rag
     # 4. Motor Selection Recommendation & Rationale
     story.append(Paragraph("4. Motor Selection Recommendation & Engineering Rationale", h1_style))
     motor_text = (
-        f"Under standard IEC 60034-1 frame ratings, nominal 3-phase motor sizes in this power class are 2.2 kW, 3.0 kW, 3.7 kW (5.0 HP), "
-        f"4.0 kW, and 5.5 kW. A 3.0 kW motor is disqualified because the required shaft brake power of {calc['p_shaft_kw']:.3f} kW exceeds its "
-        f"rated continuous capacity (operating at 101.9% of nameplate rating, which violates thermal insulation class limits).<br/><br/>"
-        f"<b>Primary Recommendation: 3.7 kW (5.0 HP) Motor</b><br/>"
-        f"• Sizing Safety Margin: <i>(3.70 kW - {calc['p_shaft_kw']:.3f} kW) ÷ {calc['p_shaft_kw']:.3f} kW × 100% = <b>{calc['safety_margin_3_7_pct']:.1f}%</b></i><br/>"
-        f"• Rationale: Conforms exactly to Hydraulic Institute (HI 14.3) and API 610 motor sizing margin guidelines (which mandate 15% to 25% "
-        f"safety margin for pump shaft power between 2.2 kW and 15 kW). Operates the motor at 82.6% loading, right in its peak electrical efficiency band.<br/><br/>"
-        f"<b>Alternative Recommendation: 4.0 kW Motor</b><br/>"
-        f"• Sizing Safety Margin: <i>(4.00 kW - {calc['p_shaft_kw']:.3f} kW) ÷ {calc['p_shaft_kw']:.3f} kW × 100% = <b>{calc['safety_margin_4_0_pct']:.1f}%</b></i><br/>"
-        f"• Rationale: Provides expanded margin if future piping scaling or valve throttling increases system head."
+        f"Under standard IEC 60034-1 frame ratings, nominal 3-phase motor sizes in this power class are 0.75, 1.1, 1.5, 2.2, 3.0, 3.7, 4.0, 5.5, 7.5, 11.0, 15.0, 18.5, and 22.0 kW.<br/><br/>"
+        f"<b>Primary Recommendation: {calc['recommended_motor_kw']:.1f} kW Motor</b><br/>"
+        f"• Sizing Safety Margin: <i>({calc['recommended_motor_kw']:.2f} kW - {calc['p_shaft_kw']:.3f} kW) ÷ {calc['p_shaft_kw']:.3f} kW × 100% = <b>{calc['safety_margin_recommended_pct']:.1f}%</b></i><br/>"
+        f"• Rationale: Conforms to Hydraulic Institute (HI 14.3) and standard engineering practice (mandating 15% to 35% safety margin for continuous industrial pump duty). "
+        f"Operates the motor at {(calc['p_shaft_kw']/calc['recommended_motor_kw']*100):.1f}% continuous load, well within thermal limits.<br/><br/>"
+        f"<b>Alternative Recommendation: {calc['alt_motor_kw']:.1f} kW Motor</b><br/>"
+        f"• Sizing Safety Margin: <i>({calc['alt_motor_kw']:.2f} kW - {calc['p_shaft_kw']:.3f} kW) ÷ {calc['p_shaft_kw']:.3f} kW × 100% = <b>{calc['safety_margin_alt_pct']:.1f}%</b></i><br/>"
+        f"• Rationale: Provides expanded margin if future piping friction scaling or valve throttling increases dynamic system head."
     )
     story.append(Paragraph(motor_text, body_style))
     story.append(Spacer(1, 10))
@@ -938,30 +980,29 @@ def generate_water_pump_pdf(calc, chart1_path, chart2_path, output_pdf_path, rag
     # 5. Operational Electricity & Cost Analysis
     story.append(Paragraph("5. Operational Energy Consumption & Electricity Cost Analysis", h1_style))
     energy_text = (
-        f"Energy accounting for 12 operating hours/day across a standard 30-day operating calendar:<br/>"
-        f"• <b>Daily Electricity Consumption:</b> <i>P_elec × t_day = {calc['p_elec_kw']:.3f} kW × 12.0 h = <b>{calc['daily_kwh']:.2f} kWh/day</b></i><br/>"
-        f"• <b>Monthly Electricity Consumption (30 days):</b> <i>{calc['daily_kwh']:.2f} kWh/day × 30 days = <b>{calc['monthly_kwh']:.1f} kWh/month</b></i><br/>"
-        f"• <b>Annual Electricity Consumption:</b> <i>{calc['monthly_kwh']:.1f} kWh/month × 12 months = <b>{calc['annual_kwh']:,.1f} kWh/year</b></i><br/>"
-        f"• <b>Monthly Electricity Cost:</b> <i>{calc['monthly_kwh']:.1f} kWh/month × ₹{calc['tariff_inr_kwh']:.2f}/kWh = <b>₹{calc['monthly_cost_inr']:,.2f}/month</b></i><br/>"
+        f"Energy accounting for {calc['hours_per_day']:.1f} operating hours/day across {calc['days_per_month']:.0f} monthly operational days:<br/>"
+        f"• <b>Daily Electricity Consumption:</b> <i>P_elec × t_day = {calc['p_elec_kw']:.3f} kW × {calc['hours_per_day']:.1f} h = <b>{calc['daily_kwh']:.2f} kWh/day</b></i><br/>"
+        f"• <b>Monthly Electricity Consumption ({calc['days_per_month']:.0f} days):</b> <i>{calc['daily_kwh']:.2f} kWh/day × {calc['days_per_month']:.0f} days = <b>{calc['monthly_kwh']:,.1f} kWh/month</b></i><br/>"
+        f"• <b>Annual Electricity Consumption:</b> <i>{calc['monthly_kwh']:,.1f} kWh/month × 12 months = <b>{calc['annual_kwh']:,.1f} kWh/year</b></i><br/>"
+        f"• <b>Monthly Electricity Cost:</b> <i>{calc['monthly_kwh']:,.1f} kWh/month × ₹{calc['tariff_inr_kwh']:.2f}/kWh = <b>₹{calc['monthly_cost_inr']:,.2f}/month</b></i><br/>"
         f"• <b>Annual Electricity Cost:</b> <i>{calc['annual_kwh']:,.1f} kWh/year × ₹{calc['tariff_inr_kwh']:.2f}/kWh = <b>₹{calc['annual_cost_inr']:,.2f}/year</b></i>"
     )
     story.append(Paragraph(energy_text, body_style))
     story.append(Spacer(1, 10))
 
-    # 6. Sensitivity Analysis (+20% Flow Rate)
-    story.append(Paragraph("6. Sensitivity & Scenario Analysis: +20% Flow Rate Excursion", h1_style))
+    # 6. Sensitivity Analysis
+    story.append(Paragraph(f"6. Sensitivity & Scenario Analysis: +{calc['flow_increase_pct']:.0f}% Flow Rate Excursion", h1_style))
     sens_text = (
-        f"If process expansion demands a 20% increase in water flow rate from 25.0 m³/h to <b>{calc['flow_rate_sens_m3_h']:.1f} m³/h</b> while head remains 35.0 m:<br/>"
-        f"• Revised Hydraulic Power: <i>P_hyd = (1000 × 9.81 × (30/3600) × 35) / 1000 = <b>{calc['p_hyd_sens_kw']:.3f} kW</b> (+20.0%)</i><br/>"
-        f"• Revised Shaft Power: <i>P_shaft = {calc['p_hyd_sens_kw']:.3f} kW ÷ 0.78 = <b>{calc['p_shaft_sens_kw']:.3f} kW</b> (+20.0%)</i><br/>"
-        f"• Revised Electrical Input: <i>P_elec = {calc['p_shaft_sens_kw']:.3f} kW ÷ 0.90 = <b>{calc['p_elec_sens_kw']:.3f} kW</b> (+20.0%)</i><br/>"
-        f"• Revised Monthly Energy: <i>{calc['p_elec_sens_kw']:.3f} kW × 12 h × 30 days = <b>{calc['monthly_kwh_sens']:.1f} kWh/month</b></i><br/>"
-        f"• Revised Monthly Cost: <i>{calc['monthly_kwh_sens']:.1f} kWh/mo × ₹8/kWh = <b>₹{calc['monthly_cost_sens_inr']:,.2f}/month</b></i><br/>"
-        f"• Operational Cost Delta: <b>+₹{calc['monthly_cost_increase_inr']:,.2f}/month</b> (+20.0% expenditure increase).<br/><br/>"
-        f"<b>Critical Motor Loading Warning:</b><br/>"
-        f"At {calc['p_shaft_sens_kw']:.3f} kW shaft power, a 3.7 kW motor operates at <b>{calc['motor_load_3_7_pct']:.1f}%</b> of nameplate capacity. "
-        f"While a 1.15 service factor can handle intermittent duty, continuous operation at 30 m³/h eliminates the recommended safety envelope. "
-        f"If the 20% flow increase is permanent, upgrade to a <b>4.0 kW (91.7% load)</b> or <b>5.5 kW (66.7% load)</b> motor is mandatory."
+        f"If process expansion demands a {calc['flow_increase_pct']:.0f}% increase in water flow rate from {calc['flow_rate_m3_h']:.1f} m³/h to <b>{calc['flow_rate_sens_m3_h']:.1f} m³/h</b> while head remains {calc['head_m']:.1f} m:<br/>"
+        f"• Revised Hydraulic Power: <i>P_hyd = ({calc['density_kg_m3']:.1f} × {calc['gravity_m_s2']:.2f} × ({calc['flow_rate_sens_m3_h']:.2f}/3600) × {calc['head_m']:.2f}) / 1000 = <b>{calc['p_hyd_sens_kw']:.3f} kW</b> (+{calc['flow_increase_pct']:.1f}%)</i><br/>"
+        f"• Revised Shaft Power: <i>P_shaft = {calc['p_hyd_sens_kw']:.3f} kW ÷ {calc['pump_eff']:.2f} = <b>{calc['p_shaft_sens_kw']:.3f} kW</b> (+{calc['flow_increase_pct']:.1f}%)</i><br/>"
+        f"• Revised Electrical Input: <i>P_elec = {calc['p_shaft_sens_kw']:.3f} kW ÷ {calc['motor_eff']:.2f} = <b>{calc['p_elec_sens_kw']:.3f} kW</b> (+{calc['flow_increase_pct']:.1f}%)</i><br/>"
+        f"• Revised Monthly Energy: <i>{calc['p_elec_sens_kw']:.3f} kW × {calc['hours_per_day']:.1f} h × {calc['days_per_month']:.0f} days = <b>{calc['monthly_kwh_sens']:,.1f} kWh/month</b></i><br/>"
+        f"• Revised Monthly Cost: <i>{calc['monthly_kwh_sens']:,.1f} kWh/mo × ₹{calc['tariff_inr_kwh']:.2f}/kWh = <b>₹{calc['monthly_cost_sens_inr']:,.2f}/month</b></i><br/>"
+        f"• Operational Cost Delta: <b>+₹{calc['monthly_cost_increase_inr']:,.2f}/month</b> (+{calc['flow_increase_pct']:.1f}% expenditure increase).<br/><br/>"
+        f"<b>Motor Loading Evaluation:</b><br/>"
+        f"At {calc['p_shaft_sens_kw']:.3f} kW shaft power, the recommended {calc['recommended_motor_kw']:.1f} kW motor operates at <b>{calc['motor_load_recommended_pct']:.1f}%</b> of nameplate capacity. "
+        + ("Operation remains within acceptable continuous envelope." if calc['motor_load_recommended_pct'] <= 100.0 else f"Continuous operation at this flow exceeds nameplate rating. Upgrade to {calc['alt_motor_kw']:.1f} kW motor is required.")
     )
     story.append(Paragraph(sens_text, body_style))
     story.append(Spacer(1, 10))
@@ -970,13 +1011,13 @@ def generate_water_pump_pdf(calc, chart1_path, chart2_path, output_pdf_path, rag
     story.append(Paragraph("7. Hydrodynamic Significance of Best Efficiency Point (BEP)", h1_style))
     bep_text = (
         "Operating a centrifugal pump close to its design Best Efficiency Point (BEP) is vital to mechanical reliability and lifecycle economics:<br/>"
-        "• <b>Hydraulic Shock & Turbulence Minimization:</b> At BEP, fluid incidence angles align perfectly with impeller blade leading edges, "
+        "• <b>Hydraulic Shock & Turbulence Minimization:</b> At BEP, fluid incidence angles align with impeller blade leading edges, "
         "minimizing fluid separation, recirculation vortices, and shock losses.<br/>"
         "• <b>Radial Thrust Balance:</b> Far from BEP, asymmetric volute pressure distributions generate extreme unbalanced radial forces on the impeller, "
-        "causing shaft deflection, premature mechanical seal face wear, and catastrophic bearing failure.<br/>"
+        "causing shaft deflection, premature mechanical seal face wear, and bearing fatigue.<br/>"
         "• <b>Cavitation Protection:</b> Operating at excessive flows (right of BEP) drastically increases Net Positive Suction Head Required (NPSHr), "
         "triggering vapor bubble collapse and acoustic cavitation pitting.<br/>"
-        "• <b>Standards Compliance:</b> Per Hydraulic Institute (HI 14.3) and ISO 9906, continuous duty must remain within the Preferred Operating Region (POR: 70% to 120% of BEP)."
+        "• <b>Operating Envelope:</b> Standard practice dictates that continuous duty should remain within the Preferred Operating Region (POR: 70% to 120% of BEP)."
     )
     story.append(Paragraph(bep_text, body_style))
     story.append(Spacer(1, 10))
@@ -999,28 +1040,41 @@ def generate_water_pump_pdf(calc, chart1_path, chart2_path, output_pdf_path, rag
     # 9. Grounded Standards & Citations
     story.append(Paragraph("9. Standards, Guidelines & Grounded Knowledge Base Sources", h1_style))
     if rag_citations and len(rag_citations) > 0:
+        story.append(Paragraph("<b>Retrieved Knowledge Base Evidence:</b>", h2_style))
         for c in rag_citations:
-            story.append(Paragraph(f"• <b>{c.get('file', 'Standard')}</b> ({c.get('section', 'General')}): Applied for {c.get('appliedTo', 'technical methodology and reporting standards')}.", bullet_style))
+            doc_id = c.get('id', 'N/A')
+            file_name = c.get('file', 'Reference Document')
+            section = c.get('section', 'General')
+            score = c.get('score', 0)
+            snippet = c.get('snippet', '')
+            score_text = f" (Score: {score:.2f})" if score else ""
+            story.append(Paragraph(f"• <b>{file_name}</b> [Doc ID: {doc_id[:12]}] - Section: <i>{section}</i>{score_text}", bullet_style))
+            if snippet:
+                story.append(Paragraph(f"&nbsp;&nbsp;&nbsp;&nbsp;<i>Excerpt: \"{snippet[:180]}...\"</i>", body_style))
     else:
-        story.append(Paragraph("• <b>ISO 9906:2012</b>: Rotodynamic pumps — Hydraulic performance acceptance tests (Grade 1/2 tolerance standards).", bullet_style))
-        story.append(Paragraph("• <b>Hydraulic Institute (HI 14.3 / 9.6.1)</b>: Sizing guidelines, motor driver margins, and Preferred Operating Region (POR) definitions.", bullet_style))
-        story.append(Paragraph("• <b>IEC 60034-1:2022</b>: Rotating electrical machines — Rating, duty cycles, and standard output power norms.", bullet_style))
-        story.append(Paragraph("• <b>ENG-STD-002</b>: Technical Report & Engineering Document Guideline (Document hierarchy and calculation verification standards).", bullet_style))
-        story.append(Paragraph("• <b>DOC-STD-001</b>: Controlled PDF & Document Creation Guideline (Controlled metadata and two-pass page numbering).", bullet_style))
+        story.append(Paragraph("<b>Notice:</b> No uploaded knowledge-base reference documents were retrieved for this query. The following calculations are based on standard engineering hydrodynamic equations. Grounded verification against external reference documents was not established.", body_style))
+        story.append(Spacer(1, 4))
+        story.append(Paragraph("<b>General Engineering Principles Applied:</b>", h2_style))
+        story.append(Paragraph("• <b>Standard Hydrodynamic Power Formula:</b> P_hyd = rho * g * Q * H / 1000 (Fundamental Fluid Mechanics)", bullet_style))
+        story.append(Paragraph("• <b>IEC 60034-1:</b> Standard Output Ratings for Three-Phase Induction Motors (General Engineering Reference)", bullet_style))
+        story.append(Paragraph("• <b>Hydraulic Institute Guidelines:</b> Recommended Driver Sizing Margins (General Industry Practice)", bullet_style))
     story.append(Spacer(1, 10))
 
     # 10. Summary Table of Computed Results
     story.append(Paragraph("10. Summary of Computed Engineering Results", h1_style))
     summary_data = [
-        [Paragraph("Computed Metric", table_header), Paragraph("Baseline Value (25 m³/h)", table_header), Paragraph("Sensitivity Value (+20% Q)", table_header), Paragraph("Engineering Status", table_header)],
+        [Paragraph("Computed Metric", table_header),
+         Paragraph(f"Baseline Value ({calc['flow_rate_m3_h']:.1f} m³/h)", table_header),
+         Paragraph(f"Sensitivity (+{calc['flow_increase_pct']:.0f}% Q: {calc['flow_rate_sens_m3_h']:.1f} m³/h)", table_header),
+         Paragraph("Engineering Status", table_header)],
         [Paragraph("Hydraulic Fluid Power (P_hyd)", table_cell_bold), Paragraph(f"{calc['p_hyd_kw']:.3f} kW", table_cell), Paragraph(f"{calc['p_hyd_sens_kw']:.3f} kW", table_cell), Paragraph("Verified Deterministic", table_cell)],
         [Paragraph("Pump Shaft Brake Power (P_shaft)", table_cell_bold), Paragraph(f"{calc['p_shaft_kw']:.3f} kW", table_cell), Paragraph(f"{calc['p_shaft_sens_kw']:.3f} kW", table_cell), Paragraph("Verified Deterministic", table_cell)],
         [Paragraph("Electrical Input Power (P_elec)", table_cell_bold), Paragraph(f"{calc['p_elec_kw']:.3f} kW", table_cell), Paragraph(f"{calc['p_elec_sens_kw']:.3f} kW", table_cell), Paragraph("Verified Deterministic", table_cell)],
-        [Paragraph("Recommended Standard Motor", table_cell_bold), Paragraph(f"{calc['recommended_motor_kw']:.1f} kW (5.0 HP)", table_cell), Paragraph("4.0 kW or 5.5 kW", table_cell), Paragraph("IEC 60034-1 Compliant", table_cell)],
-        [Paragraph("Motor Safety Margin", table_cell_bold), Paragraph(f"{calc['safety_margin_3_7_pct']:.1f}%", table_cell), Paragraph("3.7 kW: 99.1% load", table_cell), Paragraph("HI 14.3 Compliant", table_cell)],
-        [Paragraph("Daily Electricity Consumption", table_cell_bold), Paragraph(f"{calc['daily_kwh']:.2f} kWh/day", table_cell), Paragraph(f"{calc['daily_kwh_sens']:.2f} kWh/day", table_cell), Paragraph("12 Hours/Day Duty", table_cell)],
-        [Paragraph("Monthly Electricity Consumption", table_cell_bold), Paragraph(f"{calc['monthly_kwh']:.1f} kWh/month", table_cell), Paragraph(f"{calc['monthly_kwh_sens']:.1f} kWh/month", table_cell), Paragraph("30 Days Calendar", table_cell)],
-        [Paragraph("Monthly Electricity Cost", table_cell_bold), Paragraph(f"₹{calc['monthly_cost_inr']:,.2f}", table_cell), Paragraph(f"₹{calc['monthly_cost_sens_inr']:,.2f}", table_cell), Paragraph("₹8/kWh Tariff Schedule", table_cell)]
+        [Paragraph("Recommended Standard Motor", table_cell_bold), Paragraph(f"{calc['recommended_motor_kw']:.1f} kW", table_cell), Paragraph(f"{calc['alt_motor_kw']:.1f} kW", table_cell), Paragraph("IEC 60034-1 Compliant", table_cell)],
+        [Paragraph("Motor Safety Margin", table_cell_bold), Paragraph(f"{calc['safety_margin_recommended_pct']:.1f}%", table_cell), Paragraph(f"{calc['recommended_motor_kw']:.1f} kW: {calc['motor_load_recommended_pct']:.1f}% load", table_cell), Paragraph("HI 14.3 Compliant", table_cell)],
+        [Paragraph("Daily Electricity Consumption", table_cell_bold), Paragraph(f"{calc['daily_kwh']:.2f} kWh/day", table_cell), Paragraph(f"{calc['daily_kwh_sens']:.2f} kWh/day", table_cell), Paragraph(f"{calc['hours_per_day']:.0f} Hours/Day Duty", table_cell)],
+        [Paragraph("Monthly Electricity Consumption", table_cell_bold), Paragraph(f"{calc['monthly_kwh']:,.1f} kWh/month", table_cell), Paragraph(f"{calc['monthly_kwh_sens']:,.1f} kWh/month", table_cell), Paragraph(f"{calc['days_per_month']:.0f} Days Calendar", table_cell)],
+        [Paragraph("Monthly Electricity Cost", table_cell_bold), Paragraph(f"₹{calc['monthly_cost_inr']:,.2f}", table_cell), Paragraph(f"₹{calc['monthly_cost_sens_inr']:,.2f}", table_cell), Paragraph(f"₹{calc['tariff_inr_kwh']:.2f}/kWh Tariff", table_cell)]
     ]
     t_sum = Table(summary_data, colWidths=[150, 120, 115, 119])
     t_sum.setStyle(TableStyle([
@@ -1085,19 +1139,44 @@ def main():
             "type": "water_pump",
             "pdfPath": pdf_path,
             "calculations": calc["records"],
+            "flow_rate_m3_h": calc["flow_rate_m3_h"],
+            "q_m3_s": calc["q_m3_s"],
+            "head_m": calc["head_m"],
+            "density_kg_m3": calc["density_kg_m3"],
+            "gravity_m_s2": calc["gravity_m_s2"],
+            "pump_eff": calc["pump_eff"],
+            "motor_eff": calc["motor_eff"],
+            "hours_per_day": calc["hours_per_day"],
+            "days_per_month": calc["days_per_month"],
+            "tariff_inr_kwh": calc["tariff_inr_kwh"],
+            "flow_increase_pct": calc["flow_increase_pct"],
             "p_hyd_kw": calc["p_hyd_kw"],
             "p_shaft_kw": calc["p_shaft_kw"],
             "p_elec_kw": calc["p_elec_kw"],
             "recommended_motor_kw": calc["recommended_motor_kw"],
-            "safety_margin_3_7_pct": calc["safety_margin_3_7_pct"],
+            "alt_motor_kw": calc["alt_motor_kw"],
+            "safety_margin_recommended_pct": calc["safety_margin_recommended_pct"],
+            "safety_margin_alt_pct": calc["safety_margin_alt_pct"],
+            "safety_margin_3_7_pct": calc["safety_margin_recommended_pct"],
+            "safety_margin_4_0_pct": calc["safety_margin_alt_pct"],
             "daily_kwh": calc["daily_kwh"],
             "monthly_kwh": calc["monthly_kwh"],
+            "annual_kwh": calc["annual_kwh"],
+            "daily_cost_inr": calc["daily_cost_inr"],
             "monthly_cost_inr": calc["monthly_cost_inr"],
+            "annual_cost_inr": calc["annual_cost_inr"],
+            "flow_rate_sens_m3_h": calc["flow_rate_sens_m3_h"],
+            "p_hyd_sens_kw": calc["p_hyd_sens_kw"],
+            "p_shaft_sens_kw": calc["p_shaft_sens_kw"],
+            "p_elec_sens_kw": calc["p_elec_sens_kw"],
+            "daily_kwh_sens": calc["daily_kwh_sens"],
+            "monthly_kwh_sens": calc["monthly_kwh_sens"],
             "monthly_cost_sens_inr": calc["monthly_cost_sens_inr"],
             "monthly_cost_increase_inr": calc["monthly_cost_increase_inr"],
-            "motor_load_3_7_pct": calc["motor_load_3_7_pct"]
+            "motor_load_recommended_pct": calc["motor_load_recommended_pct"],
+            "motor_load_3_7_pct": calc["motor_load_recommended_pct"]
         }
-    else:
+    elif problem_type == "air_audit":
         calc = calculate_compressed_air(input_params)
         c1, c2 = generate_charts(calc, charts_dir)
         pdf_path = generate_technical_pdf(calc, c1, c2, output_pdf, rag_citations=rag_citations)
@@ -1113,6 +1192,9 @@ def main():
             "scen_a_annual_kwh_saved": calc["scen_a_annual_kwh_saved"],
             "scen_b_annual_kwh_saved": calc["scen_b_annual_kwh_saved"]
         }
+    else:
+        sys.stderr.write(f"Unknown calculation type: {problem_type}\n")
+        sys.exit(1)
 
     print(json.dumps(result))
 

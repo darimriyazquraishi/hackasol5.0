@@ -1,4 +1,4 @@
-import { TaskDecomposition, TaskDomain } from './taskDecomposer';
+import { TaskDecomposition } from './taskDecomposer';
 import { AgentArchetype, LumiWorkflowStep, LumiWorkplan } from '../src/types';
 
 export interface ModelRegistryConfig {
@@ -10,16 +10,16 @@ export interface ModelRegistryConfig {
 }
 
 const DEFAULT_MODELS: ModelRegistryConfig = {
-  vision: 'qwen2.5-vl:7b',
+  vision: 'moondream:latest',
   image_generation: 'flux1-schnell',
-  math_code: 'python-scientific-runtime',
+  math_code: 'qwen2.5-coder:1.5b',
   reasoning: 'qwen2.5:1.5b',
-  coder: 'qwen2.5-coder:7b'
+  coder: 'qwen2.5-coder:1.5b'
 };
 
 /**
  * Generate Dynamic, Capability-Routed Workplan
- * Creates 5 to 7 detailed stages tailored directly to the decomposed task.
+ * Adapts execution stages, selected models, and deliverables to the specific task operation.
  */
 export function generateDynamicWorkplan(
   decomp: TaskDecomposition,
@@ -28,15 +28,14 @@ export function generateDynamicWorkplan(
   const models = { ...DEFAULT_MODELS };
   if (installedModels.length > 0) {
     const installedNames = installedModels.map(m => m.name);
-    // Find best match for reasoning
-    const rMatch = installedNames.find(n => /qwen2\.5|qwen3|llama|mistral/i.test(n));
+    const rMatch = installedNames.find(n => /qwen2\.5:1\.5b|qwen2\.5|llama|mistral/i.test(n));
     if (rMatch) models.reasoning = rMatch;
-    // Find best match for coder
-    const cMatch = installedNames.find(n => /coder|code/i.test(n));
-    if (cMatch) models.coder = cMatch;
-    else if (rMatch) models.coder = rMatch;
-    // Find best match for vision
-    const vMatch = installedNames.find(n => /vl|vision/i.test(n));
+    const cMatch = installedNames.find(n => /qwen2\.5-coder|coder|code/i.test(n));
+    if (cMatch) {
+      models.coder = cMatch;
+      models.math_code = cMatch;
+    }
+    const vMatch = installedNames.find(n => /moondream|vision|vl/i.test(n));
     if (vMatch) models.vision = vMatch;
   }
 
@@ -47,321 +46,525 @@ export function generateDynamicWorkplan(
   const expectedDeliverables: string[] = [];
 
   let stepCounter = 1;
+  const lower = decomp.originalPrompt.toLowerCase();
 
-  if (decomp.domain === 'engineering_calculation') {
-    // -------------------------------------------------------------
-    // DOMAIN 1: ENGINEERING CALCULATION WORKPLAN (7 STAGES)
-    // -------------------------------------------------------------
-    requiredCapabilities.push(
-      'Vector Standard Ingestion',
-      'Boundary Parameter Validation',
-      'Deterministic Thermodynamic/Fluid Calculation',
-      'Sensitivity & Excursion Modeling',
-      'Formal Technical Synthesis',
-      `Native ${decomp.requestedOutputFormat.toUpperCase()} Document Assembly`,
-      'Post-Generation Quality Audit'
-    );
-    selectedAgents.push('vector_rag', 'math_code', 'reasoning_synthesis');
-    selectedModels['vector_rag'] = 'vector-similarity-engine';
-    selectedModels['math_code'] = models.math_code;
-    selectedModels['reasoning_synthesis'] = models.reasoning;
+  // -------------------------------------------------------------------------
+  // 1. CODE GENERATION (e.g. Fibonacci, algorithms, scripts)
+  // -------------------------------------------------------------------------
+  if (decomp.operation === 'code_generation') {
+    requiredCapabilities.push('Coding', 'Execution', 'Validation');
+    selectedAgents.push('math_code');
+    selectedModels['math_code'] = models.coder;
+    selectedModels['execution'] = 'python-sandbox-runtime';
 
-    // Stage 1
+    const isFibonacci = /fibonacci|fibonnacci/i.test(lower);
+    const termMatch = lower.match(/(?:upto|up\s*to)?\s*(\d+)\s*terms?/i);
+    const termCount = termMatch ? termMatch[1] : '12';
+
+    // Step 1: Code Generation
     const s1Id = `step-${stepCounter++}`;
     steps.push({
       id: s1Id,
       stageNumber: 1,
-      name: 'Document Retrieval & Technical Standard Ingestion',
-      agent: 'vector_rag',
-      model: 'vector-similarity-engine',
-      description: 'Retrieve governing engineering standards, equations, and document guidelines from knowledge base.',
+      name: 'Code Generation',
+      agent: 'math_code',
+      model: models.coder,
+      description: isFibonacci
+        ? `Generate the Fibonacci program using the coding agent.`
+        : `Generate the ${decomp.targetLanguage || 'Python'} program using the coding agent.`,
       actions: [
-        'Query indexed knowledge base for pump engineering standards and guidelines.',
-        'Extract equation definitions for hydraulic power, shaft power, and motor electrical input power.',
-        'Retrieve motor sizing criteria, standard frame ratings, and recommended safety margin envelopes.',
-        'Ingest organizational reporting rules (ENG-STD-002, DOC-STD-001).'
+        `Synthesize standalone, executable ${decomp.targetLanguage || 'Python'} code using ${models.coder}.`,
+        'Ensure clean algorithmic design with zero unverified external dependencies.',
+        'Format output inside a fenced code block with clear comments.'
       ],
-      inputs: `Search queries across ${decomp.applicableStandards.join(', ')}`,
+      inputs: decomp.originalPrompt,
       dependencies: [],
-      expectedOutput: 'Grounded engineering formulas, efficiency definitions, and document layout standards.',
-      validationCriteria: 'Relevant standards retrieved and citation anchors verified.',
+      expectedOutput: `Standalone, executable ${decomp.targetLanguage || 'Python'} source code.`,
+      validationCriteria: 'Syntactically valid source code.',
       status: 'pending'
     });
 
-    // Stage 2
+    // Step 2: Execution & Testing
     const s2Id = `step-${stepCounter++}`;
     steps.push({
       id: s2Id,
       stageNumber: 2,
+      name: 'Execution & Testing',
+      agent: 'math_code',
+      model: 'python-sandbox-runtime',
+      description: isFibonacci
+        ? `Run the program and verify that it produces ${termCount} correct terms.`
+        : `Run the program and verify that it produces correct output.`,
+      actions: [
+        'Dispatch synthesized code to isolated subprocess runner.',
+        'Monitor execution duration, exit code, and memory allocation.',
+        'Capture and parse stdout stream and verify computed values.'
+      ],
+      inputs: `Synthesized code from Stage 1 (${s1Id}).`,
+      dependencies: [s1Id],
+      expectedOutput: 'Sandboxed process execution output and verified telemetry.',
+      validationCriteria: 'Process exit code == 0 with expected output verified.',
+      status: 'pending'
+    });
+
+    expectedDeliverables.push(isFibonacci ? 'Executable Python program' : `Executable ${decomp.targetLanguage || 'Python'} program (${decomp.suggestedDeliverableName})`);
+    expectedDeliverables.push('Verified execution output');
+
+  // -------------------------------------------------------------------------
+  // 2. CODE DEBUGGING & DEFECT PATCHING
+  // -------------------------------------------------------------------------
+  } else if (decomp.operation === 'code_debugging') {
+    requiredCapabilities.push('Code Analysis', 'Defect Isolation & Patching', 'Sandboxed Verification');
+    selectedAgents.push('math_code');
+    selectedModels['math_code'] = models.coder;
+    selectedModels['execution'] = 'python-sandbox-runtime';
+
+    const s1Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s1Id,
+      stageNumber: 1,
+      name: 'Code Analysis & Defect Identification',
+      agent: 'math_code',
+      model: models.coder,
+      description: 'Analyze source code and isolate syntax, type, or runtime exceptions.',
+      actions: [
+        'Inspect code syntax, variable bindings, and execution stack traces.',
+        'Isolate defect root cause (e.g. index out of range, syntax error, null reference).',
+        'Formulate minimal corrective patch.'
+      ],
+      inputs: decomp.originalPrompt,
+      dependencies: [],
+      expectedOutput: 'Identified root cause and patch plan.',
+      validationCriteria: 'Defect isolated with explicit line reference.',
+      status: 'pending'
+    });
+
+    const s2Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s2Id,
+      stageNumber: 2,
+      name: 'Code Correction & Patch Synthesis',
+      agent: 'math_code',
+      model: models.coder,
+      description: 'Generate corrected source code with verified error resolution.',
+      actions: [
+        'Apply corrective patch preserving original algorithmic intent.',
+        'Embed regression assertions to prevent defect re-occurrence.',
+        'Synthesize clean, corrected source code block.'
+      ],
+      inputs: `Defect analysis from Stage 1 (${s1Id}).`,
+      dependencies: [s1Id],
+      expectedOutput: 'Patched, syntactically clean source code.',
+      validationCriteria: 'Patched code eliminates target exception.',
+      status: 'pending'
+    });
+
+    const s3Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s3Id,
+      stageNumber: 3,
+      name: 'Sandboxed Execution & Regression Testing',
+      agent: 'math_code',
+      model: 'python-sandbox-runtime',
+      description: 'Execute patched code in sandbox to confirm clean execution without errors.',
+      actions: [
+        'Run patched program in isolated execution environment.',
+        'Confirm return code 0 and absence of stderr exceptions.',
+        'Verify programmatic output.'
+      ],
+      inputs: `Patched code from Stage 2 (${s2Id}).`,
+      dependencies: [s2Id],
+      expectedOutput: 'Verified execution telemetry confirming clean run.',
+      validationCriteria: 'Process exits with code 0.',
+      status: 'pending'
+    });
+
+    expectedDeliverables.push('Patched Python program');
+    expectedDeliverables.push('Verified execution output');
+
+  // -------------------------------------------------------------------------
+  // 3. VISUAL OCR & TEXT EXTRACTION
+  // -------------------------------------------------------------------------
+  } else if (decomp.operation === 'vision_ocr') {
+    requiredCapabilities.push('Visual OCR', 'Text Extraction & Transcription');
+    selectedAgents.push('vision');
+    selectedModels['vision'] = models.vision;
+
+    const s1Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s1Id,
+      stageNumber: 1,
+      name: 'Visual OCR & Text Extraction',
+      agent: 'vision',
+      model: models.vision,
+      description: 'Extract and transcribe all visible text, numbers, component codes, and annotations from image.',
+      actions: [
+        'Dispatch image buffer to Moondream multimodal vision agent.',
+        'Detect text regions, header blocks, labels, and table cells.',
+        'Transcribe visible text character-for-character preserving layout hierarchy.'
+      ],
+      inputs: 'Raw image buffer attachment.',
+      dependencies: [],
+      expectedOutput: 'Verbatim transcribed text elements.',
+      validationCriteria: 'High character accuracy without speculative completion.',
+      status: 'pending'
+    });
+
+    const s2Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s2Id,
+      stageNumber: 2,
+      name: 'Transcription Formatting & Verification',
+      agent: 'vision',
+      model: models.vision,
+      description: 'Format extracted text labels into structured transcript and verify character fidelity.',
+      actions: [
+        'Normalize whitespace, align column data, and structure numbered sections.',
+        'Flag any faint or ambiguous characters with explicit visual uncertainty markers.',
+        'Assemble clean transcript deliverable.'
+      ],
+      inputs: `Extracted text from Stage 1 (${s1Id}).`,
+      dependencies: [s1Id],
+      expectedOutput: 'Structured textual transcription.',
+      validationCriteria: 'Formatted clean transcript.',
+      status: 'pending'
+    });
+
+    expectedDeliverables.push('Extracted Text Transcript');
+
+  // -------------------------------------------------------------------------
+  // 4. MULTIMODAL VISION & DIAGRAM EXPLANATION
+  // -------------------------------------------------------------------------
+  } else if (decomp.operation === 'vision_analysis') {
+    requiredCapabilities.push('Visual Inspection', 'Evidence Extraction', 'Technical Explanation');
+    selectedAgents.push('vision', 'reasoning_synthesis');
+    selectedModels['vision'] = models.vision;
+    selectedModels['reasoning_synthesis'] = models.reasoning;
+
+    const s1Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s1Id,
+      stageNumber: 1,
+      name: 'Visual Element & Component Recognition',
+      agent: 'vision',
+      model: models.vision,
+      description: 'Inspect image layout, visual hierarchy, diagram components, and directional flow connections.',
+      actions: [
+        'Load image buffer and inspect graphical layout and elements.',
+        'Identify diagram components, symbols, arrows, and directional flow connections.',
+        'Recognize charts, legends, equipment symbols, and visual annotations.'
+      ],
+      inputs: 'Raw image buffer from uploaded attachment.',
+      dependencies: [],
+      expectedOutput: 'Structured visual element inventory and spatial relationship map.',
+      validationCriteria: 'Diagram components, symbols, and connections identified.',
+      status: 'pending'
+    });
+
+    const s2Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s2Id,
+      stageNumber: 2,
+      name: 'Diagram Element & Connection Mapping',
+      agent: 'vision',
+      model: models.vision,
+      description: 'Transcribe visible text labels and map topological connections between visual components.',
+      actions: [
+        'Transcribe equipment tags, pipeline specifications, and numerical units.',
+        'Trace directional flow lines and component interfaces.',
+        'Structure evidence context for technical explanation.'
+      ],
+      inputs: `Visual element inventory from Stage 1 (${s1Id}).`,
+      dependencies: [s1Id],
+      expectedOutput: 'Topological connection map with visible annotations.',
+      validationCriteria: 'Evidence grounded in visual features.',
+      status: 'pending'
+    });
+
+    const s3Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s3Id,
+      stageNumber: 3,
+      name: 'Multi-Agent Technical Synthesis & Explanation',
+      agent: 'reasoning_synthesis',
+      model: models.reasoning,
+      description: 'Synthesize vision findings into structured plain-language technical explanation.',
+      actions: [
+        'Synthesize diagram components into cohesive operational workflow.',
+        'Explain technical terminology and operational relationships clearly.',
+        'Distinguish confirmed visible facts from inferred interpretations.',
+        'Highlight important operational observations and flagged uncertainties.'
+      ],
+      inputs: `Extracted visual evidence from Stages 1 & 2 (${s1Id}, ${s2Id}).`,
+      dependencies: [s2Id],
+      expectedOutput: 'Comprehensive grounded technical explanation.',
+      validationCriteria: '100% grounded in visual evidence with zero ungrounded hallucinations.',
+      status: 'pending'
+    });
+
+    expectedDeliverables.push('Visual Analysis & Grounded Explanation Report');
+
+  // -------------------------------------------------------------------------
+  // 5. MATHEMATICAL PROBLEMS & DERIVATIONS
+  // -------------------------------------------------------------------------
+  } else if (decomp.operation === 'math_problem') {
+    requiredCapabilities.push('Mathematical Formulation', 'Boundary & Assertion Verification');
+    selectedAgents.push('math_code');
+    selectedModels['math_code'] = models.coder;
+
+    const s1Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s1Id,
+      stageNumber: 1,
+      name: 'Mathematical Formulation & Derivation',
+      agent: 'math_code',
+      model: models.coder,
+      description: 'Derive step-by-step algebraic solution and evaluate governing equations deterministically.',
+      actions: [
+        'Formulate mathematical equations and variables.',
+        'Derive step-by-step analytical solutions.',
+        'Evaluate numerical values and roots.'
+      ],
+      inputs: decomp.originalPrompt,
+      dependencies: [],
+      expectedOutput: 'Step-by-step mathematical derivation.',
+      validationCriteria: 'Algebraically sound derivations.',
+      status: 'pending'
+    });
+
+    const s2Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s2Id,
+      stageNumber: 2,
+      name: 'Boundary & Assertion Verification',
+      agent: 'math_code',
+      model: 'python-scientific-runtime',
+      description: 'Verify computed solutions against domain constraints and evaluate numerical stability.',
+      actions: [
+        'Verify roots and critical points.',
+        'Confirm mathematical assertions.',
+        'Format clean final solution.'
+      ],
+      inputs: `Derivation from Stage 1 (${s1Id}).`,
+      dependencies: [s1Id],
+      expectedOutput: 'Verified numerical solution.',
+      validationCriteria: 'Correct numerical result verified.',
+      status: 'pending'
+    });
+
+    expectedDeliverables.push('Step-by-Step Mathematical Derivation');
+    expectedDeliverables.push('Verified Numerical Solution');
+
+  // -------------------------------------------------------------------------
+  // 6. PURE ENGINEERING CALCULATION (e.g. Pump Power Calculation, Air Leakage Loss)
+  // -------------------------------------------------------------------------
+  } else if ((decomp.operation === 'engineering_pump' || decomp.operation === 'engineering_compressed_air' || decomp.operation === 'engineering_general') && decomp.requestedOutputFormat !== 'pdf' && !lower.includes('report') && !lower.includes('guideline')) {
+    requiredCapabilities.push('Parameter Extraction', 'Deterministic Engineering Calculation', 'Numerical Validation');
+    selectedAgents.push('math_code', 'reasoning_synthesis');
+    selectedModels['math_code'] = 'python-scientific-runtime';
+    selectedModels['reasoning_synthesis'] = models.reasoning;
+
+    const s1Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s1Id,
+      stageNumber: 1,
+      name: 'Parameter Extraction & SI Normalization',
+      agent: 'reasoning_synthesis',
+      model: models.reasoning,
+      description: 'Extract numerical input parameters, convert to SI units, and verify physical boundaries.',
+      actions: [
+        `Extract numerical specifications: ${decomp.parameters.map(p => `${p.name}: ${p.value} ${p.unit}`).join(', ')}.`,
+        'Convert flow rate to SI units (m³/s = m³/h ÷ 3600).',
+        'Verify density, total dynamic head, and gravitational acceleration.',
+        'Confirm non-zero positive physical values.'
+      ],
+      inputs: decomp.originalPrompt,
+      dependencies: [],
+      expectedOutput: 'Verified dimensional parameter matrix ready for deterministic calculation.',
+      validationCriteria: 'All input variables present with confirmed non-zero positive boundaries.',
+      status: 'pending'
+    });
+
+    const s2Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s2Id,
+      stageNumber: 2,
+      name: 'Deterministic Engineering Calculation Execution',
+      agent: 'math_code',
+      model: 'python-scientific-runtime',
+      description: 'Execute deterministic physical calculations in Python scientific runtime with zero LLM arithmetic.',
+      actions: [
+        'Calculate hydraulic power required: P_hyd = rho * g * Q * H / 1000.',
+        'Calculate required shaft power accounting for pump efficiency: P_shaft = P_hyd / eta_pump.',
+        'Calculate electrical input power accounting for motor efficiency: P_elec = P_shaft / eta_motor.',
+        'Evaluate standard IEC motor ratings and sizing safety margin.'
+      ],
+      inputs: `Verified SI parameter matrix from Stage 1 (${s1Id}).`,
+      dependencies: [s1Id],
+      expectedOutput: 'Exact calculation records with formulas, values, and units.',
+      validationCriteria: 'All primary calculations solved deterministically.',
+      status: 'pending'
+    });
+
+    const s3Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s3Id,
+      stageNumber: 3,
+      name: 'Drive Sizing & Operating Cost Validation',
+      agent: 'math_code',
+      model: 'python-scientific-runtime',
+      description: 'Size standard electrical drive, evaluate safety margins, and project operating costs.',
+      actions: [
+        'Recommend standard motor rating with reasonable engineering margin.',
+        'Compute daily and monthly electricity consumption (kWh).',
+        'Compute monthly electricity cost based on electricity tariff.'
+      ],
+      inputs: `Calculation records from Stage 2 (${s2Id}).`,
+      dependencies: [s2Id],
+      expectedOutput: 'Motor sizing recommendation and operational cost breakdown.',
+      validationCriteria: 'Standard motor sizing envelope satisfied.',
+      status: 'pending'
+    });
+
+    expectedDeliverables.push('Verified Calculation Records');
+    expectedDeliverables.push('Engineering Specification Sheet');
+
+  // -------------------------------------------------------------------------
+  // 6. FORMAL ENGINEERING AUDIT REPORT (Water Pump / Compressed Air PDF)
+  // -------------------------------------------------------------------------
+  } else if (decomp.domain === 'engineering_calculation') {
+    requiredCapabilities.push(
+      'Standard Knowledge Ingestion',
+      'Boundary Parameter Validation',
+      'Deterministic Physical Calculation',
+      'Sensitivity & Scenario Modeling',
+      'Formal Technical Synthesis',
+      `Native ${decomp.requestedOutputFormat.toUpperCase()} Document Assembly`
+    );
+    if (decomp.requiresRAG) {
+      selectedAgents.push('vector_rag');
+      selectedModels['vector_rag'] = 'vector-similarity-engine';
+    }
+    selectedAgents.push('math_code', 'reasoning_synthesis');
+    selectedModels['math_code'] = 'python-scientific-runtime';
+    selectedModels['reasoning_synthesis'] = models.reasoning;
+
+    if (decomp.requiresRAG) {
+      const s1Id = `step-${stepCounter++}`;
+      steps.push({
+        id: s1Id,
+        stageNumber: steps.length + 1,
+        name: 'Document Retrieval & Technical Standard Ingestion',
+        agent: 'vector_rag',
+        model: 'vector-similarity-engine',
+        description: 'Retrieve governing engineering standards, equations, and document guidelines from knowledge base.',
+        actions: [
+          'Query indexed knowledge base for engineering standards and guidelines.',
+          'Extract equation definitions and standard motor sizing criteria.',
+          'Ingest organizational reporting rules (ENG-STD-002, DOC-STD-001).'
+        ],
+        inputs: `Search queries across ${decomp.applicableStandards.join(', ')}`,
+        dependencies: [],
+        expectedOutput: 'Grounded engineering formulas, efficiency definitions, and document layout standards.',
+        validationCriteria: 'Relevant standards retrieved and citation anchors verified.',
+        status: 'pending'
+      });
+    }
+
+    const sParamId = `step-${stepCounter++}`;
+    steps.push({
+      id: sParamId,
+      stageNumber: steps.length + 1,
       name: 'Parameter Extraction & Boundary Condition Verification',
       agent: 'reasoning_synthesis',
       model: models.reasoning,
       description: 'Normalize input parameters to standard SI units and verify physical boundary conditions.',
       actions: [
         `Extract numerical specifications: ${decomp.parameters.map(p => `${p.name}: ${p.value} ${p.unit}`).join(', ')}.`,
-        'Convert flow rate to SI units (Q = 25 m³/h = 0.006944 m³/s).',
-        'Verify density (1000 kg/m³), head (35 m), and gravitational acceleration (9.81 m/s²).',
-        'Validate efficiency ranges (Pump: 78%, Motor: 90%) and tariff rate (₹8/kWh).'
+        'Verify density, head/pressure, and operational schedule.',
+        'Validate non-zero positive physical boundaries.'
       ],
-      inputs: 'User specification prompt and parameter definitions.',
-      dependencies: [s1Id],
+      inputs: decomp.originalPrompt,
+      dependencies: steps.length > 0 ? [steps[steps.length - 1].id] : [],
       expectedOutput: 'Verified dimensional parameter matrix ready for deterministic solver.',
       validationCriteria: 'All input variables present with confirmed non-zero positive boundaries.',
       status: 'pending'
     });
 
-    // Stage 3
-    const s3Id = `step-${stepCounter++}`;
+    const sCalcId = `step-${stepCounter++}`;
     steps.push({
-      id: s3Id,
-      stageNumber: 3,
+      id: sCalcId,
+      stageNumber: steps.length + 1,
       name: 'Deterministic Engineering Calculation Execution',
       agent: 'math_code',
-      model: models.math_code,
+      model: 'python-scientific-runtime',
       description: 'Execute deterministic physical calculations in Python scientific runtime with zero LLM arithmetic.',
       actions: [
-        'Calculate hydraulic power: P_hyd = rho * g * Q * H (1000 * 9.81 * (25/3600) * 35 / 1000 = 2.384 kW).',
-        'Calculate required shaft power accounting for pump efficiency: P_shaft = P_hyd / 0.78 = 3.057 kW.',
-        'Calculate electrical input power accounting for motor efficiency: P_elec = P_shaft / 0.90 = 3.397 kW.',
-        'Evaluate standard IEC motor ratings (3.0 kW, 3.7 kW, 4.0 kW, 5.5 kW) and compute safety margins.',
-        'Compute daily consumption (3.397 kW * 12 h = 40.76 kWh/day) and monthly consumption (1,222.8 kWh/month).',
-        'Compute monthly operating cost: 1,222.8 kWh * ₹8/kWh = ₹9,782.30/month.'
+        'Execute deterministic fluid/thermodynamic formulas.',
+        'Compute power, energy consumption, and operating costs.',
+        'Evaluate standard equipment ratings and margins.'
       ],
-      inputs: 'Verified SI parameter matrix from Stage 2.',
-      dependencies: [s2Id],
+      inputs: `Verified SI parameter matrix (${sParamId}).`,
+      dependencies: [sParamId],
       expectedOutput: 'Deterministic calculation records with exact formulas, values, and units.',
-      validationCriteria: 'All 7 primary calculations solved without arithmetic approximation.',
+      validationCriteria: 'All primary calculations solved without arithmetic approximation.',
       status: 'pending'
     });
 
-    // Stage 4
-    const s4Id = `step-${stepCounter++}`;
+    const sSynthId = `step-${stepCounter++}`;
     steps.push({
-      id: s4Id,
-      stageNumber: 4,
-      name: 'Sensitivity & Scenario Analysis (+20% Flow & BEP Dynamics)',
-      agent: 'math_code',
-      model: models.math_code,
-      description: 'Simulate flow increase excursion and analyze hydrodynamic operation relative to BEP.',
-      actions: [
-        'Simulate 20% flow rate increase (30 m³/h) under constant head (35 m).',
-        'Compute revised power: P_hyd = 2.861 kW, P_shaft = 3.668 kW, P_elec = 4.076 kW (+20.0%).',
-        'Evaluate motor loading on standard 3.7 kW motor (3.668 / 3.7 = 99.1% load).',
-        'Compute revised operating cost: ₹11,738.80/month (+₹1,956.50/month, +20.0%).',
-        'Analyze Best Efficiency Point (BEP) operating dynamics per HI 14.3 (radial thrust, vibration, MTBF).'
-      ],
-      inputs: 'Baseline calculation records and sensitivity parameters.',
-      dependencies: [s3Id],
-      expectedOutput: 'Sensitivity comparison dataset and hydrodynamic BEP impact findings.',
-      validationCriteria: 'Linear power scaling verified; motor overload constraints evaluated.',
-      status: 'pending'
-    });
-
-    // Stage 5
-    const s5Id = `step-${stepCounter++}`;
-    steps.push({
-      id: s5Id,
-      stageNumber: 5,
-      name: 'Multi-Agent Technical Synthesis & Interpretation',
+      id: sSynthId,
+      stageNumber: steps.length + 1,
+      name: 'Technical Synthesis & Report Drafting',
       agent: 'reasoning_synthesis',
       model: models.reasoning,
       description: 'Synthesize formal engineering report narrative incorporating calculation records and standards.',
       actions: [
-        'Draft executive summary highlighting power requirements, recommended motor rating, and operating budget.',
-        'Articulate motor selection rationale (3.7 kW rating provides 21.0% margin over baseline shaft power).',
-        'Detail BEP engineering significance: hydrodynamic efficiency, cavitation prevention, and seal/bearing longevity.',
-        'Synthesize sensitivity findings recommending 4.0 kW or 5.5 kW motor if 30 m³/h operation is continuous.'
+        'Draft executive summary highlighting power requirements and operating budget.',
+        'Articulate equipment selection rationale and operating dynamics.',
+        'Detail prioritized engineering recommendations.'
       ],
-      inputs: 'Deterministic records from Stages 3 & 4 and standard passages from Stage 1.',
-      dependencies: [s4Id],
-      expectedOutput: 'Comprehensive report sections strictly conforming to ENG-STD-002.',
-      validationCriteria: 'All required sections addressed with rigorous technical depth and zero conversational filler.',
+      inputs: `Deterministic records (${sCalcId}).`,
+      dependencies: [sCalcId],
+      expectedOutput: 'Comprehensive report sections strictly conforming to technical guidelines.',
+      validationCriteria: 'All required sections addressed with rigorous technical depth.',
       status: 'pending'
     });
 
-    // Stage 6
-    const s6Id = `step-${stepCounter++}`;
+    const sDocId = `step-${stepCounter++}`;
     steps.push({
-      id: s6Id,
-      stageNumber: 6,
+      id: sDocId,
+      stageNumber: steps.length + 1,
       name: `Professional Document Deliverable Assembly (${decomp.requestedOutputFormat.toUpperCase()})`,
       agent: 'reasoning_synthesis',
       model: 'reportlab-docx-deliverable-engine',
       description: `Compile fully formatted native ${decomp.requestedOutputFormat.toUpperCase()} deliverable file.`,
       actions: [
         'Assemble document title header, revision metadata, and discipline tags.',
-        'Format design parameters table with alternating row fills, clean borders, and units.',
-        'Construct step-by-step engineering calculation section with formulas, substitutions, and computed outputs.',
-        'Generate operational cost table and sensitivity comparison matrix.',
-        'Apply running headers, footers, and two-pass page numbering ("Page X of Y").'
+        'Format design parameters table with clean borders and units.',
+        'Generate charts and apply running headers, footers, and two-pass page numbering ("Page X of Y").'
       ],
-      inputs: 'Synthesized report prose and structured calculation tables.',
-      dependencies: [s5Id],
+      inputs: `Synthesized report prose (${sSynthId}).`,
+      dependencies: [sSynthId],
       expectedOutput: `Native binary deliverable: ${decomp.suggestedDeliverableName}.`,
       validationCriteria: 'Valid binary file generated with complete typographic layout.',
-      status: 'pending'
-    });
-
-    // Stage 7
-    const s7Id = `step-${stepCounter++}`;
-    steps.push({
-      id: s7Id,
-      stageNumber: 7,
-      name: 'Quality Assurance, Verification & Completeness Audit',
-      agent: 'reasoning_synthesis',
-      model: 'lumi-quality-gate',
-      description: 'Perform deterministic completeness and mathematical consistency audit on generated deliverable.',
-      actions: [
-        'Re-open generated deliverable buffer and extract textual content.',
-        'Verify document length exceeds 1500 characters of substantive technical text.',
-        'Validate presence of all 8 mandatory report sections.',
-        'Cross-verify computed values (2.384 kW, 3.057 kW, 3.397 kW, 3.7 kW motor, ₹9,782/mo).',
-        'Confirm absence of prompt echoes, unrendered tags, and debugging metadata.'
-      ],
-      inputs: 'Compiled deliverable binary and verification truth records.',
-      dependencies: [s6Id],
-      expectedOutput: 'Verified quality assurance audit certificate (STATUS: PASSED).',
-      validationCriteria: '100% compliance across completeness, calculations, and layout checks.',
       status: 'pending'
     });
 
     expectedDeliverables.push(decomp.suggestedDeliverableName);
     expectedDeliverables.push('Verified Technical Findings Summary');
 
-  } else if (decomp.domain === 'programming') {
-    // -------------------------------------------------------------
-    // DOMAIN 2: PROGRAMMING & CODE EXECUTION WORKPLAN (5 STAGES)
-    // -------------------------------------------------------------
-    requiredCapabilities.push(
-      'Requirements & Interface Specification',
-      'Algorithmic Code Synthesis',
-      'Isolated Sandboxed Execution',
-      'Test Suite & Edge Case Verification',
-      'Technical Documentation & Packaging'
-    );
-    selectedAgents.push('math_code', 'reasoning_synthesis');
-    selectedModels['math_code'] = models.coder;
-    selectedModels['reasoning_synthesis'] = models.reasoning;
-
-    const s1 = `step-${stepCounter++}`;
-    steps.push({
-      id: s1,
-      stageNumber: 1,
-      name: 'Requirements & Interface Specification',
-      agent: 'reasoning_synthesis',
-      model: models.reasoning,
-      description: 'Analyze programmatic requirements, function signatures, dependencies, and expected I/O.',
-      actions: [
-        'Decompose functional requirements and data structures.',
-        'Identify target runtime (Python 3.10+ / Node.js) and required standard libraries.',
-        'Define explicit unit test assertions and edge cases (empty inputs, bounds, invalid types).'
-      ],
-      inputs: 'User programming specification.',
-      dependencies: [],
-      expectedOutput: 'Formal API interface specification and test criteria.',
-      validationCriteria: 'Signatures and type contracts clearly defined.',
-      status: 'pending'
-    });
-
-    const s2 = `step-${stepCounter++}`;
-    steps.push({
-      id: s2,
-      stageNumber: 2,
-      name: 'Algorithmic Code Synthesis',
-      agent: 'math_code',
-      model: models.coder,
-      description: 'Generate idiomatic, robust code implementation using dedicated coder model.',
-      actions: [
-        'Implement core computational functions with defensive error handling.',
-        'Ensure clean modular design with zero external unverified dependencies.',
-        'Embed automated test execution wrapper.'
-      ],
-      inputs: 'Interface specification and test contracts from Stage 1.',
-      dependencies: [s1],
-      expectedOutput: 'Executable standalone source code block.',
-      validationCriteria: 'Syntactically valid code with proper typing and error traps.',
-      status: 'pending'
-    });
-
-    const s3 = `step-${stepCounter++}`;
-    steps.push({
-      id: s3,
-      stageNumber: 3,
-      name: 'Isolated Sandboxed Execution',
-      agent: 'math_code',
-      model: 'sandbox-execution-runtime',
-      description: 'Execute synthesized code inside subprocess sandbox and capture stdout/stderr.',
-      actions: [
-        'Dispatch code to isolated child process execution runner.',
-        'Monitor execution duration, memory allocation, and return code.',
-        'Capture and parse stdout payload and telemetry.'
-      ],
-      inputs: 'Synthesized code block from Stage 2.',
-      dependencies: [s2],
-      expectedOutput: 'Execution telemetry (exit code, runtime ms, stdout stream).',
-      validationCriteria: 'Process exit code == 0 with zero runtime exceptions.',
-      status: 'pending'
-    });
-
-    const s4 = `step-${stepCounter++}`;
-    steps.push({
-      id: s4,
-      stageNumber: 4,
-      name: 'Test Suite & Edge Case Verification',
-      agent: 'math_code',
-      model: models.coder,
-      description: 'Evaluate assertions and verify behavioral correctness across boundary conditions.',
-      actions: [
-        'Verify test assertions against expected outputs.',
-        'Validate performance and algorithmic complexity.',
-        'Inspect potential memory or boundary edge failures.'
-      ],
-      inputs: 'Execution output stream from Stage 3.',
-      dependencies: [s3],
-      expectedOutput: 'Test suite validation matrix with 100% passing tests.',
-      validationCriteria: 'All assertion cases evaluated and confirmed.',
-      status: 'pending'
-    });
-
-    const s5 = `step-${stepCounter++}`;
-    steps.push({
-      id: s5,
-      stageNumber: 5,
-      name: 'Technical Documentation & Artifact Assembly',
-      agent: 'reasoning_synthesis',
-      model: models.reasoning,
-      description: 'Synthesize usage documentation, runtime instructions, and verified code deliverable.',
-      actions: [
-        'Compile structured code explanation and architectural overview.',
-        'Document sample inputs, outputs, and invocation instructions.',
-        'Assemble final verified deliverable artifact.'
-      ],
-      inputs: 'Verified code and execution telemetry.',
-      dependencies: [s4],
-      expectedOutput: 'Complete code deliverable with execution verification proof.',
-      validationCriteria: 'Comprehensive documentation and working verified code.',
-      status: 'pending'
-    });
-
-    expectedDeliverables.push('Verified Code Artifact & Execution Log');
-
-  } else if (decomp.domain === 'data_analysis' && decomp.requestedOutputFormat === 'pptx') {
-    // -------------------------------------------------------------
-    // DOMAIN 3B: POWERPOINT PRESENTATION DELIVERABLE WORKPLAN (5 STAGES)
-    // -------------------------------------------------------------
-    requiredCapabilities.push(
-      'Slide Outline & Theme Architecture',
-      'Thematic Domain Content Synthesis',
-      'Native Presentation Compilation (PptxGenJS)',
-      'Visual Styling & Layout Consistency Gate',
-      'Deliverable Packaging & Presentation Audit'
-    );
+  // -------------------------------------------------------------------------
+  // 7. POWERPOINT PRESENTATION DELIVERABLE
+  // -------------------------------------------------------------------------
+  } else if (decomp.operation === 'deliverable_pptx') {
+    requiredCapabilities.push('Slide Outline & Narrative Structuring', 'Content Synthesis', 'Native PPTX Compilation');
     selectedAgents.push('reasoning_synthesis');
     selectedModels['reasoning_synthesis'] = models.reasoning;
 
-    const s1 = `step-${stepCounter++}`;
+    const s1Id = `step-${stepCounter++}`;
     steps.push({
-      id: s1,
+      id: s1Id,
       stageNumber: 1,
       name: 'Slide Outline & Narrative Structuring',
       agent: 'reasoning_synthesis',
@@ -375,13 +578,13 @@ export function generateDynamicWorkplan(
       inputs: decomp.primaryObjective,
       dependencies: [],
       expectedOutput: 'Structured presentation agenda and slide outline matrix.',
-      validationCriteria: 'Clear multi-slide structure covering all core aspects of the topic.',
+      validationCriteria: 'Clear multi-slide structure covering core aspects of topic.',
       status: 'pending'
     });
 
-    const s2 = `step-${stepCounter++}`;
+    const s2Id = `step-${stepCounter++}`;
     steps.push({
-      id: s2,
+      id: s2Id,
       stageNumber: 2,
       name: 'Thematic Domain Content Synthesis',
       agent: 'reasoning_synthesis',
@@ -392,16 +595,16 @@ export function generateDynamicWorkplan(
         'Eliminate repetitive generic boilerplate and focus on informative substantive points.',
         'Format slide draft with strict heading and bullet hierarchy.'
       ],
-      inputs: 'Slide outline from Stage 1.',
-      dependencies: [s1],
+      inputs: `Slide outline from Stage 1 (${s1Id}).`,
+      dependencies: [s1Id],
       expectedOutput: 'Complete slide-by-slide copy ready for binary presentation generation.',
       validationCriteria: 'High factual density across all slides without placeholder text.',
       status: 'pending'
     });
 
-    const s3 = `step-${stepCounter++}`;
+    const s3Id = `step-${stepCounter++}`;
     steps.push({
-      id: s3,
+      id: s3Id,
       stageNumber: 3,
       name: 'Native Presentation Compilation (PptxGenJS)',
       agent: 'reasoning_synthesis',
@@ -413,157 +616,69 @@ export function generateDynamicWorkplan(
         'Generate content slides with formatted headers, accent dividers, and styled bullet points.',
         'Encode presentation to OpenXML PKZip buffer.'
       ],
-      inputs: 'Slide content copy from Stage 2.',
-      dependencies: [s2],
+      inputs: `Slide copy from Stage 2 (${s2Id}).`,
+      dependencies: [s2Id],
       expectedOutput: 'Native .pptx binary deliverable file.',
       validationCriteria: 'Non-empty presentation buffer adhering to PPTX OpenXML standards.',
       status: 'pending'
     });
 
-    const s4 = `step-${stepCounter++}`;
-    steps.push({
-      id: s4,
-      stageNumber: 4,
-      name: 'Visual Layout & Typographic Styling Gate',
-      agent: 'reasoning_synthesis',
-      model: 'visual-quality-gate',
-      description: 'Audit presentation formatting, typography, line spacing, and slide readability.',
-      actions: [
-        'Verify high contrast between text (#F5F4F1) and slide background.',
-        'Check margins (x: 0.8", y: 0.8") and consistent header font sizes (24pt).',
-        'Confirm bullet point spacing and absence of overlapping elements.'
-      ],
-      inputs: 'Compiled PPTX buffer and layout geometry.',
-      dependencies: [s3],
-      expectedOutput: 'Styling audit certificate confirming slide design compliance.',
-      validationCriteria: 'Clean typographic layout with zero text clipping or overlapping elements.',
-      status: 'pending'
-    });
+    expectedDeliverables.push('Native PowerPoint Presentation (.pptx)');
 
-    const s5 = `step-${stepCounter++}`;
-    steps.push({
-      id: s5,
-      stageNumber: 5,
-      name: 'Presentation Packaging & Deliverable Registration',
-      agent: 'reasoning_synthesis',
-      model: 'lumi-quality-gate',
-      description: 'Register deliverable in LUMI storage registry and generate direct download endpoint.',
-      actions: [
-        'Commit .pptx file to data/deliverables directory.',
-        'Register download URL and deliverable metadata in DELIVERABLE_REGISTRY.',
-        'Generate executive summary presentation card for chat interface.'
-      ],
-      inputs: 'Verified PPTX deliverable from Stage 4.',
-      dependencies: [s4],
-      expectedOutput: 'Downloadable PowerPoint presentation registered in LUMI deliverable registry.',
-      validationCriteria: 'Presentation file downloadable and confirmed non-corrupted.',
-      status: 'pending'
-    });
-
-    expectedDeliverables.push(decomp.suggestedDeliverableName);
-    expectedDeliverables.push('Executive Slide Deck (PPTX)');
-
-  } else if (decomp.domain === 'data_analysis') {
-    // -------------------------------------------------------------
-    // DOMAIN 3: DATA ANALYSIS & SPREADSHEET WORKPLAN (5 STAGES)
-    // -------------------------------------------------------------
-    requiredCapabilities.push(
-      'Tabular Data Ingestion & Schema Parsing',
-      'Statistical Computation & Numerical Modeling',
-      'Native Workbook Compilation (ExcelJS)',
-      'Analytical Insights & Trend Synthesis',
-      'Completeness & Formula Verification'
-    );
-    selectedAgents.push('math_code', 'reasoning_synthesis');
-    selectedModels['math_code'] = models.math_code;
+  // -------------------------------------------------------------------------
+  // 8. EXCEL SPREADSHEET WORKBOOK DELIVERABLE
+  // -------------------------------------------------------------------------
+  } else if (decomp.operation === 'deliverable_xlsx') {
+    requiredCapabilities.push('Data Modeling & Workbook Architecture', 'Native XLSX Compilation', 'Formula Validation');
+    selectedAgents.push('reasoning_synthesis');
     selectedModels['reasoning_synthesis'] = models.reasoning;
 
-    const s1 = `step-${stepCounter++}`;
+    const s1Id = `step-${stepCounter++}`;
     steps.push({
-      id: s1,
+      id: s1Id,
       stageNumber: 1,
-      name: 'Tabular Data Ingestion & Schema Definition',
+      name: 'Data Modeling & Spreadsheet Architecture',
       agent: 'reasoning_synthesis',
       model: models.reasoning,
-      description: 'Parse dataset structure, extract dimensions, metrics, and data types.',
+      description: 'Design worksheet tabs, table schema, KPI definitions, and formula dependencies.',
       actions: [
-        'Define spreadsheet column hierarchy, categories, and numerical formats.',
-        'Normalize currency, percentages, and timestamps.',
-        'Establish calculation dependencies across rows and columns.'
+        'Structure workbook layout (Executive KPI Summary, Detailed Data Sheet, Assumptions).',
+        'Define column headers, data types, units, and currency symbols.',
+        'Formulate dynamic Excel equations (=SUM, =AVERAGE, =B3*C3).'
       ],
-      inputs: 'User dataset specification or uploaded records.',
+      inputs: decomp.primaryObjective,
       dependencies: [],
-      expectedOutput: 'Structured schema definition and cell coordinate map.',
-      validationCriteria: 'Schema validated with typed column definitions.',
+      expectedOutput: 'Spreadsheet architecture schema with explicit formula mapping.',
+      validationCriteria: 'Well-structured table definitions with proper formula design.',
       status: 'pending'
     });
 
-    const s2 = `step-${stepCounter++}`;
+    const s2Id = `step-${stepCounter++}`;
     steps.push({
-      id: s2,
+      id: s2Id,
       stageNumber: 2,
-      name: 'Statistical Computation & Aggregation',
-      agent: 'math_code',
-      model: models.math_code,
-      description: 'Compute totals, subtotals, variances, and statistical aggregates.',
+      name: 'Native XLSX Compilation with Working Formulas',
+      agent: 'reasoning_synthesis',
+      model: 'exceljs-xlsx-runtime',
+      description: 'Generate multi-tab Excel (.xlsx) workbook with styled headers and functional formulas.',
       actions: [
-        'Compute sums, averages, and period-over-period delta percentages.',
-        'Perform sensitivity and variance evaluations.',
-        'Prepare data matrix for ExcelJS workbook generator.'
+        'Populate data rows with realistic values.',
+        'Inject dynamic spreadsheet formulas with correct relative coordinates.',
+        'Apply styling: charcoal header fills (#1E1E1E), muted grid lines, column auto-widths.',
+        'Serialize workbook to OpenXML Excel buffer.'
       ],
-      inputs: 'Raw records and schema from Stage 1.',
-      dependencies: [s1],
-      expectedOutput: 'Computed numerical matrix with explicit formulas.',
-      validationCriteria: 'Calculations verified without arithmetic discrepancies.',
+      inputs: `Spreadsheet schema from Stage 1 (${s1Id}).`,
+      dependencies: [s1Id],
+      expectedOutput: 'Native .xlsx workbook binary with working formulas.',
+      validationCriteria: 'Valid XLSX file adhering to OpenXML spreadsheet standards.',
       status: 'pending'
     });
 
-    const s3 = `step-${stepCounter++}`;
+    const s3Id = `step-${stepCounter++}`;
     steps.push({
-      id: s3,
+      id: s3Id,
       stageNumber: 3,
-      name: 'Native Workbook Assembly (XLSX / CSV)',
-      agent: 'reasoning_synthesis',
-      model: 'exceljs-workbook-engine',
-      description: 'Synthesize native formatted spreadsheet with styled headers and formulas.',
-      actions: [
-        'Format dark charcoal header row with high-contrast typography.',
-        'Apply zebra-striped row fills, thin cell borders, and currency number formats.',
-        'Inject native formula cells (=SUM, =AVERAGE) for dynamic updating.',
-        'Write binary XLSX buffer to disk registry.'
-      ],
-      inputs: 'Computed data matrix and formatting stylesheet.',
-      dependencies: [s2],
-      expectedOutput: `Downloadable spreadsheet file: ${decomp.suggestedDeliverableName}.`,
-      validationCriteria: 'Valid Excel workbook generated with styled cells and proper formulas.',
-      status: 'pending'
-    });
-
-    const s4 = `step-${stepCounter++}`;
-    steps.push({
-      id: s4,
-      stageNumber: 4,
-      name: 'Analytical Insights & Management Summary',
-      agent: 'reasoning_synthesis',
-      model: models.reasoning,
-      description: 'Synthesize business and technical insights derived from the dataset.',
-      actions: [
-        'Summarize key financial/operational highlights and dominant cost drivers.',
-        'Identify significant variances and optimization opportunities.',
-        'Draft executive briefing notes for decision makers.'
-      ],
-      inputs: 'Computed data matrix from Stage 2.',
-      dependencies: [s3],
-      expectedOutput: 'Written analytical briefing accompanying the spreadsheet.',
-      validationCriteria: 'Concrete data-backed findings without generic filler.',
-      status: 'pending'
-    });
-
-    const s5 = `step-${stepCounter++}`;
-    steps.push({
-      id: s5,
-      stageNumber: 5,
-      name: 'Spreadsheet Audit & Integrity Verification',
+      name: 'Spreadsheet Integrity & Formula Verification',
       agent: 'reasoning_synthesis',
       model: 'lumi-quality-gate',
       description: 'Audit generated spreadsheet for formula integrity and cell layout completeness.',
@@ -572,150 +687,99 @@ export function generateDynamicWorkplan(
         'Validate column headers, row counts, and data consistency.',
         'Confirm download URL availability in deliverable registry.'
       ],
-      inputs: 'Generated XLSX buffer and metadata.',
-      dependencies: [s4],
+      inputs: `Generated XLSX buffer (${s2Id}).`,
+      dependencies: [s2Id],
       expectedOutput: 'Quality audit certificate confirming spreadsheet integrity.',
       validationCriteria: 'Worksheet contains valid headers, rows, and formatted data.',
       status: 'pending'
     });
 
-    expectedDeliverables.push(decomp.suggestedDeliverableName);
-    expectedDeliverables.push('Financial & Operational Summary Report');
+    expectedDeliverables.push('Native Excel Workbook (.xlsx)');
 
-  } else if (decomp.domain === 'document_analysis') {
-    // -------------------------------------------------------------
-    // DOMAIN 4: DOCUMENT ANALYSIS & RAG WORKPLAN (5 STAGES)
-    // -------------------------------------------------------------
-    requiredCapabilities.push(
-      'Knowledge Ingestion & Vector Retrieval',
-      'Cross-Document Evidence Synthesis',
-      'Guideline Compliance Evaluation',
-      'Provenance & Citation Verification',
-      'Grounded Analysis Compilation'
-    );
-    selectedAgents.push('vector_rag', 'reasoning_synthesis');
-    selectedModels['vector_rag'] = 'vector-similarity-engine';
+  // -------------------------------------------------------------------------
+  // 9. CSV DATASET ANALYSIS
+  // -------------------------------------------------------------------------
+  } else if (decomp.operation === 'data_csv_analysis') {
+    requiredCapabilities.push('CSV Data Ingestion', 'Statistical Analysis & Aggregation', 'Insights Synthesis');
+    selectedAgents.push('math_code', 'reasoning_synthesis');
+    selectedModels['math_code'] = 'python-scientific-runtime';
     selectedModels['reasoning_synthesis'] = models.reasoning;
 
-    const s1 = `step-${stepCounter++}`;
+    const s1Id = `step-${stepCounter++}`;
     steps.push({
-      id: s1,
+      id: s1Id,
       stageNumber: 1,
-      name: 'Target Document Ingestion & Chunk Retrieval',
-      agent: 'vector_rag',
-      model: 'vector-similarity-engine',
-      description: 'Retrieve relevant text chunks and metadata from indexed persistent knowledge base.',
+      name: 'Data Ingestion & Schema Extraction',
+      agent: 'math_code',
+      model: 'python-scientific-runtime',
+      description: 'Ingest CSV dataset, inspect column definitions, data types, and record counts.',
       actions: [
-        'Execute vector similarity search across indexed documents.',
-        'Extract highest-scoring passages, document IDs, section anchors, and page locations.',
-        'Compile retrieved chunks into structured evidence context.'
+        'Load CSV into structured data frame.',
+        'Extract summary schema: column names, data types, null counts, total rows.',
+        'Identify quantitative metric columns and categorical grouping dimensions.'
       ],
-      inputs: 'User query keywords and target document parameters.',
+      inputs: decomp.originalPrompt,
       dependencies: [],
-      expectedOutput: 'Ranked list of verified evidence passages with similarity scores.',
-      validationCriteria: 'Non-empty chunk retrieval from genuine uploaded documents.',
+      expectedOutput: 'Verified dataset schema and summary profiling statistics.',
+      validationCriteria: 'Clean tabular schema extracted without missing column types.',
       status: 'pending'
     });
 
-    const s2 = `step-${stepCounter++}`;
+    const s2Id = `step-${stepCounter++}`;
     steps.push({
-      id: s2,
+      id: s2Id,
       stageNumber: 2,
-      name: 'Cross-Document Synthesis & Theme Extraction',
-      agent: 'reasoning_synthesis',
-      model: models.reasoning,
-      description: 'Extract core principles, rules, and mandatory clauses from retrieved text.',
+      name: 'Statistical Computation & Metric Aggregation',
+      agent: 'math_code',
+      model: 'python-scientific-runtime',
+      description: 'Compute descriptive statistics, aggregations, averages, and group metrics in Python runtime.',
       actions: [
-        'Analyze mandatory vs recommended provisions (MUST / SHOULD / MUST NOT).',
-        'Identify common themes, discrepancies, or policy gaps across documents.',
-        'Synthesize coherent factual findings grounded strictly in retrieved text.'
+        'Calculate core descriptive statistics: mean, median, standard deviation, min, max, quantiles.',
+        'Execute required aggregations (group sums, category breakdown, percentage distributions).',
+        'Extract anomalous data points and high-variance segments.'
       ],
-      inputs: 'Retrieved evidence passages from Stage 1.',
-      dependencies: [s1],
-      expectedOutput: 'Thematic analysis matrix linking claims to source documents.',
-      validationCriteria: 'All synthesized points grounded directly in retrieved snippets.',
+      inputs: `Dataset schema from Stage 1 (${s1Id}).`,
+      dependencies: [s1Id],
+      expectedOutput: 'Deterministic statistical calculation tables and metric aggregates.',
+      validationCriteria: 'Statistical calculations solved without approximation.',
       status: 'pending'
     });
 
-    const s3 = `step-${stepCounter++}`;
+    const s3Id = `step-${stepCounter++}`;
     steps.push({
-      id: s3,
+      id: s3Id,
       stageNumber: 3,
-      name: 'Guideline & Regulatory Compliance Audit',
+      name: 'Analytical Insights Synthesis',
       agent: 'reasoning_synthesis',
       model: models.reasoning,
-      description: 'Evaluate practical application of guidelines to user scenario or target document.',
+      description: 'Synthesize structured analytical findings highlighting business insights and key metric drivers.',
       actions: [
-        'Map requirements from guidelines (e.g. ENG-STD-002, DOC-STD-001) to operational context.',
-        'Check report layout, document numbering, review controls, and authoring rules.',
-        'Formulate actionable recommendations for full standard compliance.'
+        'Draft executive summary interpreting metric trends and dominant drivers.',
+        'Highlight critical variances, outlier patterns, and growth/efficiency opportunities.',
+        'Format clean markdown tables presenting core computed statistics.'
       ],
-      inputs: 'Extracted principles and operational scenario.',
-      dependencies: [s2],
-      expectedOutput: 'Compliance scorecard with pass/gap analysis.',
-      validationCriteria: 'Actionable guidance with explicit clause references.',
+      inputs: `Statistical computation results from Stage 2 (${s2Id}).`,
+      dependencies: [s2Id],
+      expectedOutput: 'Structured analytical summary report with verified data tables.',
+      validationCriteria: 'Grounded insights linking directly to computed data values.',
       status: 'pending'
     });
 
-    const s4 = `step-${stepCounter++}`;
-    steps.push({
-      id: s4,
-      stageNumber: 4,
-      name: 'Citation Formatting & Provenance Verification',
-      agent: 'reasoning_synthesis',
-      model: 'provenance-verification-gate',
-      description: 'Format accurate citations and audit against knowledge base to eliminate hallucinated sources.',
-      actions: [
-        'Verify document names, section numbers, and chunk IDs against database.',
-        'Eliminate any hallucinated citations not present in indexed files.',
-        'Format citation callouts: [Document Name - Section #].'
-      ],
-      inputs: 'Draft analysis and retrieved chunk registry.',
-      dependencies: [s3],
-      expectedOutput: 'Verified citation register with confirmed provenance.',
-      validationCriteria: '100% of cited sources correspond to indexed knowledge base entries.',
-      status: 'pending'
-    });
+    expectedDeliverables.push('Data Analysis Summary');
+    expectedDeliverables.push('Structured Metric Tables');
 
-    const s5 = `step-${stepCounter++}`;
-    steps.push({
-      id: s5,
-      stageNumber: 5,
-      name: 'Final Grounded Report Assembly',
-      agent: 'reasoning_synthesis',
-      model: models.reasoning,
-      description: 'Compile authoritative, cited analysis document.',
-      actions: [
-        'Synthesize executive findings, detailed analysis, and compliance recommendations.',
-        'Attach grounded source citation list with full text snippets.',
-        'Format clean markdown or deliverable output.'
-      ],
-      inputs: 'Audited text and verified citations.',
-      dependencies: [s4],
-      expectedOutput: 'Comprehensive grounded technical analysis.',
-      validationCriteria: 'Clear, rigorous document with transparent provenance.',
-      status: 'pending'
-    });
-
-    expectedDeliverables.push('Grounded Technical Analysis Document');
-
-  } else if (decomp.domain === 'image_generation') {
-    // -------------------------------------------------------------
-    // DOMAIN 5: IMAGE GENERATION WORKPLAN (4 STAGES)
-    // -------------------------------------------------------------
-    requiredCapabilities.push(
-      'Visual Concept & Prompt Enhancement',
-      'Authentic Diffusion Synthesis (FLUX.1-schnell)',
-      'Image Quality & Artifact Inspection',
-      'Asset Registration & Packaging'
-    );
+  // -------------------------------------------------------------------------
+  // 10. IMAGE GENERATION (DIFFUSION)
+  // -------------------------------------------------------------------------
+  } else if (decomp.operation === 'image_generation') {
+    requiredCapabilities.push('Visual Prompt Enhancement', 'Authentic Diffusion Synthesis (FLUX.1-schnell)');
     selectedAgents.push('image_generation', 'reasoning_synthesis');
     selectedModels['image_generation'] = models.image_generation;
     selectedModels['reasoning_synthesis'] = models.reasoning;
 
-    const s1 = `step-${stepCounter++}`;
+    const s1Id = `step-${stepCounter++}`;
     steps.push({
-      id: s1,
+      id: s1Id,
       stageNumber: 1,
       name: 'Visual Concept & Prompt Optimization',
       agent: 'reasoning_synthesis',
@@ -726,16 +790,16 @@ export function generateDynamicWorkplan(
         'Optimize diffusion prompt with photographic / artistic keywords.',
         'Set resolution (1024×1024) and generation parameters.'
       ],
-      inputs: 'User image generation brief.',
+      inputs: decomp.originalPrompt,
       dependencies: [],
-      expectedOutput: 'Optimized diffusion prompt and negative prompt parameters.',
+      expectedOutput: 'Optimized diffusion prompt.',
       validationCriteria: 'Detailed visual descriptor ready for generation engine.',
       status: 'pending'
     });
 
-    const s2 = `step-${stepCounter++}`;
+    const s2Id = `step-${stepCounter++}`;
     steps.push({
-      id: s2,
+      id: s2Id,
       stageNumber: 2,
       name: 'Authentic Diffusion Synthesis',
       agent: 'image_generation',
@@ -746,158 +810,211 @@ export function generateDynamicWorkplan(
         'Process latent diffusion steps with guidance scale and sampling schedule.',
         'Decode latent tensor to high-resolution PNG image.'
       ],
-      inputs: 'Optimized visual prompt from Stage 1.',
-      dependencies: [s1],
+      inputs: `Optimized visual prompt from Stage 1 (${s1Id}).`,
+      dependencies: [s1Id],
       expectedOutput: 'Authentic 1024×1024 PNG image binary.',
       validationCriteria: 'Valid PNG buffer with genuine image dimensions.',
       status: 'pending'
     });
 
-    const s3 = `step-${stepCounter++}`;
-    steps.push({
-      id: s3,
-      stageNumber: 3,
-      name: 'Visual Quality & Artifact Inspection',
-      agent: 'reasoning_synthesis',
-      model: 'visual-quality-gate',
-      description: 'Inspect generated image for structural fidelity and absence of visual corruption.',
-      actions: [
-        'Verify PNG magic bytes (89 50 4E 47 0D 0A 1A 0A).',
-        'Check file size (>100 KB) and resolution (1024×1024).',
-        'Verify correct visual subject representation.'
-      ],
-      inputs: 'Generated PNG buffer.',
-      dependencies: [s2],
-      expectedOutput: 'Quality inspection certificate (PASSED).',
-      validationCriteria: 'Decodable image file matching requested subject.',
-      status: 'pending'
-    });
+    expectedDeliverables.push('Synthesized High-Resolution PNG Asset');
 
-    const s4 = `step-${stepCounter++}`;
-    steps.push({
-      id: s4,
-      stageNumber: 4,
-      name: 'Asset Registration & UI Packaging',
-      agent: 'reasoning_synthesis',
-      model: models.reasoning,
-      description: 'Store image to disk, register download endpoint, and format chat presentation.',
-      actions: [
-        'Persist image to data/images directory.',
-        'Register asset ID and download URL (/api/images/...).',
-        'Format Markdown image presentation with generation metadata.'
-      ],
-      inputs: 'Verified PNG image from Stage 3.',
-      dependencies: [s3],
-      expectedOutput: 'Downloadable image asset registered in LUMI storage.',
-      validationCriteria: 'Image available via HTTP endpoint and embedded in chat.',
-      status: 'pending'
-    });
-
-    expectedDeliverables.push(decomp.suggestedDeliverableName);
-
-  } else {
-    // -------------------------------------------------------------
-    // DOMAIN 6: GENERAL KNOWLEDGE & ASSISTANT WORKPLAN (4 STAGES)
-    // -------------------------------------------------------------
-    requiredCapabilities.push(
-      'Query Decomposition & Intent Grounding',
-      'Context & Knowledge Synthesis',
-      'Structured Coherent Drafting',
-      'Factuality & Output Verification'
-    );
+  // -------------------------------------------------------------------------
+  // 11. DOCUMENT SUMMARY (PDF / DOC)
+  // -------------------------------------------------------------------------
+  } else if (decomp.operation === 'document_summary') {
+    requiredCapabilities.push('Document Text Ingestion', 'Salient Argument Extraction', 'Summary Synthesis');
     selectedAgents.push('reasoning_synthesis');
     selectedModels['reasoning_synthesis'] = models.reasoning;
 
-    const s1 = `step-${stepCounter++}`;
+    const s1Id = `step-${stepCounter++}`;
     steps.push({
-      id: s1,
+      id: s1Id,
       stageNumber: 1,
-      name: 'Intent Grounding & Context Ingestion',
+      name: 'Document Text Ingestion & Section Chunking',
       agent: 'reasoning_synthesis',
       model: models.reasoning,
-      description: 'Analyze user intent, extract core constraints, and gather contextual evidence.',
+      description: 'Extract textual content from document and segment into logical sections.',
       actions: [
-        'Decompose prompt into primary requirements and implied constraints.',
-        'Check knowledge base for relevant facts or definitions.',
-        'Define output structure and tone.'
+        'Parse document text and preserve section hierarchy.',
+        'Identify major headings, executive summaries, and core conclusions.',
+        'Filter out boilerplate headers, footers, and page numbers.'
       ],
-      inputs: 'User prompt.',
+      inputs: decomp.originalPrompt,
       dependencies: [],
-      expectedOutput: 'Grounded query plan with key themes.',
-      validationCriteria: 'Clear intent understanding established.',
+      expectedOutput: 'Clean segmented text sections.',
+      validationCriteria: 'Document text extracted completely.',
       status: 'pending'
     });
 
-    const s2 = `step-${stepCounter++}`;
+    const s2Id = `step-${stepCounter++}`;
     steps.push({
-      id: s2,
+      id: s2Id,
       stageNumber: 2,
-      name: 'Multi-Perspective Synthesis',
+      name: 'Salient Argument & Finding Extraction',
       agent: 'reasoning_synthesis',
       model: models.reasoning,
-      description: 'Synthesize insights from foundational knowledge and logical deductions.',
+      description: 'Identify primary theses, supporting evidence, and key empirical findings.',
       actions: [
-        'Develop thorough, logically coherent arguments.',
-        'Synthesize concrete examples and structured explanations.',
-        'Ensure direct answers without unnecessary preamble.'
+        'Extract core qualitative arguments and quantitative metrics.',
+        'Isolate author conclusions and recommendations.',
+        'Structure findings into thematic bullet points.'
       ],
-      inputs: 'Query plan from Stage 1.',
-      dependencies: [s1],
-      expectedOutput: 'Structured draft addressing all user questions.',
+      inputs: `Segmented text from Stage 1 (${s1Id}).`,
+      dependencies: [s1Id],
+      expectedOutput: 'Thematic findings matrix.',
+      validationCriteria: 'All extracted points grounded in source document.',
+      status: 'pending'
+    });
+
+    const s3Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s3Id,
+      stageNumber: 3,
+      name: 'Executive Summary Synthesis',
+      agent: 'reasoning_synthesis',
+      model: models.reasoning,
+      description: 'Synthesize concise executive summary with clear structure and actionable takeaways.',
+      actions: [
+        'Draft executive overview highlighting essential conclusions.',
+        'Organize key takeaways with bold emphasis and clean formatting.',
+        'Provide structured document overview without conversational filler.'
+      ],
+      inputs: `Findings from Stage 2 (${s2Id}).`,
+      dependencies: [s2Id],
+      expectedOutput: 'Comprehensive executive summary document.',
+      validationCriteria: 'Clear, high-density summary.',
+      status: 'pending'
+    });
+
+    expectedDeliverables.push('Executive Summary Document');
+
+  // -------------------------------------------------------------------------
+  // 12. DOCUMENT COMPLIANCE & STANDARDS AUDIT (RAG)
+  // -------------------------------------------------------------------------
+  } else if (decomp.operation === 'document_compliance') {
+    requiredCapabilities.push('Knowledge Ingestion & Vector Retrieval', 'Guideline Compliance Evaluation', 'Provenance Verification');
+    selectedAgents.push('vector_rag', 'reasoning_synthesis');
+    selectedModels['vector_rag'] = 'vector-similarity-engine';
+    selectedModels['reasoning_synthesis'] = models.reasoning;
+
+    const s1Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s1Id,
+      stageNumber: 1,
+      name: 'Standard Document Ingestion & Chunk Retrieval',
+      agent: 'vector_rag',
+      model: 'vector-similarity-engine',
+      description: 'Retrieve relevant text chunks and guidelines from persistent knowledge base.',
+      actions: [
+        'Execute vector similarity search across indexed documents.',
+        'Extract highest-scoring passages, section anchors, and page locations.',
+        'Compile retrieved chunks into structured evidence context.'
+      ],
+      inputs: decomp.originalPrompt,
+      dependencies: [],
+      expectedOutput: 'Ranked list of verified evidence passages.',
+      validationCriteria: 'Non-empty chunk retrieval from genuine documents.',
+      status: 'pending'
+    });
+
+    const s2Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s2Id,
+      stageNumber: 2,
+      name: 'Guideline & Regulatory Compliance Audit',
+      agent: 'reasoning_synthesis',
+      model: models.reasoning,
+      description: 'Evaluate practical application of guidelines to user scenario or target document.',
+      actions: [
+        'Map requirements from guidelines (e.g. ENG-STD-002, DOC-STD-001) to operational context.',
+        'Check report layout, document numbering, review controls, and authoring rules.',
+        'Formulate actionable recommendations for full standard compliance.'
+      ],
+      inputs: `Retrieved passages from Stage 1 (${s1Id}).`,
+      dependencies: [s1Id],
+      expectedOutput: 'Compliance scorecard with pass/gap analysis.',
+      validationCriteria: 'Actionable guidance with explicit clause references.',
+      status: 'pending'
+    });
+
+    const s3Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s3Id,
+      stageNumber: 3,
+      name: 'Grounded Compliance Analysis Assembly',
+      agent: 'reasoning_synthesis',
+      model: models.reasoning,
+      description: 'Compile authoritative, cited analysis document with transparent provenance.',
+      actions: [
+        'Synthesize executive findings, detailed analysis, and compliance recommendations.',
+        'Attach grounded source citation list with full text snippets.',
+        'Format clean markdown output.'
+      ],
+      inputs: `Compliance analysis from Stage 2 (${s2Id}).`,
+      dependencies: [s2Id],
+      expectedOutput: 'Comprehensive grounded technical analysis.',
+      validationCriteria: 'Clear, rigorous document with transparent provenance.',
+      status: 'pending'
+    });
+
+    expectedDeliverables.push('Grounded Compliance Evaluation Report');
+
+  // -------------------------------------------------------------------------
+  // 13. GENERAL QA & CONCEPTUAL INQUIRY
+  // -------------------------------------------------------------------------
+  } else {
+    requiredCapabilities.push('Concept Analysis', 'Direct Technical Synthesis');
+    selectedAgents.push('reasoning_synthesis');
+    selectedModels['reasoning_synthesis'] = models.reasoning;
+
+    const s1Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s1Id,
+      stageNumber: 1,
+      name: 'Context & Concept Analysis',
+      agent: 'reasoning_synthesis',
+      model: models.reasoning,
+      description: 'Analyze core inquiry, identify foundational principles, and define structure.',
+      actions: [
+        'Decompose prompt into primary requirements and implied constraints.',
+        'Isolate foundational definitions, historical context, or engineering principles.',
+        'Structure logical progression of the answer.'
+      ],
+      inputs: decomp.originalPrompt,
+      dependencies: [],
+      expectedOutput: 'Structured response architecture.',
+      validationCriteria: 'Clear conceptual understanding established.',
+      status: 'pending'
+    });
+
+    const s2Id = `step-${stepCounter++}`;
+    steps.push({
+      id: s2Id,
+      stageNumber: 2,
+      name: 'Coherent Technical Synthesis',
+      agent: 'reasoning_synthesis',
+      model: models.reasoning,
+      description: 'Synthesize direct, factual response formatted cleanly without conversational filler.',
+      actions: [
+        'Formulate direct, logically rigorous answer addressing all parts of prompt.',
+        'Use clean markdown structure with code snippets or lists where appropriate.',
+        'Ensure direct answers without unnecessary conversational preamble.'
+      ],
+      inputs: `Concept architecture from Stage 1 (${s1Id}).`,
+      dependencies: [s1Id],
+      expectedOutput: 'Direct, comprehensive technical answer.',
       validationCriteria: 'Accurate and comprehensive response content.',
       status: 'pending'
     });
 
-    const s3 = `step-${stepCounter++}`;
-    steps.push({
-      id: s3,
-      stageNumber: 3,
-      name: 'Clarity & Formatting Polish',
-      agent: 'reasoning_synthesis',
-      model: models.reasoning,
-      description: 'Refine response formatting with clean markdown, lists, and emphasis.',
-      actions: [
-        'Format with clear headings, bullet points, and code/quote blocks where appropriate.',
-        'Remove conversational filler, repetitive apologies, or robotic transitions.',
-        'Verify grammatical and technical precision.'
-      ],
-      inputs: 'Draft response from Stage 2.',
-      dependencies: [s2],
-      expectedOutput: 'Polished markdown response.',
-      validationCriteria: 'Professional presentation meeting LUMI quality standards.',
-      status: 'pending'
-    });
-
-    const s4 = `step-${stepCounter++}`;
-    steps.push({
-      id: s4,
-      stageNumber: 4,
-      name: 'Factuality & Completeness Verification',
-      agent: 'reasoning_synthesis',
-      model: 'lumi-quality-gate',
-      description: 'Verify all aspects of the user prompt have been addressed accurately.',
-      actions: [
-        'Check every question in original prompt against the answer.',
-        'Confirm factual coherence and logical consistency.',
-        'Approve final compiled response for user delivery.'
-      ],
-      inputs: 'Polished response and original prompt.',
-      dependencies: [s3],
-      expectedOutput: 'Verified complete response ready for user presentation.',
-      validationCriteria: '100% prompt question coverage verified.',
-      status: 'pending'
-    });
-
-    expectedDeliverables.push('Compiled Technical Response');
+    expectedDeliverables.push('Direct Technical Response');
   }
 
-  // Construct task interpretation: Rich, specific, preserving numbers & objective
+  // Task interpretation: rich, specific, preserving numbers & objective
   let taskInterpretation = decomp.primaryObjective;
   if (decomp.parameters.length > 0) {
     taskInterpretation += ` Parameters: ${decomp.parameters.map(p => `${p.name}=${p.value}${p.unit}`).join(', ')}.`;
-  }
-  if (decomp.requiredCalculations.length > 0) {
-    taskInterpretation += ` Tasks: ${decomp.requiredCalculations.slice(0, 3).join('; ')}...`;
   }
 
   return {

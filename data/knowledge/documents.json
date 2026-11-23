@@ -22,5 +22,41 @@
     "status": "indexed",
     "extractedTextLength": 5294,
     "chunkCount": 13
+  },
+  {
+    "id": "doc-1795400779687-b9gx",
+    "name": "ENG_STD_002_Technical_Report_Guideline.txt",
+    "extension": ".txt",
+    "sizeBytes": 547,
+    "size": "547 B",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795400779687-b9gx_ENG_STD_002_Technical_Report_Guideline.txt",
+    "uploadedAt": "2026-11-23T02:26:19.946Z",
+    "status": "indexed",
+    "extractedTextLength": 547,
+    "chunkCount": 1
+  },
+  {
+    "id": "doc-1795403359811-je9v",
+    "name": "ENG_STD_002_Technical_Report_Guideline.txt",
+    "extension": ".txt",
+    "sizeBytes": 547,
+    "size": "547 B",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795403359811-je9v_ENG_STD_002_Technical_Report_Guideline.txt",
+    "uploadedAt": "2026-11-23T03:09:20.061Z",
+    "status": "indexed",
+    "extractedTextLength": 547,
+    "chunkCount": 1
+  },
+  {
+    "id": "doc-1795404129709-kb18",
+    "name": "PSU_Corporate_Presentation_Guidelines.pdf",
+    "extension": ".pdf",
+    "sizeBytes": 43728,
+    "size": "42.7 KB",
+    "originalPath": "D:\\IIIT(2)\\data\\knowledge\\files\\doc-1795404129709-kb18_PSU_Corporate_Presentation_Guidelines.pdf",
+    "uploadedAt": "2026-11-23T03:22:18.566Z",
+    "status": "indexed",
+    "extractedTextLength": 13905,
+    "chunkCount": 37
   }
 ]

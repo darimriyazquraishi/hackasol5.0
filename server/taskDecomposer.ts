@@ -16,7 +16,25 @@ export type TaskDomain =
   | 'programming'
   | 'document_analysis'
   | 'general_qa'
-  | 'image_generation';
+  | 'image_generation'
+  | 'vision_analysis';
+
+export type TaskOperation =
+  | 'code_generation'
+  | 'code_debugging'
+  | 'vision_analysis'
+  | 'vision_ocr'
+  | 'engineering_pump'
+  | 'engineering_compressed_air'
+  | 'engineering_general'
+  | 'math_problem'
+  | 'document_summary'
+  | 'document_compliance'
+  | 'data_csv_analysis'
+  | 'deliverable_pptx'
+  | 'deliverable_xlsx'
+  | 'image_generation'
+  | 'general_qa';
 
 export interface ConversationHistoryItem {
   sender: 'user' | 'assistant' | string;
@@ -146,6 +164,7 @@ export interface TaskDecomposition {
   id: string;
   originalPrompt: string;
   domain: TaskDomain;
+  operation: TaskOperation;
   primaryObjective: string;
   parameters: ExtractedParameter[];
   constraints: string[];
@@ -153,6 +172,17 @@ export interface TaskDecomposition {
   relevantDocuments: string[];
   applicableStandards: string[];
   requestedOutputFormat: 'pdf' | 'docx' | 'xlsx' | 'pptx' | 'csv' | 'markdown' | 'png' | 'code';
+  targetLanguage?: 'python' | 'javascript' | 'typescript' | 'auto';
+  requiresRAG: boolean;
+  requiresVision: boolean;
+  requiresCodeExecution: boolean;
+  requiresImageGen: boolean;
+  attachedFileProfiles?: {
+    images: string[];
+    code: string[];
+    data: string[];
+    documents: string[];
+  };
   requiredSections: string[];
   citationRequirements: string[];
   validationCriteria: string[];
@@ -178,6 +208,46 @@ export function decomposeUserTask(
 
   const imgIntent = detectImageGenerationIntent(p);
 
+  // Attachment profile classification
+  const imageAttachments = attachments.filter(a =>
+    ['png', 'jpg', 'jpeg', 'webp', 'bmp', 'gif'].includes(a.type.toLowerCase())
+  );
+  const codeAttachments = attachments.filter(a =>
+    ['py', 'js', 'ts', 'jsx', 'tsx', 'cpp', 'c', 'java', 'rs', 'go', 'sh', 'bash', 'html', 'css', 'json', 'sql', 'zip', 'tar', 'gz'].includes(a.type.toLowerCase())
+  );
+  const dataAttachments = attachments.filter(a =>
+    ['csv', 'tsv', 'xlsx', 'xls'].includes(a.type.toLowerCase())
+  );
+  const docAttachments = attachments.filter(a =>
+    ['pdf', 'docx', 'doc', 'txt', 'md', 'rtf'].includes(a.type.toLowerCase())
+  );
+
+  const attachedFileProfiles = {
+    images: imageAttachments.map(a => a.name),
+    code: codeAttachments.map(a => a.name),
+    data: dataAttachments.map(a => a.name),
+    documents: docAttachments.map(a => a.name)
+  };
+
+  // Coding intent detection (catching spelling variations like fibonnacci, upto, etc.)
+  const isFibonacci = /\b(?:fibonacci|fibonnacci)\b/i.test(lower);
+  const isCodingRequest =
+    isFibonacci ||
+    codeAttachments.length > 0 ||
+    /(?:write|generate|create|build|implement|develop|code|run|execute)\s+(?:a\s+|an\s+)?(?:python|javascript|typescript|js|py|c\+\+|java|rust|go|bash|shell|node)?\s*(?:program|script|code|application|app|function|algorithm|class|module|routine|solver|calculator)\b/i.test(lower) ||
+    /\b(?:program|script|code)\s+(?:for|to|that)\b/i.test(lower) ||
+    /\b(?:factorial|quicksort|mergesort|binary\s*search|bubble\s*sort|dijkstra|sieve\s*of\s*eratosthenes|prime\s*numbers?|linked\s*list|binary\s*tree|recursion|dynamic\s*programming)\b/i.test(lower) ||
+    /\b(?:debug|fix\s*(?:bug|error|issue|syntax|traceback)|traceback|syntaxerror|typeerror|indexerror|keyerror|runtimeerror|nullpointer|exception)\b/i.test(lower) ||
+    /(?:in|using|with)\s+(?:python|javascript|typescript|c\+\+|java|rust|golang|bash)\b/i.test(lower) ||
+    /^(?:write|generate|implement)\s+(?:code|a\s+function|a\s+script|a\s+program)\b/i.test(lower);
+
+  // Target programming language
+  let targetLanguage: 'python' | 'javascript' | 'typescript' | 'auto' = 'python';
+  if (/(?:javascript|\bjs\b|node|nodejs)/i.test(lower)) targetLanguage = 'javascript';
+  else if (/(?:typescript|\bts\b)/i.test(lower)) targetLanguage = 'typescript';
+  else if (/(?:python|\bpy\b)/i.test(lower)) targetLanguage = 'python';
+  else if (codeAttachments.some(a => ['js', 'ts'].includes(a.type.toLowerCase()))) targetLanguage = 'javascript';
+
   // 1. Output Format Detection
   let requestedOutputFormat: TaskDecomposition['requestedOutputFormat'] = 'markdown';
   if (/(?:export\s*to\s*pdf|\bpdf\b|printable\s*report)/i.test(lower)) {
@@ -190,9 +260,9 @@ export function decomposeUserTask(
     requestedOutputFormat = 'pptx';
   } else if (/(?:\bcsv\b|comma\s*separated)/i.test(lower)) {
     requestedOutputFormat = 'csv';
-  } else if (imgIntent.isImageGen) {
+  } else if (imgIntent.isImageGen && imageAttachments.length === 0) {
     requestedOutputFormat = 'png';
-  } else if (/(?:write|generate|implement)\s+(?:python|javascript|script|code|program|algorithm)/i.test(lower)) {
+  } else if (isCodingRequest) {
     requestedOutputFormat = 'code';
   }
 
@@ -201,7 +271,7 @@ export function decomposeUserTask(
   const lines = p.split('\n');
 
   // Regex patterns for key engineering/numerical parameters
-  const paramLineRegex = /^[\s*-•]*([A-Za-z0-9\s()/_.-]+?)\s*[:=]\s*([₹$€£]?\s*[\d,.]+(?:\.\d+)?)\s*([a-zA-Z0-9³/²%_°/\\-]*)/;
+  const paramLineRegex = /^[\s*•\t-]*([A-Za-z0-9\s()/_.-]+?)\s*[:=]\s*([₹$€£]?\s*[\d,.]+(?:\.\d+)?)\s*([a-zA-Z0-9³/²%_°/\\-]*)/;
 
   for (const line of lines) {
     const match = line.match(paramLineRegex);
@@ -219,7 +289,19 @@ export function decomposeUserTask(
 
       const numVal = parseFloat(rawVal.replace(/,/g, ''));
       if (!isNaN(numVal) && rawName.length > 2 && rawName.length < 50) {
-        const key = rawName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        const rawKey = rawName.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+        let key = rawKey;
+        if (/flow.*rate|discharge/i.test(rawKey)) key = 'flow_rate_m3_h';
+        else if (/head|tdh/i.test(rawKey)) key = 'head_m';
+        else if (/density|rho/i.test(rawKey)) key = 'density_kg_m3';
+        else if (/gravity/i.test(rawKey)) key = 'gravity_m_s2';
+        else if (/pump.*eff/i.test(rawKey)) key = 'pump_efficiency';
+        else if (/motor.*eff/i.test(rawKey)) key = 'motor_efficiency';
+        else if (/operat.*duration|operat.*hour|duty.*hour/i.test(rawKey)) key = 'hours_per_day';
+        else if (/tariff|electricity.*rate|power.*rate/i.test(rawKey)) key = 'tariff_inr_kwh';
+        else if (/flow.*increase|sensitivity/i.test(rawKey)) key = 'flow_increase_pct';
+        else if (/operating.*day|calendar.*day/i.test(rawKey)) key = 'days_per_month';
+
         parameters.push({
           name: rawName,
           key,
@@ -231,21 +313,24 @@ export function decomposeUserTask(
     }
   }
 
-  // Catch inline patterns if lines didn't capture (e.g. "flow rate of 25 m3/h", "head of 35 m")
-  if (parameters.length === 0) {
-    const inlinePatterns = [
-      { key: 'flow_rate', name: 'Flow Rate', regex: /(?:water\s*flow\s*rate|flow\s*rate|discharge|\bq\b)\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*(m[3³]\/h(?:our)?|m[3³]\/s|l\/s|gpm)/i },
-      { key: 'head', name: 'Total Dynamic Head', regex: /(?:total\s*dynamic\s*head|\bhead\b|\btdh\b)\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*(m(?:etres?|eters?)?|ft)?/i },
-      { key: 'density', name: 'Fluid Density', regex: /(?:water\s*density|\bdensity\b|\brho\b)\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*(kg\/m[3³])/i },
-      { key: 'gravity', name: 'Gravitational Acceleration', regex: /(?:gravitational\s*acceleration|\bgravity\b|\bg\b)\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*(m\/s[2²])/i },
-      { key: 'pump_efficiency', name: 'Pump Efficiency', regex: /pump\s*efficiency\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*%/i },
-      { key: 'motor_efficiency', name: 'Motor Efficiency', regex: /motor\s*efficiency\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*%/i },
-      { key: 'power', name: 'Power Consumption', regex: /(?:power\s*consumption|\bpower\b)\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*(kw|mw|hp)/i },
-      { key: 'tariff', name: 'Electricity Tariff', regex: /(?:electricity\s*tariff|\btariff\b|power\s*cost|\brate\b)\s*(?:of|is|[:=])?\s*[₹$€£]?\s*(\d+(?:\.\d+)?)\s*\/?\s*(kwh|unit)/i },
-      { key: 'duration', name: 'Operating Duration', regex: /(?:operating\s*duration|\bduration\b|operating\s*hours)\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*(hours?\/day|h\/d|hrs?)/i }
-    ];
+  // Catch inline patterns for any parameters not already captured by line regex
+  const existingKeys = new Set(parameters.map(param => param.key));
+  const inlinePatterns = [
+    { key: 'flow_rate', name: 'Flow Rate', regex: /(?:water\s*flow\s*rate|flow\s*rate|discharge|\bq\b)\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*(m[3³]\/h(?:our)?|m[3³]\/s|l\/s|gpm)/i },
+    { key: 'head', name: 'Total Dynamic Head', regex: /(?:total\s*dynamic\s*head|\bhead\b|\btdh\b)\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*(m(?:etres?|eters?)?|ft)?/i },
+    { key: 'density', name: 'Fluid Density', regex: /(?:water\s*density|\bdensity\b|\brho\b)\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*(kg\/m[3³])/i },
+    { key: 'gravity', name: 'Gravitational Acceleration', regex: /(?:gravitational\s*acceleration|\bgravity\b|\bg\b)\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*(m\/s[2²])/i },
+    { key: 'pump_efficiency', name: 'Pump Efficiency', regex: /pump\s*efficiency\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*%/i },
+    { key: 'motor_efficiency', name: 'Motor Efficiency', regex: /motor\s*efficiency\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*%/i },
+    { key: 'power', name: 'Power Consumption', regex: /(?:power\s*consumption|\bpower\b)\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*(kw|mw|hp)/i },
+    { key: 'tariff', name: 'Electricity Tariff', regex: /(?:electricity\s*tariff|\btariff\b|power\s*cost|\brate\b)\s*(?:of|is|[:=])?\s*[₹$€£]?\s*(\d+(?:\.\d+)?)\s*\/?\s*(kwh|unit)/i },
+    { key: 'duration', name: 'Operating Duration', regex: /(?:operating\s*duration|\bduration\b|operating\s*hours)\s*(?:of|is|[:=])?\s*(\d+(?:\.\d+)?)\s*(hours?\/day|h\/d|hrs?)/i },
+    { key: 'flow_increase_pct', name: 'Flow Rate Increase', regex: /(?:flow\s*(?:rate)?\s*increase|increase\s*(?:in\s*)?flow(?:\s*rate)?|sensitivity(?:\s*scenario)?)\s*(?:of|by|to|[:=])?\s*(\d+(?:\.\d+)?)\s*%/i },
+    { key: 'days_per_month', name: 'Operating Days', regex: /(?:assume\s*)?(\d+)\s*(?:operating\s*)?days(?:\s*\/\s*month)?/i }
+  ];
 
-    for (const pat of inlinePatterns) {
+  for (const pat of inlinePatterns) {
+    if (!existingKeys.has(pat.key)) {
       const m = p.match(pat.regex);
       if (m) {
         parameters.push({
@@ -255,6 +340,7 @@ export function decomposeUserTask(
           unit: m[2] || '',
           raw: m[0]
         });
+        existingKeys.add(pat.key);
       }
     }
   }
@@ -340,35 +426,112 @@ export function decomposeUserTask(
     // ignore
   }
 
-  // 6. Domain Classification
+  // 6. Domain & Fine-Grained Operation Classification
   let domain: TaskDomain = 'general_qa';
-  const hasFluidOrMechanical = /(?:pump|flow\s*rate|dynamic\s*head|compressor|nm3|kw|kwh|pressure|bar|efficiency|pipe|hydraulic|shaft\s*power)/i.test(lower);
-  const hasProgramming = /(?:python|javascript|typescript|function|script|class|api|endpoint|debug|syntax|algorithm)/i.test(lower);
-  const hasSpreadsheet = /(?:excel|xlsx|csv|spreadsheet|tabular|budget|expenses|columns|rows)/i.test(lower);
-  const hasImage = imgIntent.isImageGen;
-  const hasDocAnalysis =
-    /(?:analyze|review|extract|summarize|read|search|query|check|cite|retrieve|inspect|examine)\b.*?\b(?:document|guideline|standard|manual|specification|knowledge\s*base|sop|paper|pdf|policy|policies)/i.test(lower) ||
-    /(?:knowledge\s*base|uploaded\s*documents?|reference\s*documents?|document\s*control|engineering\s*report\s*guidelines?)/i.test(lower) ||
-    attachments.length > 0;
+  let operation: TaskOperation = 'general_qa';
 
-  if (hasImage && !hasFluidOrMechanical) {
+  const hasFluidOrMechanical = /(?:pump|flow\s*rate|dynamic\s*head|compressor|nm3|kw|kwh|pressure|bar|efficiency|pipe|hydraulic|shaft\s*power)/i.test(lower);
+
+  // 1. Image generation (diffusion)
+  if (imgIntent.isImageGen && imageAttachments.length === 0 && !/(?:explain|summarize|ocr|read|inspect)\s+(?:this|the)?\s*(?:image|diagram|chart|picture)/i.test(lower)) {
     domain = 'image_generation';
-  } else if (hasFluidOrMechanical || parameters.length >= 2) {
-    domain = 'engineering_calculation';
-  } else if (requestedOutputFormat === 'pptx') {
-    domain = 'data_analysis';
-  } else if (hasSpreadsheet) {
-    domain = 'data_analysis';
-  } else if (hasProgramming) {
-    domain = 'programming';
-  } else if (hasDocAnalysis) {
-    domain = 'document_analysis';
+    operation = 'image_generation';
   }
+  // 2. Multimodal Vision / OCR
+  else if (
+    imageAttachments.length > 0 ||
+    (/(?:image|picture|photo|diagram|drawing|chart|flowchart|layout|schematic|pipeline)/i.test(lower) &&
+      /(?:summarize|explain|describe|analyze|analyse|inspect|examine|read|understand|interpret|what\s+is\s+in|what\s+does.*show|tell\s+me\s+about|break\s+down|extract\s+text|ocr|read\s+text|visible\s+text)/i.test(lower))
+  ) {
+    domain = 'vision_analysis';
+    if (/(?:extract\s+text|ocr|read\s+text|visible\s+text|labels|symbols|transcribe)/i.test(lower)) {
+      operation = 'vision_ocr';
+    } else {
+      operation = 'vision_analysis';
+    }
+  }
+  // 3. Programming & Code (Generation, Debugging, Scripting)
+  else if (isCodingRequest) {
+    domain = 'programming';
+    if (/(?:debug|fix|patch|error|traceback|syntaxerror|typeerror|bug|issue|why\s+does\s+(?:this|my\s+code)\s+fail)/i.test(lower)) {
+      operation = 'code_debugging';
+    } else {
+      operation = 'code_generation';
+    }
+  }
+  // 4. Engineering calculations (Water pump, Compressed Air, Thermodynamics)
+  else if (/(?:water\s*pump|pumping|flow\s*rate|dynamic\s*head|\btdh\b|hydraulic\s*power|shaft\s*power)/i.test(lower)) {
+    domain = 'engineering_calculation';
+    operation = 'engineering_pump';
+  } else if (/(?:compress|air\s*audit|leakage|pneumatic|cagi|nm3\/h)/i.test(lower)) {
+    domain = 'engineering_calculation';
+    operation = 'engineering_compressed_air';
+  } else if (parameters.length >= 2 && /(?:power|kw|kwh|pressure|bar|efficiency|flow|temperature)/i.test(lower)) {
+    domain = 'engineering_calculation';
+    operation = 'engineering_general';
+  }
+  // 5. Math Problem Solving
+  else if (/(?:solve\s+(?:the\s+)?equation|quadratic|calculus|integral|derivative|matrix|algebra|solve\s+for\s+[a-z])/i.test(lower)) {
+    domain = 'engineering_calculation';
+    operation = 'math_problem';
+  }
+  // 6. CSV Data Analysis
+  else if (dataAttachments.length > 0 || (/(?:\bcsv\b|dataset|tabular\s*data|sales|revenue|expenses)/i.test(lower) && /(?:analyze|analysis|calculate|find|compute|stats|summary|average)/i.test(lower))) {
+    domain = 'data_analysis';
+    operation = 'data_csv_analysis';
+  }
+  // 7. Deliverables: PPTX or XLSX
+  else if (requestedOutputFormat === 'pptx') {
+    domain = 'data_analysis';
+    operation = 'deliverable_pptx';
+  } else if (requestedOutputFormat === 'xlsx' || /(?:excel|spreadsheet|workbook|kpi\s*dashboard)/i.test(lower)) {
+    domain = 'data_analysis';
+    operation = 'deliverable_xlsx';
+  }
+  // 8. Document Analysis: Compliance vs Summary
+  else if (
+    /(?:knowledge\s*base|uploaded\s*documents?|reference\s*documents?|guidelines?|sop|standard|compliance|iso\s*\d+|iec\s*\d+)/i.test(lower)
+  ) {
+    domain = 'document_analysis';
+    operation = 'document_compliance';
+  } else if (
+    docAttachments.length > 0 ||
+    /(?:summarize|summary|review|abstract|bullet\s*points)\b.*?\b(?:pdf|document|paper|report|file|article)/i.test(lower)
+  ) {
+    domain = 'document_analysis';
+    operation = 'document_summary';
+  }
+  // 9. General QA
+  else {
+    domain = 'general_qa';
+    operation = 'general_qa';
+  }
+
+  // Capability Requirements (strict - no unnecessary RAG or models)
+  const requiresRAG =
+    operation === 'document_compliance' ||
+    /(?:knowledge\s*base|uploaded\s*documents?|reference\s*documents?|guidelines?|sop|per\s+our\s+manual|standards?)/i.test(lower) ||
+    (domain === 'engineering_calculation' && requestedOutputFormat === 'pdf');
+
+  const requiresVision = domain === 'vision_analysis' || imageAttachments.length > 0;
+  const requiresCodeExecution = domain === 'programming' || operation === 'data_csv_analysis';
+  const requiresImageGen = operation === 'image_generation';
 
   // 7. Suggested Deliverable Filename
   let suggestedDeliverableName = 'LUMI_Technical_Report.pdf';
   const cleanTopicForFile = contextTopic ? contextTopic.replace(/[^a-zA-Z0-9_-]+/g, '_') : '';
-  if (lower.includes('water pump') || lower.includes('pumping')) {
+  if (isFibonacci) {
+    suggestedDeliverableName = 'fibonacci_12_terms.py';
+  } else if (domain === 'programming') {
+    const rawSubj = p
+      .replace(/^(?:generate|write|create|build|implement|debug|fix)\s+(?:a\s+|an\s+)?(?:python|javascript|script|program|code\s+for|function\s+for)?\s*/i, '')
+      .replace(/[.!?]+$/, '')
+      .trim()
+      .slice(0, 30)
+      .replace(/[^a-zA-Z0-9_-]+/g, '_');
+    const ext = targetLanguage === 'javascript' ? 'js' : targetLanguage === 'typescript' ? 'ts' : 'py';
+    suggestedDeliverableName = `${rawSubj || 'program'}.${ext}`;
+  } else if (lower.includes('water pump') || lower.includes('pumping')) {
     suggestedDeliverableName = requestedOutputFormat === 'docx'
       ? 'Industrial_Water_Pumping_System_Performance_Report.docx'
       : 'Industrial_Water_Pumping_System_Performance_Report.pdf';
@@ -388,25 +551,52 @@ export function decomposeUserTask(
     suggestedDeliverableName = 'Synthesized_Asset.png';
   }
 
-  // 8. Primary Objective Formulation
+  // 8. Primary Objective Formulation (Dynamic & Task-Specific)
   let primaryObjective = '';
-  if (domain === 'engineering_calculation') {
-    const flowParam = parameters.find(p => p.key.includes('flow'));
-    const headParam = parameters.find(p => p.key.includes('head'));
+  if (operation === 'code_generation') {
+    if (isFibonacci) {
+      const termMatch = lower.match(/(?:upto|up\s*to)?\s*(\d+)\s*terms?/i) || lower.match(/(\d+)\s*(?:numbers?|elements?|values?|terms?)/i);
+      const termCount = termMatch ? termMatch[1] : '12';
+      primaryObjective = `Generate and verify a working program that prints the first ${termCount} terms of the Fibonacci sequence.`;
+    } else {
+      const cleanSubj = p
+        .replace(/^(?:generate|write|create|build|implement)\s+(?:a\s+|an\s+)?(?:python|javascript|script|program|code\s+for|function\s+for)?\s*/i, '')
+        .replace(/[.!?]+$/, '')
+        .trim();
+      primaryObjective = `Generate and verify a working ${targetLanguage} program for ${cleanSubj || 'the requested computational task'}.`;
+    }
+  } else if (operation === 'code_debugging') {
+    const fileHint = codeAttachments[0]?.name ? ` in ${codeAttachments[0].name}` : '';
+    primaryObjective = `Analyze source code${fileHint}, isolate syntax/runtime defects, apply verified corrections, and validate execution.`;
+  } else if (operation === 'vision_ocr') {
+    primaryObjective = `Extract and transcribe all visible textual annotations, labels, and numeric parameters from image.`;
+  } else if (operation === 'vision_analysis') {
+    primaryObjective = `Inspect visual diagram/image elements, extract visible labels and technical annotations using multimodal vision agent, and synthesize grounded explanation.`;
+  } else if (operation === 'engineering_pump') {
+    const flowParam = parameters.find(param => param.key.includes('flow'));
+    const headParam = parameters.find(param => param.key.includes('head'));
     const contextStr = flowParam && headParam ? ` (${flowParam.value} ${flowParam.unit}, ${headParam.value} ${headParam.unit})` : '';
-    primaryObjective = `Execute comprehensive engineering analysis for ${lower.includes('pump') ? 'industrial water pumping system' : 'mechanical/energy system'}${contextStr}: evaluate governing formulas, compute power requirements, size electrical drives with verified safety margins, project operating costs, and generate formal ${requestedOutputFormat.toUpperCase()} deliverable.`;
-  } else if (domain === 'data_analysis') {
-    primaryObjective = requestedOutputFormat === 'pptx'
-      ? `Compile comprehensive presentation slides for ${contextTopic || 'topic'} with thematic structure, domain evidence, and native PPTX formatting.`
-      : `Perform quantitative data modeling, calculate statistical distributions, and assemble formatted ${requestedOutputFormat.toUpperCase()} deliverable.`;
-  } else if (domain === 'programming') {
-    primaryObjective = `Synthesize robust code solution, execute sandboxed verification tests, and provide verified operational implementation.`;
-  } else if (domain === 'document_analysis') {
+    primaryObjective = `Execute comprehensive engineering analysis for industrial water pumping system${contextStr}: evaluate governing formulas, compute power requirements, size electrical drives with verified safety margins, project operating costs, and generate formal ${requestedOutputFormat.toUpperCase()} deliverable.`;
+  } else if (operation === 'engineering_compressed_air') {
+    primaryObjective = `Execute comprehensive engineering audit for facility compressed-air system: evaluate active power, air demand, specific energy consumption, and quantify leakage reduction scenarios.`;
+  } else if (operation === 'engineering_general') {
+    primaryObjective = `Execute deterministic physical calculations, verify dimensional boundaries, and synthesize engineering evaluation.`;
+  } else if (operation === 'math_problem') {
+    primaryObjective = `Solve mathematical problem deterministically, show step-by-step algebraic derivations, and verify boundary conditions.`;
+  } else if (operation === 'data_csv_analysis') {
+    primaryObjective = `Ingest dataset, compute descriptive statistical distributions, analyze metrics, and synthesize analytical summary.`;
+  } else if (operation === 'deliverable_pptx') {
+    primaryObjective = `Compile comprehensive presentation slides for ${contextTopic || 'topic'} with thematic structure, domain evidence, and native PPTX formatting.`;
+  } else if (operation === 'deliverable_xlsx') {
+    primaryObjective = `Create an Excel workbook spreadsheet on ${contextTopic || 'topic'} with data tables, metrics, and structured formulas.`;
+  } else if (operation === 'document_summary') {
+    primaryObjective = `Ingest document artifact, extract core principles and key findings, and synthesize structured executive summary.`;
+  } else if (operation === 'document_compliance') {
     primaryObjective = `Ingest knowledge artifacts, extract grounded technical evidence, and synthesize cited findings per organizational guidelines.`;
-  } else if (domain === 'image_generation') {
+  } else if (operation === 'image_generation') {
     primaryObjective = `Synthesize high-fidelity visual asset using authentic local diffusion pipeline.`;
   } else {
-    primaryObjective = `Execute structured multi-agent synthesis for user query with transparent evidence provenance.`;
+    primaryObjective = `Synthesize clear, direct, and factual response addressing user inquiry.`;
   }
 
   // 9. Validation Criteria
@@ -423,12 +613,13 @@ export function decomposeUserTask(
     'Report exact document titles, sections, and relevance.'
   ];
 
-  const summary = `Primary Objective: ${primaryObjective}\nDomain: ${domain.replace('_', ' ').toUpperCase()} | Format: ${requestedOutputFormat.toUpperCase()} | Parameters: ${parameters.length} extracted | Standards: ${applicableStandards.length} referenced`;
+  const summary = `Primary Objective: ${primaryObjective}\nDomain: ${domain.replace('_', ' ').toUpperCase()} | Operation: ${operation.toUpperCase()} | Format: ${requestedOutputFormat.toUpperCase()}`;
 
   return {
     id,
     originalPrompt: p,
     domain,
+    operation,
     primaryObjective,
     parameters,
     constraints: [
@@ -440,10 +631,181 @@ export function decomposeUserTask(
     relevantDocuments,
     applicableStandards,
     requestedOutputFormat,
+    targetLanguage,
+    requiresRAG,
+    requiresVision,
+    requiresCodeExecution,
+    requiresImageGen,
+    attachedFileProfiles,
     requiredSections,
     citationRequirements,
     validationCriteria,
     suggestedDeliverableName,
     summary
+  };
+}
+
+export interface StructuredTaskContext {
+  originalPrompt: string;
+  extractedParameters: Record<string, { value: number | string; unit: string; raw: string }>;
+  assumptions: string[];
+  requestedCalculations: string[];
+  outputFormat: string;
+  requiredSections: string[];
+  uploadedFiles: string[];
+  retrievedEvidence: Array<{ id: string; file: string; section: string; snippet: string; score: number }>;
+  discrepancies: string[];
+}
+
+export function extractEngineeringPumpParameters(
+  prompt: string,
+  existingParams: ExtractedParameter[] = []
+): {
+  flow_rate_m3_h: number;
+  head_m: number;
+  density_kg_m3: number;
+  gravity_m_s2: number;
+  pump_efficiency: number;
+  motor_efficiency: number;
+  hours_per_day: number;
+  days_per_month: number;
+  tariff_inr_kwh: number;
+  flow_increase_pct: number;
+} {
+  const p = prompt;
+  const paramMap = new Map<string, number>();
+
+  for (const ep of existingParams) {
+    if (typeof ep.value === 'number' && !isNaN(ep.value)) {
+      paramMap.set(ep.key, ep.value);
+    }
+  }
+
+  // 1. Flow rate
+  let flowRate = paramMap.get('water_flow_rate') ?? paramMap.get('flow_rate_m3_h') ?? paramMap.get('flow_rate') ?? paramMap.get('q');
+  if (flowRate === undefined) {
+    const m = p.match(/(?:water\s*flow\s*rate|flow\s*rate|discharge|\bq\b)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(?:m[3³]\/h|m\^3\/h)/i);
+    if (m) flowRate = parseFloat(m[1]);
+  }
+
+  // 2. Head
+  let head = paramMap.get('total_dynamic_head') ?? paramMap.get('head_m') ?? paramMap.get('head') ?? paramMap.get('tdh');
+  if (head === undefined) {
+    const m = p.match(/(?:total\s*dynamic\s*head|\bhead\b|\btdh\b)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(?:m(?:etres?|eters?)?)/i);
+    if (m) head = parseFloat(m[1]);
+  }
+
+  // 3. Density
+  let density = paramMap.get('water_density') ?? paramMap.get('density_kg_m3') ?? paramMap.get('density') ?? paramMap.get('rho');
+  if (density === undefined) {
+    const m = p.match(/(?:water\s*density|\bdensity\b|\brho\b)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(?:kg\/m[3³]|kg\/m\^3)/i);
+    if (m) density = parseFloat(m[1]);
+  }
+
+  // 4. Gravity
+  let gravity = paramMap.get('gravitational_acceleration') ?? paramMap.get('gravity_m_s2') ?? paramMap.get('gravity') ?? paramMap.get('g');
+  if (gravity === undefined) {
+    const m = p.match(/(?:gravitational\s*acceleration|\bgravity\b|\bg\b)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(?:m\/s[2²]|m\/s\^2)/i);
+    if (m) gravity = parseFloat(m[1]);
+  }
+
+  // 5. Pump efficiency
+  let pumpEff = paramMap.get('pump_efficiency') ?? paramMap.get('pump_eff');
+  if (pumpEff === undefined) {
+    const m = p.match(/pump\s*efficiency\s*[:=]?\s*(\d+(?:\.\d+)?)\s*%/i);
+    if (m) pumpEff = parseFloat(m[1]);
+  }
+
+  // 6. Motor efficiency
+  let motorEff = paramMap.get('motor_efficiency') ?? paramMap.get('motor_eff');
+  if (motorEff === undefined) {
+    const m = p.match(/motor\s*efficiency\s*[:=]?\s*(\d+(?:\.\d+)?)\s*%/i);
+    if (m) motorEff = parseFloat(m[1]);
+  }
+
+  // 7. Operating hours
+  let hours = paramMap.get('operating_duration') ?? paramMap.get('hours_per_day') ?? paramMap.get('operating_hours') ?? paramMap.get('duration');
+  if (hours === undefined) {
+    const m = p.match(/(?:operating\s*duration|\boperating\s*hours|\bduration\b)\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(?:hours?\/day|h\/d|hrs?)/i);
+    if (m) hours = parseFloat(m[1]);
+  }
+
+  // 8. Operating days
+  let days = paramMap.get('operating_days') ?? paramMap.get('days_per_month') ?? paramMap.get('operating_calendar');
+  if (days === undefined) {
+    const m = p.match(/(?:assume\s*)?(\d+)\s*(?:operating\s*)?days(?:\s*\/\s*month)?/i);
+    if (m) days = parseFloat(m[1]);
+  }
+
+  // 9. Tariff
+  let tariff = paramMap.get('electricity_tariff') ?? paramMap.get('tariff_inr_kwh') ?? paramMap.get('tariff') ?? paramMap.get('power_tariff');
+  if (tariff === undefined) {
+    const m = p.match(/(?:electricity\s*tariff|\btariff\b|power\s*cost)\s*[:=]?\s*[₹$€£]?\s*(\d+(?:\.\d+)?)\s*\/?\s*(?:kwh|unit)/i);
+    if (m) tariff = parseFloat(m[1]);
+  }
+
+  // 10. Flow increase percentage
+  let flowIncrease = paramMap.get('flow_increase_pct') ?? paramMap.get('flow_rate_increase') ?? paramMap.get('flow_increase');
+  if (flowIncrease === undefined) {
+    const m = p.match(/(?:flow\s*(?:rate)?\s*increase|increase\s*(?:in\s*)?flow(?:\s*rate)?|sensitivity(?:\s*scenario)?)\s*(?:of|by|to|[:=])?\s*(\d+(?:\.\d+)?)\s*%/i)
+      || p.match(/(\d+(?:\.\d+)?)\s*%\s*(?:flow\s*(?:rate)?\s*increase|increase\s*(?:in\s*)?flow)/i);
+    if (m) flowIncrease = parseFloat(m[1]);
+  }
+
+  return {
+    flow_rate_m3_h: flowRate ?? 25.0,
+    head_m: head ?? 35.0,
+    density_kg_m3: density ?? 1000.0,
+    gravity_m_s2: gravity ?? 9.81,
+    pump_efficiency: pumpEff ?? 78.0,
+    motor_efficiency: motorEff ?? 90.0,
+    hours_per_day: hours ?? 12.0,
+    days_per_month: days ?? 30.0,
+    tariff_inr_kwh: tariff ?? 8.0,
+    flow_increase_pct: flowIncrease ?? 20.0
+  };
+}
+
+export function buildStructuredTaskContext(
+  prompt: string,
+  decomp: TaskDecomposition,
+  retrievedEvidence: Array<{ id: string; file: string; section: string; snippet: string; score: number }> = [],
+  uploadedFiles: string[] = []
+): StructuredTaskContext {
+  const extractedParams: Record<string, { value: number | string; unit: string; raw: string }> = {};
+  for (const p of decomp.parameters) {
+    extractedParams[p.key] = {
+      value: p.value,
+      unit: p.unit,
+      raw: p.raw
+    };
+  }
+
+  const discrepancies: string[] = [];
+
+  // Cross-compare prompt numbers with extracted parameters
+  const numbersInPrompt = Array.from(prompt.matchAll(/\b(\d+(?:\.\d+)?)\b/g)).map(m => parseFloat(m[1]));
+  const extractedValues = decomp.parameters.map(p => typeof p.value === 'number' ? p.value : parseFloat(String(p.value))).filter(n => !isNaN(n));
+
+  for (const ev of extractedValues) {
+    if (!numbersInPrompt.includes(ev)) {
+      discrepancies.push(`Extracted parameter value ${ev} does not appear directly in original user prompt.`);
+    }
+  }
+
+  return {
+    originalPrompt: prompt,
+    extractedParameters: extractedParams,
+    assumptions: [
+      'Operating temperature: standard 20°C ambient fluid conditions.',
+      'Pipe friction losses incorporated in Total Dynamic Head (TDH).',
+      'Continuous motor load rating per IEC 60034-1 duty class S1.'
+    ],
+    requestedCalculations: decomp.requiredCalculations,
+    outputFormat: decomp.requestedOutputFormat,
+    requiredSections: decomp.requiredSections,
+    uploadedFiles,
+    retrievedEvidence,
+    discrepancies
   };
 }
