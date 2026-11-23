@@ -67,21 +67,36 @@ def run_diffusion(
         except Exception:
             pass
 
-        model_id = "segmind/tiny-sd"
+        # Prefer stabilityai/sd-turbo if downloaded in local HuggingFace cache
+        turbo_cache = os.path.expanduser("~/.cache/huggingface/hub/models--stabilityai--sd-turbo")
+        if os.path.exists(turbo_cache):
+            from diffusers import AutoPipelineForText2Image
+            model_id = "stabilityai/sd-turbo"
+            pipe = AutoPipelineForText2Image.from_pretrained(
+                model_id,
+                torch_dtype=torch.float32,
+                safety_checker=None,
+                requires_safety_checker=False
+            )
+            actual_steps = min(steps, 2)
+            actual_guidance = 0.0
+            actual_negative = None
+        else:
+            model_id = "segmind/tiny-sd"
+            pipe = StableDiffusionPipeline.from_pretrained(
+                model_id,
+                torch_dtype=torch.float32,
+                safety_checker=None,
+                requires_safety_checker=False
+            )
+            pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+                pipe.scheduler.config,
+                use_karras_sigmas=True
+            )
+            actual_steps = steps
+            actual_guidance = guidance_scale
+            actual_negative = negative_prompt
 
-        # Load pipeline from cached local weights
-        pipe = StableDiffusionPipeline.from_pretrained(
-            model_id,
-            torch_dtype=torch.float32,
-            safety_checker=None,
-            requires_safety_checker=False
-        )
-
-        # Fast DPM-Solver++ scheduler with Karras noise schedule for clean convergence in 12-14 steps
-        pipe.scheduler = DPMSolverMultistepScheduler.from_config(
-            pipe.scheduler.config,
-            use_karras_sigmas=True
-        )
         try:
             pipe.set_progress_bar_config(disable=True)
         except Exception:
@@ -94,15 +109,18 @@ def run_diffusion(
 
         final_prompt = enhance_prompt(prompt)
 
-        # Generate image with negative prompt conditioning
-        result = pipe(
-            prompt=final_prompt,
-            negative_prompt=negative_prompt,
-            num_inference_steps=steps,
-            guidance_scale=guidance_scale,
-            width=width,
-            height=height
-        )
+        # Generate image
+        gen_kwargs = {
+            "prompt": final_prompt,
+            "num_inference_steps": actual_steps,
+            "guidance_scale": actual_guidance,
+            "width": width,
+            "height": height
+        }
+        if actual_negative:
+            gen_kwargs["negative_prompt"] = actual_negative
+
+        result = pipe(**gen_kwargs)
 
         image = result.images[0]
 

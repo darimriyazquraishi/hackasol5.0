@@ -1630,7 +1630,8 @@ export async function executeImageGeneration(
     }
     if (diffResult.success && fs.existsSync(filePath)) {
       pngBuffer = fs.readFileSync(filePath);
-      engineUsed = `segmind/tiny-sd (${diffResult.steps || 12} steps, DPM-Solver++ Karras with Negative Prompting)`;
+      const usedModel = diffResult.model || 'stabilityai/sd-turbo';
+      engineUsed = `${usedModel} (${diffResult.steps || 1} steps, Adversarial Diffusion Distillation)`;
     } else {
       throw new Error(`Diffusion engine failed: ${diffResult.error || 'Failed to generate diffusion tensor'}`);
     }
