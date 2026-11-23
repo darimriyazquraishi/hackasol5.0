@@ -91,16 +91,25 @@ export function runDiffusionEngine(prompt: string, outputPath: string, steps: nu
       '--output', outputPath,
       '--steps', steps.toString(),
       '--guidance', '7.5'
-    ], { encoding: 'utf-8', timeout: 120000 });
+    ], { encoding: 'utf-8', timeout: 240000 });
 
-    if (res.status === 0 && res.stdout) {
+    if (res.stdout) {
       const lines = res.stdout.trim().split('\n');
-      const lastLine = lines[lines.length - 1];
-      const parsed = JSON.parse(lastLine);
-      return parsed;
-    } else {
-      return { success: false, error: res.stderr || res.stdout || `Exit status ${res.status}` };
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i].trim();
+        if (line.startsWith('{') && line.endsWith('}')) {
+          try {
+            const parsed = JSON.parse(line);
+            if (typeof parsed.success === 'boolean') {
+              return parsed;
+            }
+          } catch {
+            // continue searching
+          }
+        }
+      }
     }
+    return { success: false, error: res.stderr || res.stdout || `Exit status ${res.status}` };
   } catch (err: any) {
     return { success: false, error: err.message };
   }
@@ -1614,19 +1623,19 @@ export async function executeImageGeneration(
 
   // 1. For subjects without a specialized artisanal vector scene, execute local diffusion (segmind/tiny-sd)
   if (!isArtisanal) {
-    try {
-      const diffResult = runDiffusionEngine(intent.prompt || subject, filePath, 12);
-      if (diffResult.success && fs.existsSync(filePath)) {
-        pngBuffer = fs.readFileSync(filePath);
-        engineUsed = `segmind/tiny-sd (${diffResult.steps || 12} steps, DPM-Solver++ with Negative Prompting)`;
-      }
-    } catch {
-      pngBuffer = null;
+    let diffResult = runDiffusionEngine(intent.prompt || subject, filePath, 12);
+    if (!diffResult.success && !fs.existsSync(filePath)) {
+      // Retry once with 10 steps if first run encountered transient pressure
+      diffResult = runDiffusionEngine(intent.prompt || subject, filePath, 10);
     }
-  }
-
-  // 2. High-Performance Local Vector Synthesis fallback / benchmark scenes
-  if (!pngBuffer) {
+    if (diffResult.success && fs.existsSync(filePath)) {
+      pngBuffer = fs.readFileSync(filePath);
+      engineUsed = `segmind/tiny-sd (${diffResult.steps || 12} steps, DPM-Solver++ Karras with Negative Prompting)`;
+    } else {
+      throw new Error(`Diffusion engine failed: ${diffResult.error || 'Failed to generate diffusion tensor'}`);
+    }
+  } else {
+    // 2. High-Performance Local Vector Synthesis for benchmark scenes
     const innerSvg = getArtisanalScene(subject, intent.prompt || subject);
     const finalSvg = `<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
       ${innerSvg}
@@ -1642,7 +1651,7 @@ export async function executeImageGeneration(
     const pngData = resvg.render();
     pngBuffer = pngData.asPng();
     fs.writeFileSync(filePath, pngBuffer);
-    engineUsed = isArtisanal ? 'Artisanal Vector Synthesis' : 'Dynamic Scene Synthesizer';
+    engineUsed = 'Artisanal Vector Synthesis';
   }
 
   // 3. Strict Decoder Verification

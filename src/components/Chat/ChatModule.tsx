@@ -26,7 +26,8 @@ import {
   Plus,
   Trash2,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  BookOpen
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { APP_CONFIG } from '../../config';
@@ -737,6 +738,66 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                         </p>
                       )}
                     </div>
+
+                    {/* Knowledge Base Matches (Pre-Approval RAG Grounding) */}
+                    {msg.lumiWorkplan.knowledgeMatches && msg.lumiWorkplan.knowledgeMatches.length > 0 ? (
+                      <div className="space-y-2 p-3 rounded-lg bg-[#0e1726] border border-[#1e293b]">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-1.5 text-xs font-semibold text-sky-400 uppercase tracking-wider font-mono">
+                            <BookOpen className="w-3.5 h-3.5" />
+                            <span>Knowledge Base Matches (Retrieved Policy)</span>
+                          </div>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800">
+                            Pre-Approval RAG Grounded
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {msg.lumiWorkplan.knowledgeMatches.map((km, kIdx) => (
+                            <div key={kIdx} className="p-2.5 rounded bg-[#0a0f14] border border-[#1e293b] text-xs space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold text-slate-200">{km.docName}</span>
+                                <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800">
+                                  Score: {(km.relevanceScore * 100).toFixed(0)}% ({km.relevanceLevel})
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-400">
+                                <span className="text-slate-500 font-mono">Sections: </span>{km.sections}
+                                {km.versionDate && <span className="ml-2 text-slate-500 font-mono">• {km.versionDate}</span>}
+                              </div>
+                              <div className="text-[11px] text-emerald-400 font-mono flex items-center space-x-1">
+                                <span>✓</span>
+                                <span>{km.status}</span>
+                              </div>
+                              {km.keyRequirements && km.keyRequirements.length > 0 && (
+                                <div className="mt-1 pt-1 border-t border-slate-800/60 flex flex-wrap gap-1">
+                                  {km.keyRequirements.map((req, rIdx) => (
+                                    <span key={rIdx} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800/80 text-slate-300">
+                                      • {req}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        {msg.lumiWorkplan.knowledgeContext?.conflictDetected && (
+                          <div className="p-2 rounded bg-amber-950/40 border border-amber-800/50 text-[11px] text-amber-300 flex items-start space-x-1.5">
+                            <span className="font-bold">⚠️</span>
+                            <span>{msg.lumiWorkplan.knowledgeContext.conflictDetails}</span>
+                          </div>
+                        )}
+                      </div>
+                    ) : msg.lumiWorkplan.policyNotice ? (
+                      <div className="p-2.5 rounded bg-amber-950/20 border border-amber-800/40 text-xs text-amber-300 space-y-1">
+                        <div className="font-semibold font-mono flex items-center space-x-1">
+                          <span>ℹ️</span>
+                          <span>Internal Policy Notice</span>
+                        </div>
+                        <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                          {msg.lumiWorkplan.policyNotice}
+                        </p>
+                      </div>
+                    ) : null}
 
                     {/* Execution Sequence */}
                     <div className="space-y-2">

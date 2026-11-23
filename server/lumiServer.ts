@@ -25,6 +25,7 @@ import {
   buildStructuredTaskContext
 } from './taskDecomposer';
 import { generateDynamicWorkplan } from './workplanEngine';
+import { retrieveTaskContext, enrichWorkplan } from './contextRagEngine';
 import {
   listUserProjects,
   createUserProject,
@@ -674,7 +675,17 @@ export async function generateLumiWorkplan(
   }
   const decomp = decomposeUserTask(prompt, attachments, history);
   const audit = await auditLocalRuntime();
-  return generateDynamicWorkplan(decomp, audit.installedModels);
+  const rawWorkplan = generateDynamicWorkplan(decomp, audit.installedModels);
+  
+  // NEW STAGE: Knowledge Base Retrieval & Relevance Scoring/Filtering
+  // Runs before user approval so the user sees matching company guidelines in the workplan card
+  try {
+    const context = await retrieveTaskContext(prompt, decomp);
+    return enrichWorkplan(rawWorkplan, context, decomp);
+  } catch (ragErr) {
+    console.warn('[ContextRAG] Pre-approval retrieval warning:', ragErr);
+    return rawWorkplan;
+  }
 }
 
 /**
@@ -1186,8 +1197,13 @@ Instructions:
               const imgArtifact = agentOutputs['image_generation'];
               synthPrompt = `You are LUMI. The image generation agent has successfully generated the requested image of ${imgArtifact.subject}.
 Provide a concise, positive statement presenting the generated image. Do not mention missing evidence or apologize.`;
+            } else if (workplan.decomposition?.operation === 'image_generation' || step.name.toLowerCase().includes('visual') || step.name.toLowerCase().includes('prompt optimization')) {
+              synthPrompt = `You are LUMI's visual creative art director. Formulate a vivid, concise visual concept description for generating an image of "${effectivePrompt}".
+Describe the subject, artistic style, lighting, and composition in 2-3 engaging sentences. Do NOT apologize and do NOT say you cannot generate an image or need evidence.`;
             } else {
-              synthPrompt = `Synthesize findings to answer the user query directly and concisely:\n\nUser Query: ${effectivePrompt}\n\nRetrieved Evidence: ${JSON.stringify(agentOutputs)}`;
+              const ragContext = workplan.knowledgeContext?.sanitizedContextText || '';
+              const refSection = ragContext ? `\n\nRetrieved Organizational Reference Documents:\n${ragContext}\n\nStrict Grounding Rule: Ground your answer in the verified organizational reference documents above. Cite document guidelines and sections explicitly.` : '';
+              synthPrompt = `Synthesize findings to answer the user query directly and concisely:\n\nUser Query: ${effectivePrompt}\n\nRetrieved Evidence: ${JSON.stringify(agentOutputs)}${refSection}`;
             }
 
             const response = await callOllamaGenerate(
@@ -1230,11 +1246,12 @@ Provide a concise, positive statement presenting the generated image. Do not men
   if (agentOutputs['image_generation']) {
     const imgArt = agentOutputs['image_generation'];
     const imgMarkdown = `\n\n![${imgArt.subject}](${imgArt.imageUrl})\n\n`;
-    if (agentOutputs['reasoning_synthesis']) {
-      compiledText = cleanDirectAnswer(agentOutputs['reasoning_synthesis']) + imgMarkdown;
-    } else {
-      compiledText = `I have generated an authentic image of **${imgArt.subject}** (${imgArt.width}×${imgArt.height}, ${imgArt.sizeKb}).` + imgMarkdown;
+    let reasoningText = agentOutputs['reasoning_synthesis'] ? cleanDirectAnswer(agentOutputs['reasoning_synthesis']) : '';
+    // Strip any false apologies or missing evidence claims
+    if (!reasoningText || /apologize|unable to provide|without any specific evidence|missing evidence|cannot provide/i.test(reasoningText)) {
+      reasoningText = `I have generated an authentic high-resolution image of **${imgArt.subject}** (${imgArt.width}×${imgArt.height}, ${imgArt.sizeKb}):`;
     }
+    compiledText = `${reasoningText}\n\n${imgMarkdown}`;
   } else if (agentOutputs['math_code'] && agentOutputs['math_code'].code && (!agentOutputs['reasoning_synthesis'] || workplan.decomposition?.domain === 'programming')) {
     const m = agentOutputs['math_code'];
     const lang = m.language || 'python';
@@ -1313,7 +1330,7 @@ Provide a concise, positive statement presenting the generated image. Do not men
         effectivePrompt,
         callOllamaGenerate,
         targetModel,
-        undefined,
+        workplan.knowledgeContext?.sanitizedContextText,
         undefined,
         {
           compiledText,

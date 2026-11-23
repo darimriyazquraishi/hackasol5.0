@@ -262,6 +262,29 @@ export interface LumiWorkflowStep {
   error?: string;
 }
 
+export interface KnowledgeMatchItem {
+  docId: string;
+  docName: string;
+  sections: string;
+  relevanceScore: number;
+  relevanceLevel: 'high' | 'moderate' | 'low';
+  status: string;
+  rationale: string;
+  versionDate?: string;
+  keyRequirements?: string[];
+}
+
+export interface KnowledgeContextPackage {
+  hasMatches: boolean;
+  matches: KnowledgeMatchItem[];
+  sanitizedContextText: string;
+  conflictDetected: boolean;
+  conflictDetails?: string;
+  derivedQueries: string[];
+  primarySource?: string;
+  guidelineRules: string[];
+}
+
 export interface LumiWorkplan {
   id: string;
   taskInterpretation: string;
@@ -274,6 +297,10 @@ export interface LumiWorkplan {
   expectedDeliverables: string[];
   status: 'pending_approval' | 'approved' | 'in_progress' | 'completed' | 'cancelled';
   createdAt: string;
+  knowledgeMatches?: KnowledgeMatchItem[];
+  knowledgeContext?: KnowledgeContextPackage;
+  policyFound?: boolean;
+  policyNotice?: string;
 }
 
 export interface ValidationResult {

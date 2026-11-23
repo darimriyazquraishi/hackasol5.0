@@ -17,24 +17,33 @@ os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 DEFAULT_NEGATIVE_PROMPT = (
     "deformed, distorted, disfigured, bad anatomy, bad proportions, unnatural body, "
-    "weird limbs, mannequin, cutout, blurry, grainy, low resolution, multiple figures, "
-    "mutated hands, poorly drawn face, worst quality, extra limbs, ugly"
+    "weird limbs, elongated neck, malformed limbs, missing limbs, extra limbs, "
+    "mannequin, blurry, grainy, low resolution, poorly drawn face, ugly, cartoon, doll"
 )
 
 def enhance_prompt(prompt: str) -> str:
     p = prompt.strip()
-    lower = p.toLowerCase() if hasattr(p, 'toLowerCase') else p.lower()
+    lower = p.lower()
     # Strip conversational prefixes if present
-    for prefix in ['generate an image of ', 'generate a picture of ', 'create an image of ', 'draw a picture of ', 'draw an image of ', 'image of ']:
+    for prefix in [
+        'generate an image of ', 'generate a picture of ', 'create an image of ',
+        'draw a picture of ', 'draw an image of ', 'image of ', 'picture of '
+    ]:
         if lower.startswith(prefix):
             p = p[len(prefix):].strip()
+            lower = p.lower()
             break
             
     # If prompt already contains quality modifiers, keep intact
     if any(q in lower for q in ['photorealistic', '8k', 'cinematic', 'hyperrealistic', 'dslr', 'masterpiece']):
         return p
+
+    # Handle person/character subjects with balanced portrait/fashion framing (staying safely under 77 CLIP tokens)
+    is_person = any(w in lower for w in ['woman', 'girl', 'lady', 'man', 'person', 'boy', 'female', 'male', 'model'])
+    if is_person:
+        return f"professional portrait photograph of {p}, natural pose, detailed face, symmetrical eyes, soft studio lighting, photorealistic, 8k"
         
-    return f"high quality professional photograph of {p}, sharp focus, detailed features, expressive eyes, realistic textures, cinematic lighting, 8k uhd, photorealistic"
+    return f"professional photograph of {p}, sharp focus, detailed features, realistic textures, cinematic lighting, 8k"
 
 def run_diffusion(
     prompt: str,
@@ -68,8 +77,15 @@ def run_diffusion(
             requires_safety_checker=False
         )
 
-        # Fast DPM-Solver++ scheduler for clean convergence in 10-14 steps
-        pipe.scheduler = DPMSolverMultistepScheduler.from_config(pipe.scheduler.config)
+        # Fast DPM-Solver++ scheduler with Karras noise schedule for clean convergence in 12-14 steps
+        pipe.scheduler = DPMSolverMultistepScheduler.from_config(
+            pipe.scheduler.config,
+            use_karras_sigmas=True
+        )
+        try:
+            pipe.set_progress_bar_config(disable=True)
+        except Exception:
+            pass
 
         # Ensure output directory exists
         out_dir = os.path.dirname(os.path.abspath(output_path))
