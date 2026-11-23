@@ -1175,6 +1175,10 @@ Instructions:
 4. Distinguish clearly between visible facts directly confirmed from the image versus inferred interpretations.
 5. Highlight key engineering observations or concerns.
 6. Note any uncertain or unreadable regions if applicable.`;
+            } else if (agentOutputs['image_generation']) {
+              const imgArtifact = agentOutputs['image_generation'];
+              synthPrompt = `You are LUMI. The image generation agent has successfully generated the requested image of ${imgArtifact.subject}.
+Provide a concise, positive statement presenting the generated image. Do not mention missing evidence or apologize.`;
             } else {
               synthPrompt = `Synthesize findings to answer the user query directly and concisely:\n\nUser Query: ${effectivePrompt}\n\nRetrieved Evidence: ${JSON.stringify(agentOutputs)}`;
             }
@@ -1241,6 +1245,9 @@ Instructions:
       `- **Execution Duration:** \`${m.execRes?.durationMs ?? 0} ms\`\n` +
       (isFib ? `- **Sequence Verification:** Verified 12 terms (\`0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89\`)\n` : '') +
       `- **Output Verification:** Confirmed mathematically and functionally verified.`;
+  } else if (agentOutputs['image_generation']) {
+    const img = agentOutputs['image_generation'];
+    compiledText = `I have generated an image of **${img.subject}** (${img.width}×${img.height}, ${img.sizeKb}).\n\n![${img.subject}](${img.imageUrl})\n\n- **Verification Status:** ${img.verified ? '✅ Verified by Moondream' : '⚠️ Visual Flagged'}\n- **Vision Analysis:** "${img.visionDescription || ''}"`;
   } else if (agentOutputs['reasoning_synthesis']) {
     compiledText = cleanDirectAnswer(agentOutputs['reasoning_synthesis']);
   } else {
