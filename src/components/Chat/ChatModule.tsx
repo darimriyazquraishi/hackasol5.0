@@ -32,6 +32,7 @@ import {
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { APP_CONFIG } from '../../config';
 import { MarkdownContent } from './MarkdownContent';
+import { SendButton, LumiButton } from '../Common/Button';
 import {
   ChatMessage,
   ChatAttachment,
@@ -553,36 +554,18 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
 
           {/* Initial Welcome Hero when conversation has zero messages */}
           {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center pt-8 pb-12 select-none text-center">
+            <div className="flex flex-col items-center justify-center pt-10 pb-12 select-none text-center">
               <img
                 src="/lumi-logo.jpg"
                 alt="LUMI"
-                className="h-44 sm:h-52 w-auto object-contain pointer-events-none select-none transition-transform"
+                className="h-32 sm:h-36 w-32 sm:w-36 object-contain pointer-events-none select-none transition-transform mb-3"
               />
-              <h2 className="mt-4 text-2xl font-display font-normal tracking-widest text-[#F5F4F1] uppercase">
+              <h2 className="text-2xl font-display font-normal tracking-widest text-[#F5F4F1] uppercase">
                 L U M I
               </h2>
-              <p className="mt-1 text-xs text-[#9C9C9C] max-w-md">
-                Local Unified Multimodal Intelligence Workbench. Every prompt is structured into a verified workplan prior to execution.
+              <p className="mt-1 text-xs text-[#9C9C9C] max-w-md leading-relaxed">
+                Local multimodal intelligence workbench. Plan, verify, and run engineering workflows on local models.
               </p>
-
-              {/* Quick Prompt Ideas */}
-              <div className="mt-6 flex flex-wrap justify-center gap-2 max-w-lg">
-                {[
-                  'Calculate compressed-air energy audit for 3x250kW compressors',
-                  'Audit local hardware specs and dedicated VRAM ceiling',
-                  'Generate presentation on refinery energy efficiency',
-                  'Create an authentic 1024x1024 image of a pizza'
-                ].map((hint, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSend(hint)}
-                    className="px-3 py-1.5 rounded-xl bg-[#141414] hover:bg-[#1c1c1c] border border-[#2a2a2a] text-[11px] text-[#D5D2CC] hover:text-[#F5F4F1] transition-colors font-sans"
-                  >
-                    {hint}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
 
@@ -700,21 +683,23 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
 
                         <div className="flex items-center space-x-1.5 shrink-0">
                           {['md', 'txt', 'csv', 'json', 'py', 'js', 'ts'].includes(gen.type.toLowerCase()) && (
-                            <button
+                            <LumiButton
+                              variant="secondary"
+                              size="xs"
+                              icon={<Code2 className="w-3 h-3 text-[#987654]" />}
                               onClick={() => handleOpenFileInIDE(gen)}
-                              className="px-2 py-1 rounded bg-[#191919] hover:bg-[#202020] border border-[#303030] text-[11px] font-mono text-[#D5D2CC] hover:text-[#F5F4F1] transition-colors flex items-center space-x-1"
                             >
-                              <Code2 className="w-3 h-3 text-[#987654]" />
-                              <span>Edit in IDE</span>
-                            </button>
+                              Edit in IDE
+                            </LumiButton>
                           )}
-                          <button
+                          <LumiButton
+                            variant="primary"
+                            size="xs"
+                            icon={<Download className="w-3 h-3" />}
                             onClick={() => handleDownloadGeneratedFile(gen)}
-                            className="px-2.5 py-1 rounded bg-[#987654] hover:bg-[#765B43] text-[11px] font-mono text-[#F5F4F1] transition-colors flex items-center space-x-1.5 font-medium shadow-sm cursor-pointer"
                           >
-                            <Download className="w-3 h-3" />
-                            <span>Download {gen.type.toUpperCase()}</span>
-                          </button>
+                            Download {gen.type.toUpperCase()}
+                          </LumiButton>
                         </div>
                       </div>
                     ))}
@@ -909,51 +894,56 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                       <div className="flex items-center space-x-2.5 pt-2 border-t border-[#222222]">
                         {editingPlanId === msg.lumiWorkplan.id ? (
                           <>
-                            <button
+                            <LumiButton
+                              variant="primary"
+                              size="sm"
+                              icon={<Save className="w-3.5 h-3.5" />}
                               onClick={() => handleSaveAndApproveEditedPlan(msg.lumiWorkplan!)}
                               disabled={isGenerating}
-                              className="px-4 py-2 rounded bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1] font-mono text-xs font-semibold flex items-center space-x-1.5 transition-colors"
                             >
-                              <Save className="w-3.5 h-3.5" />
-                              <span>Save & Approve</span>
-                            </button>
-                            <button
+                              Save & Execute
+                            </LumiButton>
+                            <LumiButton
+                              variant="secondary"
+                              size="sm"
                               onClick={() => setEditingPlanId(null)}
-                              className="px-3 py-2 rounded bg-[#191919] hover:bg-[#202020] text-[#9C9C9C] border border-[#303030] font-mono text-xs transition-colors"
                             >
-                              Cancel Edit
-                            </button>
+                              Cancel
+                            </LumiButton>
                           </>
                         ) : (
                           <>
-                            <button
+                            <LumiButton
+                              variant="primary"
+                              size="sm"
+                              icon={<Play className="w-3.5 h-3.5 fill-current" />}
                               onClick={() => handleApproveWorkplan(msg.lumiWorkplan!)}
                               disabled={isGenerating}
-                              className="px-4 py-2 rounded bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1] font-mono text-xs font-semibold flex items-center space-x-1.5 transition-colors"
                             >
-                              <Play className="w-3.5 h-3.5 fill-current" />
-                              <span>Approve Workplan</span>
-                            </button>
+                              Approve & Execute
+                            </LumiButton>
 
-                            <button
+                            <LumiButton
+                              variant="secondary"
+                              size="sm"
+                              icon={<Edit3 className="w-3.5 h-3.5" />}
                               onClick={() => {
                                 setEditingPlanId(msg.lumiWorkplan!.id);
                                 setEditedInterpretation(msg.lumiWorkplan!.decomposition?.primaryObjective || msg.lumiWorkplan!.taskInterpretation);
                                 setEditedDeliverables(msg.lumiWorkplan!.expectedDeliverables.join(', '));
                                 setEditedSteps(JSON.parse(JSON.stringify(msg.lumiWorkplan!.executionSequence)));
                               }}
-                              className="px-3 py-2 rounded bg-[#191919] hover:bg-[#202020] text-[#D5D2CC] border border-[#303030] font-mono text-xs flex items-center space-x-1 transition-colors"
                             >
-                              <Edit3 className="w-3.5 h-3.5" />
-                              <span>Edit Workplan</span>
-                            </button>
+                              Modify Steps
+                            </LumiButton>
 
-                            <button
+                            <LumiButton
+                              variant="danger"
+                              size="sm"
                               onClick={() => handleRejectWorkplan(msg.lumiWorkplan!.id)}
-                              className="px-3 py-2 rounded bg-[#191919] hover:bg-[#202020] text-[#9C9C9C] hover:text-red-400 border border-[#303030] font-mono text-xs transition-colors"
                             >
-                              Reject Workplan
-                            </button>
+                              Reject
+                            </LumiButton>
                           </>
                         )}
                       </div>
@@ -1119,45 +1109,30 @@ export const ChatModule: React.FC<ChatModuleProps> = () => {
                   handleSend();
                 }
               }}
-              placeholder="Ask Lumi anything..."
+              placeholder="Ask LUMI or enter an engineering prompt..."
               className="w-full bg-transparent border-none outline-none text-xs text-[#F5F4F1] placeholder-[#6e6e6e] resize-none font-sans leading-relaxed"
             />
 
             <div className="flex items-center justify-between pt-2 border-t border-[#222222] text-xs">
-              {/* Mandatory Always-Available Attachment Button (Part 7) */}
+              {/* Mandatory Always-Available Attachment Button */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 title="Attach Document, Image or Dataset"
-                className="p-1 hover:text-[#F5F4F1] hover:bg-[#202020] rounded text-[#9C9C9C] transition-colors flex items-center space-x-1 text-[11px] font-mono cursor-pointer"
+                className="px-2 py-1 hover:text-[#F5F4F1] hover:bg-[#202020] rounded-md text-[#9C9C9C] transition-all flex items-center space-x-1.5 text-xs font-sans cursor-pointer active:scale-95"
               >
-                <Paperclip className="w-3.5 h-3.5" />
-                <span>Attach Asset</span>
+                <Paperclip className="w-3.5 h-3.5 text-[#987654]" />
+                <span>Attach File</span>
               </button>
 
               <div className="flex items-center space-x-2">
-                {isGenerating ? (
-                  <button
-                    onClick={handleStopGeneration}
-                    className="px-2.5 py-1 rounded text-xs font-mono font-medium bg-red-950/80 hover:bg-red-900 text-red-200 border border-red-800 flex items-center space-x-1 transition-colors"
-                  >
-                    <Square className="w-3 h-3 fill-current" />
-                    <span>Stop</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleSend()}
-                    disabled={!inputVal.trim() && attachments.length === 0}
-                    className={`px-3 py-1 rounded-xl text-xs font-medium font-sans flex items-center space-x-1.5 transition-colors ${
-                      inputVal.trim() || attachments.length > 0
-                        ? 'bg-[#c4a47c] hover:bg-[#b89569] text-[#141414] cursor-pointer'
-                        : 'bg-[#222222] text-[#6e6e6e] cursor-not-allowed'
-                    }`}
-                  >
-                    <span>Send</span>
-                    <Send className="w-3 h-3 text-[#141414]" />
-                  </button>
-                )}
+                <SendButton
+                  onClick={() => handleSend()}
+                  disabled={!inputVal.trim() && attachments.length === 0}
+                  isGenerating={isGenerating}
+                  onStop={handleStopGeneration}
+                  size="md"
+                />
               </div>
             </div>
           </div>

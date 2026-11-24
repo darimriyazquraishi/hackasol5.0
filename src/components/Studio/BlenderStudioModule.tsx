@@ -38,6 +38,7 @@ import {
   BlenderTaskState,
   BlenderViewportMode
 } from '../../types/blender';
+import { LumiButton } from '../Common/Button';
 import {
   fetchBlenderStatus,
   fetchBlenderProjects,
@@ -917,26 +918,16 @@ export const BlenderStudioModule: React.FC = () => {
                   className="flex-1 bg-[#181818] border border-[#303030] rounded-lg px-3.5 py-2.5 text-xs text-[#F5F4F1] placeholder-[#666] focus:outline-none focus:border-[#987654]"
                 />
 
-                <button
+                <LumiButton
+                  variant="primary"
                   onClick={handleGenerate}
                   disabled={isGenerating || !prompt.trim()}
-                  className={`px-4 py-2.5 rounded-lg text-xs font-medium flex items-center space-x-2 transition-all shrink-0 ${isGenerating || !prompt.trim()
-                    ? 'bg-[#191919] text-[#666] cursor-not-allowed border border-[#282828]'
-                    : 'bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1] shadow-lg shadow-[#987654]/10 cursor-pointer'
-                    }`}
+                  loading={isGenerating}
+                  icon={!isGenerating ? <Play className="w-3.5 h-3.5" /> : undefined}
+                  className="px-4 py-2.5 rounded-lg text-xs shadow-md"
                 >
-                  {isGenerating ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Building in Blender...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-3.5 h-3.5" />
-                      <span>{isModification ? 'Update Scene' : 'Generate'}</span>
-                    </>
-                  )}
-                </button>
+                  {isGenerating ? 'Building in Blender...' : (isModification ? 'Update Scene' : 'Generate')}
+                </LumiButton>
               </div>
             </div>
           </footer>

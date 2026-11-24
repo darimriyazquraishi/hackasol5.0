@@ -17,7 +17,7 @@ export const TerminalView: React.FC = () => {
     {
       id: 'welcome-1',
       type: 'info',
-      text: 'Visual Studio Code Integrated Terminal Shell [Version 1.95.0]'
+      text: 'LUMI Integrated Developer Shell [Version 2.5.0]'
     },
     {
       id: 'welcome-2',
@@ -124,14 +124,14 @@ export const TerminalView: React.FC = () => {
   return (
     <div
       onClick={handleContainerClick}
-      className="flex-1 bg-[#181818] text-[#cccccc] font-mono text-[13px] p-3 overflow-y-auto cursor-text select-text h-full flex flex-col space-y-1"
+      className="flex-1 bg-[#080808] text-[#D5D2CC] font-mono text-[13px] p-3 overflow-y-auto cursor-text select-text h-full flex flex-col space-y-1"
     >
       {lines.map(line => {
-        let textColor = 'text-[#cccccc]';
-        if (line.type === 'input') textColor = 'text-[#ffffff] font-semibold';
-        if (line.type === 'error') textColor = 'text-[#f48771]';
-        if (line.type === 'info') textColor = 'text-[#75beff]';
-        if (line.type === 'system') textColor = 'text-[#858585]';
+        let textColor = 'text-[#D5D2CC]';
+        if (line.type === 'input') textColor = 'text-[#F5F4F1] font-semibold';
+        if (line.type === 'error') textColor = 'text-rose-400';
+        if (line.type === 'info') textColor = 'text-[#987654]';
+        if (line.type === 'system') textColor = 'text-[#9C9C9C]';
 
         return (
           <div key={line.id} className={`whitespace-pre-wrap leading-relaxed ${textColor}`}>
@@ -142,7 +142,7 @@ export const TerminalView: React.FC = () => {
 
       {/* Input Prompt Row */}
       <div className="flex items-center space-x-1 pt-1">
-        <span className="text-[#4ec9b0] font-semibold select-none">
+        <span className="text-[#987654] font-semibold select-none">
           {emulator.getPrompt()}
         </span>
         <input
@@ -152,7 +152,7 @@ export const TerminalView: React.FC = () => {
           onChange={e => setInputVal(e.target.value)}
           onKeyDown={handleKeyDown}
           autoFocus
-          className="flex-1 bg-transparent border-none outline-none text-white font-mono text-[13px] p-0 m-0"
+          className="flex-1 bg-transparent border-none outline-none text-[#F5F4F1] font-mono text-[13px] p-0 m-0"
         />
       </div>
 

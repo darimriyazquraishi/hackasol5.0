@@ -27,35 +27,35 @@ export const Extensions: React.FC = () => {
       </div>
 
       {/* Search & Filter */}
-      <div className="p-3 border-b border-[#2b2b2b] space-y-2">
+      <div className="p-3 border-b border-[#303030] space-y-2">
         <div className="relative flex items-center">
           <input
             type="text"
             placeholder="Search Extensions in Marketplace..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full bg-[#313131] border border-[#3c3c3c] focus:border-[#007acc] text-xs text-white pl-7 pr-2 py-1 rounded-sm outline-none"
+            className="w-full bg-[#141414] border border-[#303030] focus:border-[#987654] text-xs text-[#F5F4F1] pl-7 pr-2 py-1 rounded outline-none transition-colors"
           />
-          <Search className="w-3.5 h-3.5 text-[#858585] absolute left-2 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-[#9C9C9C] absolute left-2 pointer-events-none" />
         </div>
 
         <div className="flex space-x-1 text-xs">
           <button
             onClick={() => setFilter('all')}
-            className={`px-2 py-0.5 rounded text-[11px] ${
+            className={`px-2 py-0.5 rounded text-[11px] transition-colors ${
               filter === 'all'
-                ? 'bg-[#0078d4] text-white font-medium'
-                : 'text-[#858585] hover:text-[#cccccc] bg-[#2b2b2b]'
+                ? 'bg-[#987654] text-[#F5F4F1] font-medium'
+                : 'text-[#9C9C9C] hover:text-[#F5F4F1] bg-[#141414]'
             }`}
           >
             All
           </button>
           <button
             onClick={() => setFilter('installed')}
-            className={`px-2 py-0.5 rounded text-[11px] ${
+            className={`px-2 py-0.5 rounded text-[11px] transition-colors ${
               filter === 'installed'
-                ? 'bg-[#0078d4] text-white font-medium'
-                : 'text-[#858585] hover:text-[#cccccc] bg-[#2b2b2b]'
+                ? 'bg-[#987654] text-[#F5F4F1] font-medium'
+                : 'text-[#9C9C9C] hover:text-[#F5F4F1] bg-[#141414]'
             }`}
           >
             Installed ({extensions.filter(e => e.installed).length})
@@ -68,33 +68,33 @@ export const Extensions: React.FC = () => {
         {filteredExtensions.map(ext => (
           <div
             key={ext.id}
-            className="p-2.5 rounded bg-[#252526] hover:bg-[#2a2d2e] border border-[#333333] transition-colors flex space-x-3"
+            className="p-2.5 rounded-lg bg-[#121212] hover:bg-[#181818] border border-[#303030] transition-colors flex space-x-3"
           >
             {/* Icon */}
-            <div className="w-9 h-9 rounded bg-[#1e1e1e] flex items-center justify-center text-lg shrink-0 border border-[#3c3c3c]">
+            <div className="w-9 h-9 rounded bg-[#0c0c0c] flex items-center justify-center text-lg shrink-0 border border-[#303030]">
               {ext.icon}
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-semibold text-[#cccccc] truncate">
+                <h4 className="text-xs font-semibold text-[#F5F4F1] truncate">
                   {ext.displayName}
                 </h4>
               </div>
 
-              <div className="text-[11px] text-[#858585] truncate mt-0.5">
+              <div className="text-[11px] text-[#9C9C9C] truncate mt-0.5">
                 {ext.publisher}
               </div>
 
-              <p className="text-[11px] text-[#9d9d9d] line-clamp-2 mt-1 leading-normal">
+              <p className="text-[11px] text-[#D5D2CC] line-clamp-2 mt-1 leading-normal">
                 {ext.description}
               </p>
 
-              <div className="flex items-center justify-between mt-2 pt-1 border-t border-[#333333]/50">
-                <div className="flex items-center space-x-2 text-[10px] text-[#858585]">
+              <div className="flex items-center justify-between mt-2 pt-1 border-t border-[#303030]">
+                <div className="flex items-center space-x-2 text-[10px] text-[#9C9C9C]">
                   <span className="flex items-center space-x-0.5">
-                    <Download className="w-2.5 h-2.5" />
+                    <Download className="w-2.5 h-2.5 text-[#987654]" />
                     <span>{ext.downloads}</span>
                   </span>
                   <span className="flex items-center space-x-0.5">
@@ -107,13 +107,13 @@ export const Extensions: React.FC = () => {
                   onClick={() => toggleExtension(ext.id)}
                   className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors flex items-center space-x-1 ${
                     ext.installed
-                      ? 'bg-[#3c3c3c] hover:bg-[#484848] text-[#cccccc]'
-                      : 'bg-[#0078d4] hover:bg-[#006bb3] text-white shadow'
+                      ? 'bg-[#191919] hover:bg-[#202020] text-[#D5D2CC] border border-[#303030]'
+                      : 'bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1] shadow'
                   }`}
                 >
                   {ext.installed ? (
                     <>
-                      <Check className="w-2.5 h-2.5 text-green-400" />
+                      <Check className="w-2.5 h-2.5 text-emerald-400" />
                       <span>Installed</span>
                     </>
                   ) : (

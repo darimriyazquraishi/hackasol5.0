@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Upload, Trash2, FileText, AlertCircle, Loader2 } from 'lucide-react';
+import { LumiButton } from '../Common/Button';
 
 interface StoredDocument {
   id: string;
@@ -122,7 +123,7 @@ export const KnowledgeBaseModule: React.FC = () => {
   return (
     <div
       className={`h-full flex flex-col bg-[#080808] text-[#F5F4F1] font-sans p-8 overflow-y-auto select-none transition-colors ${
-        isDragging ? 'bg-[#12100d] ring-2 ring-[#c4a47c]/40 ring-inset' : ''
+        isDragging ? 'bg-[#12100d] ring-2 ring-[#987654]/40 ring-inset' : ''
       }`}
       onDragOver={e => {
         e.preventDefault();
@@ -155,18 +156,14 @@ export const KnowledgeBaseModule: React.FC = () => {
           Knowledge Base
         </h1>
 
-        <button
+        <LumiButton
+          variant="primary"
           onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-          className="px-4 py-2 rounded-xl bg-[#c4a47c] hover:bg-[#b89569] text-[#141414] font-medium text-xs flex items-center space-x-2 transition-colors disabled:opacity-50 cursor-pointer shadow-sm"
+          loading={isUploading}
+          icon={<Upload className="w-3.5 h-3.5" />}
         >
-          {isUploading ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Upload className="w-3.5 h-3.5" />
-          )}
-          <span>Upload Document</span>
-        </button>
+          Upload Document
+        </LumiButton>
       </div>
 
       {/* Minimal Processing & Status Notification */}
@@ -175,13 +172,13 @@ export const KnowledgeBaseModule: React.FC = () => {
           className={`mt-4 p-3 rounded-xl border text-xs font-mono flex items-center space-x-2 shrink-0 ${
             statusMessage.isError
               ? 'bg-red-950/40 border-red-900/60 text-red-300'
-              : 'bg-[#141414] border-[#303030] text-[#c4a47c]'
+              : 'bg-[#141414] border-[#303030] text-[#987654]'
           }`}
         >
           {statusMessage.isError ? (
             <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
           ) : (
-            <Loader2 className="w-4 h-4 shrink-0 animate-spin text-[#c4a47c]" />
+            <Loader2 className="w-4 h-4 shrink-0 animate-spin text-[#987654]" />
           )}
           <span className="truncate">{statusMessage.text}</span>
         </div>
@@ -211,7 +208,7 @@ export const KnowledgeBaseModule: React.FC = () => {
                   {/* Document Information */}
                   <div className="flex items-center space-x-3 min-w-0 pr-4">
                     <div className="w-8 h-8 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center shrink-0">
-                      <FileText className="w-4 h-4 text-[#c4a47c]" />
+                      <FileText className="w-4 h-4 text-[#987654]" />
                     </div>
 
                     <div className="min-w-0">
@@ -239,7 +236,7 @@ export const KnowledgeBaseModule: React.FC = () => {
                         {doc.status === 'processing' && (
                           <>
                             <span>•</span>
-                            <span className="text-[#c4a47c] font-mono text-[10px]">
+                            <span className="text-[#987654] font-mono text-[10px]">
                               Processing...
                             </span>
                           </>
@@ -253,18 +250,20 @@ export const KnowledgeBaseModule: React.FC = () => {
                     {isConfirming ? (
                       <div className="flex items-center space-x-1.5 text-xs">
                         <span className="text-[11px] text-[#9c9c9c] pr-1">Delete?</span>
-                        <button
+                        <LumiButton
+                          variant="danger"
+                          size="xs"
                           onClick={() => handleDelete(doc.id)}
-                          className="px-2 py-1 rounded bg-red-950/80 hover:bg-red-900 text-red-200 border border-red-800 text-[11px] transition-colors cursor-pointer"
                         >
                           Confirm
-                        </button>
-                        <button
+                        </LumiButton>
+                        <LumiButton
+                          variant="secondary"
+                          size="xs"
                           onClick={() => setConfirmDeleteId(null)}
-                          className="px-2 py-1 rounded bg-[#202020] hover:bg-[#282828] text-[#cccccc] text-[11px] transition-colors cursor-pointer"
                         >
                           Cancel
-                        </button>
+                        </LumiButton>
                       </div>
                     ) : (
                       <button

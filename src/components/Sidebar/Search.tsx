@@ -112,14 +112,14 @@ export const Search: React.FC = () => {
             placeholder="Search files..."
             value={query}
             onChange={e => setQuery(e.target.value)}
-            className="w-full bg-[#313131] border border-[#3c3c3c] focus:border-[#007acc] text-xs text-white pl-2 pr-16 py-1 rounded-sm outline-none"
+            className="w-full bg-[#141414] border border-[#303030] focus:border-[#987654] text-xs text-[#F5F4F1] pl-2 pr-16 py-1 rounded outline-none transition-colors"
           />
-          <div className="absolute right-1 flex items-center space-x-0.5 text-[#858585]">
+          <div className="absolute right-1 flex items-center space-x-0.5 text-[#9C9C9C]">
             <button
               onClick={() => setMatchCase(!matchCase)}
               title="Match Case"
-              className={`p-1 rounded hover:bg-[#3c3c3c] ${
-                matchCase ? 'text-white bg-[#04395e]' : ''
+              className={`p-1 rounded hover:bg-[#191919] transition-colors ${
+                matchCase ? 'text-[#F5F4F1] bg-[#987654]' : ''
               }`}
             >
               <CaseSensitive className="w-3.5 h-3.5" />
@@ -127,8 +127,8 @@ export const Search: React.FC = () => {
             <button
               onClick={() => setMatchWord(!matchWord)}
               title="Match Whole Word"
-              className={`p-1 rounded hover:bg-[#3c3c3c] ${
-                matchWord ? 'text-white bg-[#04395e]' : ''
+              className={`p-1 rounded hover:bg-[#191919] transition-colors ${
+                matchWord ? 'text-[#F5F4F1] bg-[#987654]' : ''
               }`}
             >
               <WholeWord className="w-3.5 h-3.5" />
@@ -136,8 +136,8 @@ export const Search: React.FC = () => {
             <button
               onClick={() => setUseRegex(!useRegex)}
               title="Use Regular Expression"
-              className={`p-1 rounded hover:bg-[#3c3c3c] ${
-                useRegex ? 'text-white bg-[#04395e]' : ''
+              className={`p-1 rounded hover:bg-[#191919] transition-colors ${
+                useRegex ? 'text-[#F5F4F1] bg-[#987654]' : ''
               }`}
             >
               <Regex className="w-3.5 h-3.5" />
@@ -148,7 +148,7 @@ export const Search: React.FC = () => {
         {/* Toggle Replace */}
         <button
           onClick={() => setShowReplace(!showReplace)}
-          className="text-[11px] text-[#858585] hover:text-[#cccccc] flex items-center space-x-1"
+          className="text-[11px] text-[#9C9C9C] hover:text-[#F5F4F1] flex items-center space-x-1 transition-colors"
         >
           <Replace className="w-3 h-3" />
           <span>Toggle Replace</span>
@@ -161,7 +161,7 @@ export const Search: React.FC = () => {
               placeholder="Replace..."
               value={replaceQuery}
               onChange={e => setReplaceQuery(e.target.value)}
-              className="w-full bg-[#313131] border border-[#3c3c3c] focus:border-[#007acc] text-xs text-white px-2 py-1 rounded-sm outline-none"
+              className="w-full bg-[#141414] border border-[#303030] focus:border-[#987654] text-xs text-[#F5F4F1] px-2 py-1 rounded outline-none transition-colors"
             />
           </div>
         )}
@@ -169,7 +169,7 @@ export const Search: React.FC = () => {
 
       {/* Results Header */}
       {query && (
-        <div className="px-3 py-1 text-[11px] text-[#858585] bg-[#181818]">
+        <div className="px-3 py-1 text-[11px] text-[#9C9C9C] bg-[#0c0c0c] border-b border-[#303030]">
           {totalMatches} result{totalMatches === 1 ? '' : 's'} in {searchResults.length} file{searchResults.length === 1 ? '' : 's'}
         </div>
       )}
@@ -184,9 +184,9 @@ export const Search: React.FC = () => {
               {/* File header row */}
               <div
                 onClick={() => toggleCollapse(result.filePath)}
-                className="flex items-center h-6 px-2 cursor-pointer hover:bg-[#2a2d2e] text-[#cccccc] font-medium"
+                className="flex items-center h-6 px-2 cursor-pointer hover:bg-[#141414] text-[#D5D2CC] font-medium transition-colors"
               >
-                <span className="w-4 h-4 flex items-center justify-center mr-1 text-[#858585]">
+                <span className="w-4 h-4 flex items-center justify-center mr-1 text-[#9C9C9C]">
                   {isCollapsed ? (
                     <ChevronRight className="w-3.5 h-3.5" />
                   ) : (
@@ -197,7 +197,7 @@ export const Search: React.FC = () => {
                   {getFileIcon({ name: result.fileName, className: 'w-4 h-4' })}
                 </span>
                 <span className="truncate flex-1">{result.fileName}</span>
-                <span className="text-[10px] bg-[#3c3c3c] px-1.5 py-0.2 rounded-full text-[#cccccc]">
+                <span className="text-[10px] bg-[#191919] border border-[#303030] px-1.5 py-0.2 rounded-full text-[#D5D2CC]">
                   {result.matches.length}
                 </span>
               </div>
@@ -209,12 +209,12 @@ export const Search: React.FC = () => {
                     <div
                       key={idx}
                       onClick={() => openFile(result.filePath)}
-                      className="flex items-center h-5 px-2 cursor-pointer hover:bg-[#04395e]/50 text-[#858585] hover:text-white transition-colors"
+                      className="flex items-center h-5 px-2 cursor-pointer hover:bg-[#191919] text-[#9C9C9C] hover:text-[#F5F4F1] transition-colors"
                     >
-                      <span className="w-7 text-[11px] text-[#007acc] shrink-0 font-mono">
+                      <span className="w-7 text-[11px] text-[#987654] shrink-0 font-mono">
                         {m.lineNumber}
                       </span>
-                      <span className="truncate text-xs font-mono text-[#d4d4d4]">
+                      <span className="truncate text-xs font-mono text-[#D5D2CC]">
                         {m.lineText.trim()}
                       </span>
                     </div>

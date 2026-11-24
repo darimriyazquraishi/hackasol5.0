@@ -234,9 +234,9 @@ export function cleanAgentResponse(raw: any): string {
     }
   }
 
-  // 3. Strip conversational preamble like "Certainly! Here is..." but preserve genuine content
-  text = text.replace(/^(Certainly|Sure|Here is|Here's|Of course|I'd be happy to|Below is|As an AI)[^\n.:]*[:.]\s*/i, '');
-  text = text.replace(/\n\s*(Let me know if you need anything else!|Hope this helps!|Feel free to ask if you have more questions[.!]|I hope this helps you[.!]|If you have any further questions[^\n]*)\s*$/i, '');
+  // 3. Strip conversational preamble and AI-sounding staging openers per humanizer rules
+  text = text.replace(/^(Certainly|Sure|Here is|Here's|Of course|I'd be happy to|Below is|As an AI|Let's dive in|Let's explore|Here is what you need to know)[^\n.:]*[:.]\s*/i, '');
+  text = text.replace(/\n\s*(Let me know if you need anything else!|Hope this helps!|Feel free to ask if you have more questions[.!]|I hope this helps you[.!]|If you have any further questions[^\n]*|That is the real win[.!]|In conclusion,\s*|Ultimately,\s*|Overall,\s*)\s*$/i, '');
 
   // 4. Clean formatting artifacts
   text = cleanFormattingArtifacts(text);

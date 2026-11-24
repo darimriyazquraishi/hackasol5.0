@@ -282,10 +282,10 @@ export const CommandPalette: React.FC = () => {
     >
       <div
         onClick={e => e.stopPropagation()}
-        className="w-[600px] max-h-[460px] bg-[#252526] border border-[#454545] rounded-md shadow-2xl flex flex-col overflow-hidden text-xs text-[#cccccc]"
+        className="w-[600px] max-h-[460px] bg-[#121212] border border-[#303030] rounded-xl shadow-2xl flex flex-col overflow-hidden text-xs text-[#D5D2CC]"
       >
         {/* Input bar */}
-        <div className="p-2 border-b border-[#3c3c3c]">
+        <div className="p-2 border-b border-[#303030]">
           <input
             ref={inputRef}
             type="text"
@@ -300,7 +300,7 @@ export const CommandPalette: React.FC = () => {
                 ? 'Type a command or > for options'
                 : 'Search files by name (type > for commands)'
             }
-            className="w-full bg-[#3c3c3c] border border-[#007acc] text-white text-xs px-3 py-1.5 rounded-sm outline-none placeholder-[#858585]"
+            className="w-full bg-[#141414] border border-[#303030] focus:border-[#987654] text-[#F5F4F1] text-xs px-3 py-1.5 rounded outline-none placeholder-[#9C9C9C] transition-colors"
           />
         </div>
 
@@ -308,7 +308,7 @@ export const CommandPalette: React.FC = () => {
         <div className="flex-1 overflow-y-auto py-1">
           {isCommandMode ? (
             filteredCommands.length === 0 ? (
-              <div className="px-4 py-3 text-[#858585] text-center">No matching commands found.</div>
+              <div className="px-4 py-3 text-[#9C9C9C] text-center">No matching commands found.</div>
             ) : (
               filteredCommands.map((cmd, idx) => (
                 <div
@@ -320,13 +320,13 @@ export const CommandPalette: React.FC = () => {
                   onMouseEnter={() => setSelectedIndex(idx)}
                   className={`px-3 py-2 flex items-center justify-between cursor-pointer transition-colors ${
                     selectedIndex === idx
-                      ? 'bg-[#04395e] text-white'
-                      : 'hover:bg-[#2a2d2e] text-[#cccccc]'
+                      ? 'bg-[#191919] text-[#F5F4F1] border-l-2 border-[#987654]'
+                      : 'hover:bg-[#141414] text-[#D5D2CC]'
                   }`}
                 >
                   <div className="flex items-center space-x-2">
                     {cmd.category && (
-                      <span className="text-[#858585] text-[11px] font-semibold">
+                      <span className="text-[#987654] text-[11px] font-semibold">
                         {cmd.category}:
                       </span>
                     )}
@@ -334,7 +334,7 @@ export const CommandPalette: React.FC = () => {
                   </div>
 
                   {cmd.shortcut && (
-                    <span className="text-[10px] text-[#858585] font-mono ml-4">
+                    <span className="text-[10px] text-[#9C9C9C] font-mono ml-4">
                       {cmd.shortcut}
                     </span>
                   )}
@@ -342,7 +342,7 @@ export const CommandPalette: React.FC = () => {
               ))
             )
           ) : filteredFiles.length === 0 ? (
-            <div className="px-4 py-3 text-[#858585] text-center">No matching files found.</div>
+            <div className="px-4 py-3 text-[#9C9C9C] text-center">No matching files found.</div>
           ) : (
             filteredFiles.map((file, idx) => (
               <div
@@ -354,8 +354,8 @@ export const CommandPalette: React.FC = () => {
                 onMouseEnter={() => setSelectedIndex(idx)}
                 className={`px-3 py-1.5 flex items-center justify-between cursor-pointer transition-colors ${
                   selectedIndex === idx
-                    ? 'bg-[#04395e] text-white'
-                    : 'hover:bg-[#2a2d2e] text-[#cccccc]'
+                    ? 'bg-[#191919] text-[#F5F4F1] border-l-2 border-[#987654]'
+                    : 'hover:bg-[#141414] text-[#D5D2CC]'
                 }`}
               >
                 <div className="flex items-center space-x-2">
@@ -364,7 +364,7 @@ export const CommandPalette: React.FC = () => {
                   </span>
                   <span className="font-medium">{file.name}</span>
                 </div>
-                <span className="text-[10px] text-[#858585] font-mono">{file.path}</span>
+                <span className="text-[10px] text-[#9C9C9C] font-mono">{file.path}</span>
               </div>
             ))
           )}

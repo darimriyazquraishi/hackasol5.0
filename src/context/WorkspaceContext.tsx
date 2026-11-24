@@ -27,6 +27,7 @@ import {
   DEFAULT_HARDWARE_PROFILE
 } from '../services/hardwareDetector';
 import { defaultWorkspaceFiles, detectLanguage } from '../services/defaultFiles';
+import { formatTimeAgo, getConversationCreatedAt } from '../services/timeUtils';
 import {
   findNodeByPath,
   addNode,
@@ -175,7 +176,7 @@ const DEFAULT_EXTENSIONS: ExtensionItem[] = [
     name: 'vscode-eslint',
     displayName: 'ESLint',
     publisher: 'Microsoft',
-    description: 'Integrates ESLint JavaScript into VS Code.',
+    description: 'Integrates ESLint JavaScript into the editor.',
     version: '3.0.10',
     downloads: '38.1M',
     rating: 4.7,
@@ -201,7 +202,7 @@ const DEFAULT_EXTENSIONS: ExtensionItem[] = [
     name: 'vscode-tailwindcss',
     displayName: 'Tailwind CSS IntelliSense',
     publisher: 'Tailwind Labs',
-    description: 'Intelligent Tailwind CSS tooling for VS Code.',
+    description: 'Intelligent Tailwind CSS tooling for the editor.',
     version: '0.12.7',
     downloads: '18.9M',
     rating: 4.9,
@@ -227,7 +228,7 @@ const DEFAULT_EXTENSIONS: ExtensionItem[] = [
     name: 'gitlens',
     displayName: 'GitLens — Git supercharged',
     publisher: 'GitKraken',
-    description: 'Supercharge Git within VS Code — Visualize code authorship at a glance.',
+    description: 'Supercharge Git within LUMI IDE — Visualize code authorship at a glance.',
     version: '15.7.0',
     downloads: '34.2M',
     rating: 4.8,
@@ -262,6 +263,8 @@ const INITIAL_CONVERSATIONS: ConversationThread[] = [
   {
     id: 'conv-1',
     title: 'New Conversation',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
     lastUpdated: 'Just now',
     messages: []
   }
@@ -385,7 +388,16 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (saved) {
         const parsed: ConversationThread[] = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          return parsed.map(c => {
+            const createdAt = getConversationCreatedAt(c);
+            const updatedAt = c.updatedAt || createdAt;
+            return {
+              ...c,
+              createdAt,
+              updatedAt,
+              lastUpdated: formatTimeAgo(createdAt)
+            };
+          });
         }
       }
     } catch (e) {
@@ -430,10 +442,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const activeConversation = conversations.find(c => c.id === activeConversationId) || conversations[0];
 
   const createConversation = useCallback(() => {
-    const newId = `conv-${Date.now()}`;
+    const now = Date.now();
+    const newId = `conv-${now}`;
     const newConv: ConversationThread = {
       id: newId,
       title: 'New Conversation',
+      createdAt: now,
+      updatedAt: now,
       lastUpdated: 'Just now',
       messages: []
     };
@@ -454,10 +469,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setConversations(prev => {
       const remaining = prev.filter(c => c.id !== id);
       if (remaining.length === 0) {
-        const freshId = `conv-${Date.now()}`;
+        const now = Date.now();
+        const freshId = `conv-${now}`;
         const freshThread: ConversationThread = {
           id: freshId,
           title: 'New Conversation',
+          createdAt: now,
+          updatedAt: now,
           lastUpdated: 'Just now',
           messages: []
         };
@@ -489,11 +507,14 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setConversations(prev => {
       const targetId = activeConversationId || (prev.length > 0 ? prev[0].id : null);
       if (!targetId) return prev;
+      const now = Date.now();
       const updated = prev.map(c => {
         if (c.id === targetId) {
           return {
             ...c,
             title: 'New Conversation',
+            createdAt: now,
+            updatedAt: now,
             lastUpdated: 'Just now',
             messages: []
           };
@@ -509,10 +530,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const clearAllConversations = useCallback(() => {
     fetch('/api/chat/clear-history', { method: 'POST' }).catch(() => {});
-    const freshId = `conv-${Date.now()}`;
+    const now = Date.now();
+    const freshId = `conv-${now}`;
     const freshThread: ConversationThread = {
       id: freshId,
       title: 'New Conversation',
+      createdAt: now,
+      updatedAt: now,
       lastUpdated: 'Just now',
       messages: []
     };
@@ -541,10 +565,14 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             ? msg.content.slice(0, 36) + (msg.content.length > 36 ? '...' : '')
             : c.title;
 
+          const now = Date.now();
+          const createdAt = getConversationCreatedAt(c);
           return {
             ...c,
             title: newTitle,
-            lastUpdated: 'Just now',
+            createdAt,
+            updatedAt: now,
+            lastUpdated: formatTimeAgo(createdAt),
             messages: [...c.messages, msg]
           };
         }
@@ -900,9 +928,9 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     commits: [
       {
         id: '9f3b12a',
-        message: 'Initial project setup with Monaco Editor and workspace clone',
+        message: 'Initial project setup with LUMI Studio and isolated workspace',
         date: '2 hours ago',
-        author: 'developer <dev@vscode-web.io>',
+        author: 'engineer <engineer@lumi-ide.local>',
         files: ['package.json', 'src/App.tsx', 'README.md']
       }
     ]
@@ -1341,7 +1369,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           id: Math.random().toString(16).substr(2, 7),
           message: trimmed,
           date: 'Just now',
-          author: 'developer <dev@vscode-web.io>',
+          author: 'engineer <engineer@lumi-ide.local>',
           files: [...prev.stagedFiles, ...prev.modifiedFiles]
         },
         ...prev.commits

@@ -22,16 +22,56 @@ export const CodeEditor: React.FC = () => {
         return 'vs';
       case 'high-contrast':
         return 'hc-black';
-      case 'dark-modern':
-      case 'vscode-dark':
       case 'monokai':
-      default:
         return 'vs-dark';
+      case 'vscode-dark':
+        return 'vs-dark';
+      case 'dark-modern':
+      default:
+        return 'lumi-dark';
     }
   };
 
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
+
+    // Define authoritative LUMI dark theme matching the luxury palette
+    monaco.editor.defineTheme('lumi-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: '', foreground: 'd5d2cc', background: '080808' },
+        { token: 'comment', foreground: '765b43', fontStyle: 'italic' },
+        { token: 'keyword', foreground: 'b89774', fontStyle: 'bold' },
+        { token: 'string', foreground: 'c4a480' },
+        { token: 'number', foreground: 'dfb15b' },
+        { token: 'type', foreground: 'eed292' },
+        { token: 'identifier', foreground: 'f5f4f1' },
+        { token: 'delimiter', foreground: '9c9c9c' }
+      ],
+      colors: {
+        'editor.background': '#080808',
+        'editor.foreground': '#d5d2cc',
+        'editorCursor.foreground': '#987654',
+        'editor.lineHighlightBackground': '#121212',
+        'editorLineNumber.foreground': '#404040',
+        'editorLineNumber.activeForeground': '#987654',
+        'editor.selectionBackground': '#98765433',
+        'editor.inactiveSelectionBackground': '#9876541a',
+        'editorIndentGuide.background': '#202020',
+        'editorIndentGuide.activeBackground': '#98765466',
+        'editorGutter.background': '#080808',
+        'editorWidget.background': '#121212',
+        'editorWidget.border': '#303030',
+        'editorSuggestWidget.background': '#121212',
+        'editorSuggestWidget.border': '#303030',
+        'editorSuggestWidget.selectedBackground': '#191919'
+      }
+    });
+
+    if (!theme || theme === 'dark-modern') {
+      monaco.editor.setTheme('lumi-dark');
+    }
 
     // Track cursor position
     editor.onDidChangeCursorPosition(e => {
@@ -56,7 +96,7 @@ export const CodeEditor: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-full relative overflow-hidden bg-[#1e1e1e]">
+    <div className="w-full h-full relative overflow-hidden bg-[#080808]">
       <Editor
         key={activeFile.path}
         height="100%"
@@ -107,7 +147,7 @@ export const CodeEditor: React.FC = () => {
           padding: { top: 8 }
         }}
         loading={
-          <div className="w-full h-full flex items-center justify-center bg-[#1e1e1e] text-[#858585] text-xs">
+          <div className="w-full h-full flex items-center justify-center bg-[#080808] text-[#9C9C9C] text-xs">
             Loading Monaco Editor...
           </div>
         }

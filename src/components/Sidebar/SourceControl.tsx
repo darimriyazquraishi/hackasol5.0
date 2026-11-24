@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { getFileIcon } from '../../services/fileIcons';
+import { LumiButton } from '../Common/Button';
 
 export const SourceControl: React.FC = () => {
   const {
@@ -34,10 +35,10 @@ export const SourceControl: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden select-none">
       {/* Header */}
-      <div className="h-7 px-3 flex items-center justify-between text-[11px] font-bold text-[#bbbbbb] tracking-wider uppercase border-b border-[#2b2b2b] bg-[#1f1f1f]">
+      <div className="h-7 px-3 flex items-center justify-between text-[11px] font-bold text-[#D5D2CC] tracking-wider uppercase border-b border-[#303030] bg-[#0c0c0c]">
         <span>SOURCE CONTROL: GIT</span>
-        <div className="flex items-center space-x-1 text-[#858585]">
-          <span className="text-[10px] text-[#007acc] flex items-center space-x-1">
+        <div className="flex items-center space-x-1 text-[#9C9C9C]">
+          <span className="text-[10px] text-[#987654] flex items-center space-x-1">
             <GitBranch className="w-3 h-3" />
             <span>{gitState.branch}</span>
           </span>
@@ -45,7 +46,7 @@ export const SourceControl: React.FC = () => {
       </div>
 
       {/* Commit Input Area */}
-      <div className="p-3 border-b border-[#2b2b2b] space-y-2">
+      <div className="p-3 border-b border-[#303030] space-y-2">
         <textarea
           placeholder="Message (Ctrl+Enter to commit on 'main')"
           value={commitMessage}
@@ -56,21 +57,19 @@ export const SourceControl: React.FC = () => {
             }
           }}
           rows={3}
-          className="w-full bg-[#313131] border border-[#3c3c3c] focus:border-[#007acc] text-xs text-white p-2 rounded-sm outline-none resize-none font-sans"
+          className="w-full bg-[#141414] border border-[#303030] focus:border-[#987654] text-xs text-[#F5F4F1] p-2 rounded outline-none resize-none font-sans transition-colors"
         />
 
-        <button
+        <LumiButton
+          variant="primary"
+          size="sm"
+          icon={<Check className="w-3.5 h-3.5" />}
           onClick={handleCommit}
           disabled={!commitMessage.trim() || !hasChanges}
-          className={`w-full py-1.5 px-3 rounded flex items-center justify-center space-x-1 text-xs font-semibold transition-all ${
-            commitMessage.trim() && hasChanges
-              ? 'bg-[#0078d4] hover:bg-[#006bb3] text-white shadow'
-              : 'bg-[#2b2b2b] text-[#6e6e6e] cursor-not-allowed'
-          }`}
+          className="w-full justify-center shadow-sm"
         >
-          <Check className="w-3.5 h-3.5" />
-          <span>Commit</span>
-        </button>
+          Commit
+        </LumiButton>
       </div>
 
       {/* Changes Section */}
@@ -157,22 +156,22 @@ export const SourceControl: React.FC = () => {
         </div>
 
         {/* Commits History */}
-        <div className="pt-2 border-t border-[#2b2b2b]">
-          <div className="px-3 py-1 flex items-center justify-between text-[11px] font-semibold text-[#858585] uppercase">
+        <div className="pt-2 border-t border-[#303030]">
+          <div className="px-3 py-1 flex items-center justify-between text-[11px] font-semibold text-[#9C9C9C] uppercase">
             <span className="flex items-center space-x-1">
-              <History className="w-3 h-3" />
+              <History className="w-3 h-3 text-[#987654]" />
               <span>Commit History ({gitState.commits.length})</span>
             </span>
           </div>
           {gitState.commits.map(commit => (
-            <div key={commit.id} className="px-3 py-1.5 hover:bg-[#2a2d2e] cursor-pointer">
-              <div className="flex items-center justify-between text-xs text-[#cccccc]">
+            <div key={commit.id} className="px-3 py-1.5 hover:bg-[#141414] cursor-pointer transition-colors">
+              <div className="flex items-center justify-between text-xs text-[#D5D2CC]">
                 <span className="truncate font-medium">{commit.message}</span>
-                <span className="text-[10px] text-[#007acc] font-mono shrink-0 ml-2">
+                <span className="text-[10px] text-[#987654] font-mono shrink-0 ml-2">
                   {commit.id}
                 </span>
               </div>
-              <div className="text-[10px] text-[#6e6e6e] flex justify-between mt-0.5">
+              <div className="text-[10px] text-[#9C9C9C] flex justify-between mt-0.5 font-mono">
                 <span>{commit.author}</span>
                 <span>{commit.date}</span>
               </div>

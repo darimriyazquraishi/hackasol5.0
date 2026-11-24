@@ -25,21 +25,23 @@ export const WelcomeTab: React.FC = () => {
   } = useWorkspace();
 
   return (
-    <div className="flex-1 bg-[#1e1e1e] text-[#cccccc] overflow-y-auto p-10 flex flex-col justify-center items-center select-none">
+    <div className="flex-1 bg-[#080808] text-[#D5D2CC] overflow-y-auto p-10 flex flex-col justify-center items-center select-none">
       <div className="max-w-3xl w-full">
         {/* Header */}
-        <div className="flex items-center space-x-4 mb-8">
-          <div className="w-16 h-16 text-[#007acc] shrink-0">
-            <svg className="w-full h-full fill-current" viewBox="0 0 100 100">
-              <path d="M96.7 15.6L72.4 2.8c-2.4-1.3-5.3-.8-7.1 1.2L28.1 36.3 12.3 24.2c-1.8-1.4-4.4-1.2-5.9.5L1.2 30.6c-1.6 1.8-1.6 4.5 0 6.3L19 50 .9 63.8c-1.6 1.8-1.6 4.5 0 6.3l5.2 5.9c1.6 1.8 4.1 2 5.9.5l15.9-12.1 37.1 32.3c1.8 1.6 4.5 2 6.7.9l24.9-12.7c2.4-1.2 3.9-3.7 3.9-6.4V22c0-2.7-1.5-5.2-3.8-6.4zM73.5 68.3L40.7 50l32.8-18.3v36.6z" />
-            </svg>
+        <div className="flex items-center space-x-5 mb-8">
+          <div className="w-16 h-16 rounded-xl bg-[#121212] border border-[#303030] p-2.5 flex items-center justify-center shrink-0 shadow-lg">
+            <img
+              src="/lumi-logo.jpg"
+              alt="LUMI"
+              className="w-full h-full object-contain rounded"
+            />
           </div>
           <div>
-            <h1 className="text-3xl font-normal font-display text-white tracking-tight">
-              Visual Studio Code
+            <h1 className="text-3xl font-normal font-display text-[#F5F4F1] tracking-tight">
+              LUMI IDE Studio
             </h1>
-            <p className="text-sm text-[#858585] mt-1">
-              Visual Studio Code environment with Monaco editor, browser directory access, and integrated shell.
+            <p className="text-sm text-[#9C9C9C] mt-1">
+              Integrated developer environment with Monaco editor, local workspace management, and high-performance engineering terminal.
             </p>
           </div>
         </div>
@@ -48,43 +50,43 @@ export const WelcomeTab: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Start column */}
           <div>
-            <h2 className="text-sm font-normal font-display text-[#858585] uppercase tracking-wider mb-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9C9C9C] mb-3">
               Start
             </h2>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <button
                 onClick={() => {
                   const name = prompt('Enter new file name:');
                   if (name) createFile(null, name);
                 }}
-                className="w-full p-2.5 rounded bg-[#252526] hover:bg-[#2d2d2d] flex items-center space-x-3 text-left transition-colors text-xs text-[#007acc] hover:text-[#3794ff]"
+                className="w-full p-3 rounded-lg bg-[#121212] hover:bg-[#191919] border border-[#303030] hover:border-[#987654] flex items-center space-x-3 text-left transition-all active:scale-[0.99] group cursor-pointer"
               >
-                <FilePlus className="w-4 h-4 text-[#858585]" />
+                <FilePlus className="w-4 h-4 text-[#987654] group-hover:text-[#B89774] transition-colors" />
                 <div>
-                  <div className="font-medium text-white">New File...</div>
-                  <div className="text-[11px] text-[#858585]">Create a new text or code file</div>
+                  <div className="font-medium text-xs text-[#F5F4F1]">New File...</div>
+                  <div className="text-[11px] text-[#9C9C9C]">Create a text, script, or model file</div>
                 </div>
               </button>
 
               <button
                 onClick={() => openFolderFromDisk()}
-                className="w-full p-2.5 rounded bg-[#252526] hover:bg-[#2d2d2d] flex items-center space-x-3 text-left transition-colors text-xs text-[#007acc] hover:text-[#3794ff]"
+                className="w-full p-3 rounded-lg bg-[#121212] hover:bg-[#191919] border border-[#303030] hover:border-[#987654] flex items-center space-x-3 text-left transition-all active:scale-[0.99] group cursor-pointer"
               >
-                <FolderInput className="w-4 h-4 text-[#858585]" />
+                <FolderInput className="w-4 h-4 text-[#987654] group-hover:text-[#B89774] transition-colors" />
                 <div>
-                  <div className="font-medium text-white">Open Local Folder...</div>
-                  <div className="text-[11px] text-[#858585]">Load any directory on your computer via File System API</div>
+                  <div className="font-medium text-xs text-[#F5F4F1]">Open Local Folder...</div>
+                  <div className="text-[11px] text-[#9C9C9C]">Load a local project directory into the editor</div>
                 </div>
               </button>
 
               <button
                 onClick={() => exportProjectZip()}
-                className="w-full p-2.5 rounded bg-[#252526] hover:bg-[#2d2d2d] flex items-center space-x-3 text-left transition-colors text-xs text-[#007acc] hover:text-[#3794ff]"
+                className="w-full p-3 rounded-lg bg-[#121212] hover:bg-[#191919] border border-[#303030] hover:border-[#987654] flex items-center space-x-3 text-left transition-all active:scale-[0.99] group cursor-pointer"
               >
-                <FolderOpen className="w-4 h-4 text-[#858585]" />
+                <FolderOpen className="w-4 h-4 text-[#987654] group-hover:text-[#B89774] transition-colors" />
                 <div>
-                  <div className="font-medium text-white">Export as ZIP</div>
-                  <div className="text-[11px] text-[#858585]">Download all project files as a .zip package</div>
+                  <div className="font-medium text-xs text-[#F5F4F1]">Export as ZIP</div>
+                  <div className="text-[11px] text-[#9C9C9C]">Package all workspace files into a .zip archive</div>
                 </div>
               </button>
             </div>
@@ -92,67 +94,67 @@ export const WelcomeTab: React.FC = () => {
 
           {/* Quick shortcuts & Features */}
           <div>
-            <h2 className="text-sm font-semibold text-[#858585] uppercase tracking-wider mb-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-[#9C9C9C] mb-3">
               Keyboard Shortcuts
             </h2>
-            <div className="bg-[#252526] rounded p-3 text-xs space-y-2.5 border border-[#333333]">
+            <div className="bg-[#121212] rounded-lg p-3.5 text-xs space-y-2.5 border border-[#303030]">
               <div className="flex items-center justify-between">
-                <span className="text-[#858585]">Show All Commands</span>
-                <kbd className="bg-[#1e1e1e] border border-[#3c3c3c] px-2 py-0.5 rounded text-[11px] font-mono text-white">
+                <span className="text-[#9C9C9C]">Show All Commands</span>
+                <kbd className="bg-[#080808] border border-[#303030] px-2 py-0.5 rounded text-[11px] font-mono text-[#D5D2CC]">
                   Ctrl+Shift+P
                 </kbd>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-[#858585]">Quick Open File</span>
-                <kbd className="bg-[#1e1e1e] border border-[#3c3c3c] px-2 py-0.5 rounded text-[11px] font-mono text-white">
+                <span className="text-[#9C9C9C]">Quick Open File</span>
+                <kbd className="bg-[#080808] border border-[#303030] px-2 py-0.5 rounded text-[11px] font-mono text-[#D5D2CC]">
                   Ctrl+P
                 </kbd>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-[#858585]">Toggle Integrated Terminal</span>
-                <kbd className="bg-[#1e1e1e] border border-[#3c3c3c] px-2 py-0.5 rounded text-[11px] font-mono text-white">
+                <span className="text-[#9C9C9C]">Toggle Integrated Terminal</span>
+                <kbd className="bg-[#080808] border border-[#303030] px-2 py-0.5 rounded text-[11px] font-mono text-[#D5D2CC]">
                   Ctrl+`
                 </kbd>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-[#858585]">Toggle Primary Side Bar</span>
-                <kbd className="bg-[#1e1e1e] border border-[#3c3c3c] px-2 py-0.5 rounded text-[11px] font-mono text-white">
+                <span className="text-[#9C9C9C]">Toggle Primary Side Bar</span>
+                <kbd className="bg-[#080808] border border-[#303030] px-2 py-0.5 rounded text-[11px] font-mono text-[#D5D2CC]">
                   Ctrl+B
                 </kbd>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-[#858585]">Save File</span>
-                <kbd className="bg-[#1e1e1e] border border-[#3c3c3c] px-2 py-0.5 rounded text-[11px] font-mono text-white">
+                <span className="text-[#9C9C9C]">Save File</span>
+                <kbd className="bg-[#080808] border border-[#303030] px-2 py-0.5 rounded text-[11px] font-mono text-[#D5D2CC]">
                   Ctrl+S
                 </kbd>
               </div>
             </div>
 
             {/* Quick Demo links */}
-            <div className="mt-4 pt-3 border-t border-[#333333] flex items-center justify-between text-xs text-[#858585]">
+            <div className="mt-4 pt-3 border-t border-[#303030] flex items-center justify-between text-xs text-[#9C9C9C]">
               <span>Quick Start Files:</span>
               <div className="flex space-x-2">
                 <button
                   onClick={() => openFile('/src/App.tsx')}
-                  className="text-[#007acc] hover:underline"
+                  className="text-[#987654] hover:text-[#B89774] hover:underline font-mono"
                 >
                   App.tsx
                 </button>
                 <span>•</span>
                 <button
                   onClick={() => openFile('/README.md')}
-                  className="text-[#007acc] hover:underline"
+                  className="text-[#987654] hover:text-[#B89774] hover:underline font-mono"
                 >
                   README.md
                 </button>
                 <span>•</span>
                 <button
                   onClick={() => openFile('/demo.py')}
-                  className="text-[#007acc] hover:underline"
+                  className="text-[#987654] hover:text-[#B89774] hover:underline font-mono"
                 >
                   demo.py
                 </button>

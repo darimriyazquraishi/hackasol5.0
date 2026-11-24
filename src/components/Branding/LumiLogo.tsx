@@ -24,26 +24,36 @@ export const LumiLogo: React.FC<LumiLogoProps> = ({
         <img
           src="/lumi-logo.jpg"
           alt="LUMI"
-          className="h-10 w-10 object-contain rounded transition-transform hover:scale-105"
+          className="h-9 w-9 object-contain rounded transition-transform hover:scale-105"
         />
       </div>
     );
   }
 
-  const sizeClasses = {
-    sm: 'h-10 max-w-[160px]',
-    md: 'h-14 max-w-[220px]',
-    lg: 'h-20 max-w-[280px]',
-    hero: 'h-32 md:h-36 max-w-[380px]'
+  const sizeIcon = {
+    sm: 'h-7 w-7',
+    md: 'h-8 w-8',
+    lg: 'h-11 w-11',
+    hero: 'h-20 w-20'
+  };
+
+  const sizeText = {
+    sm: 'text-sm tracking-widest',
+    md: 'text-base tracking-widest',
+    lg: 'text-xl tracking-widest',
+    hero: 'text-3xl tracking-widest'
   };
 
   return (
-    <div className={`flex items-center select-none ${className}`}>
+    <div className={`flex items-center space-x-2.5 select-none ${className}`}>
       <img
         src="/lumi-logo.jpg"
         alt="LUMI"
-        className={`object-contain transition-all duration-200 ${sizeClasses[size]}`}
+        className={`object-contain transition-all duration-200 ${sizeIcon[size]}`}
       />
+      <span className={`font-display font-normal text-[#F5F4F1] uppercase ${sizeText[size]}`}>
+        LUMI
+      </span>
     </div>
   );
 };

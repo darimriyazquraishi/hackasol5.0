@@ -89,7 +89,7 @@ export const ActivityBar: React.FC = () => {
   ];
 
   return (
-    <div className="w-12 bg-[#181818] border-r border-[#2b2b2b] flex flex-col justify-between items-center py-2 select-none z-30 shrink-0">
+    <div className="w-12 bg-[#080808] border-r border-[#303030] flex flex-col justify-between items-center py-2 select-none z-30 shrink-0">
       {/* Top Activity Icons */}
       <div className="flex flex-col space-y-1 w-full">
         {topItems.map(item => {
@@ -100,18 +100,18 @@ export const ActivityBar: React.FC = () => {
               onClick={() => handleTabClick(item.id)}
               title={item.label}
               className={`relative w-full h-11 flex items-center justify-center transition-colors group ${
-                isActive ? 'text-white' : 'text-[#858585] hover:text-[#cccccc]'
+                isActive ? 'text-[#F5F4F1]' : 'text-[#9C9C9C] hover:text-[#F5F4F1]'
               }`}
             >
               {/* Active left border indicator */}
               {isActive && (
-                <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[#0078d4]" />
+                <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[#987654]" />
               )}
               {item.icon}
 
               {/* Badge */}
               {item.badge !== undefined && (
-                <span className="absolute bottom-1 right-2 min-w-4 h-4 px-1 rounded-full bg-[#0078d4] text-[10px] font-bold text-white flex items-center justify-center">
+                <span className="absolute bottom-1 right-2 min-w-4 h-4 px-1 rounded-full bg-[#987654] text-[10px] font-bold text-[#F5F4F1] flex items-center justify-center">
                   {item.badge}
                 </span>
               )}
@@ -127,23 +127,23 @@ export const ActivityBar: React.FC = () => {
           onClick={toggleAssistant}
           title="Antigravity AI Assistant (Ctrl+L)"
           className={`relative w-full h-11 flex items-center justify-center transition-colors group ${
-            assistantVisible ? 'text-white' : 'text-[#858585] hover:text-[#cccccc]'
+            assistantVisible ? 'text-[#F5F4F1]' : 'text-[#9C9C9C] hover:text-[#F5F4F1]'
           }`}
         >
           {assistantVisible && (
-            <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-[#4285F4] to-[#9B51E0]" />
+            <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[#987654]" />
           )}
           <svg className="w-5 h-5 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="none">
             <path
               d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"
-              fill={assistantVisible ? "url(#antigravityGrad)" : "currentColor"}
+              fill={assistantVisible ? "#987654" : "currentColor"}
             />
           </svg>
         </button>
 
         <button
           title="Accounts"
-          className="w-full h-11 flex items-center justify-center text-[#858585] hover:text-[#cccccc] transition-colors"
+          className="w-full h-11 flex items-center justify-center text-[#9C9C9C] hover:text-[#F5F4F1] transition-colors"
         >
           <User className="w-5 h-5" />
         </button>
@@ -152,7 +152,7 @@ export const ActivityBar: React.FC = () => {
           onClick={() => setSettingsMenuOpen(!settingsMenuOpen)}
           title="Manage"
           className={`w-full h-11 flex items-center justify-center transition-colors ${
-            settingsMenuOpen ? 'text-white bg-[#2d2d2d]' : 'text-[#858585] hover:text-[#cccccc]'
+            settingsMenuOpen ? 'text-[#F5F4F1] bg-[#191919]' : 'text-[#9C9C9C] hover:text-[#F5F4F1]'
           }`}
         >
           <SettingsIcon className="w-5 h-5" />
@@ -160,8 +160,8 @@ export const ActivityBar: React.FC = () => {
 
         {/* Settings Popup Menu */}
         {settingsMenuOpen && (
-          <div className="absolute bottom-12 left-12 w-64 bg-[#252526] border border-[#454545] rounded-md shadow-2xl py-1 text-xs text-[#cccccc] z-50">
-            <div className="px-3 py-1 font-semibold text-[11px] text-[#858585] uppercase tracking-wider">
+          <div className="absolute bottom-12 left-12 w-64 bg-[#121212] border border-[#303030] rounded-lg shadow-2xl py-1.5 text-xs text-[#D5D2CC] z-50">
+            <div className="px-3 py-1 font-semibold text-[10px] text-[#9C9C9C] uppercase tracking-wider">
               Color Themes
             </div>
             {themes.map(t => (
@@ -171,8 +171,8 @@ export const ActivityBar: React.FC = () => {
                   setTheme(t.id);
                   setSettingsMenuOpen(false);
                 }}
-                className={`w-full px-3 py-1.5 text-left flex items-center justify-between hover:bg-[#094771] hover:text-white ${
-                  theme === t.id ? 'text-[#0078d4] font-medium' : ''
+                className={`w-full px-3 py-1.5 text-left flex items-center justify-between hover:bg-[#191919] hover:text-[#F5F4F1] ${
+                  theme === t.id ? 'text-[#987654] font-medium' : ''
                 }`}
               >
                 <div className="flex items-center space-x-2">
@@ -183,7 +183,7 @@ export const ActivityBar: React.FC = () => {
               </button>
             ))}
 
-            <div className="my-1 border-t border-[#3c3c3c]" />
+            <div className="my-1 border-t border-[#303030]" />
 
             <button
               onClick={() => {
@@ -191,10 +191,10 @@ export const ActivityBar: React.FC = () => {
                 setCommandPaletteOpen(true);
                 setSettingsMenuOpen(false);
               }}
-              className="w-full px-3 py-1.5 text-left hover:bg-[#094771] hover:text-white flex items-center justify-between"
+              className="w-full px-3 py-1.5 text-left hover:bg-[#191919] hover:text-[#F5F4F1] flex items-center justify-between"
             >
               <span>Command Palette...</span>
-              <span className="text-[10px] text-[#858585]">Ctrl+Shift+P</span>
+              <span className="text-[10px] text-[#9C9C9C] font-mono">Ctrl+Shift+P</span>
             </button>
           </div>
         )}

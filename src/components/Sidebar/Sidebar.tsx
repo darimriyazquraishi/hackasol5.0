@@ -5,6 +5,7 @@ import { Search } from './Search';
 import { SourceControl } from './SourceControl';
 import { Extensions } from './Extensions';
 import { PlayCircle, Bug } from 'lucide-react';
+import { LumiButton } from '../Common/Button';
 
 export const Sidebar: React.FC = () => {
   const { activeBarTab, sidebarVisible } = useWorkspace();
@@ -38,7 +39,7 @@ export const Sidebar: React.FC = () => {
   return (
     <div
       style={{ width: `${width}px` }}
-      className="bg-[#1f1f1f] border-r border-[#2b2b2b] flex flex-col h-full relative shrink-0 select-none overflow-hidden"
+      className="bg-[#0c0c0c] border-r border-[#303030] flex flex-col h-full relative shrink-0 select-none overflow-hidden"
     >
       {/* Dynamic Content based on active ActivityBar Tab */}
       {activeBarTab === 'explorer' && <Explorer />}
@@ -46,16 +47,16 @@ export const Sidebar: React.FC = () => {
       {activeBarTab === 'git' && <SourceControl />}
       {activeBarTab === 'extensions' && <Extensions />}
       {activeBarTab === 'debug' && (
-        <div className="flex-1 flex flex-col p-4 text-[#858585] text-xs">
-          <div className="h-7 -mx-4 -mt-4 px-3 flex items-center justify-between text-[11px] font-bold text-[#bbbbbb] tracking-wider uppercase border-b border-[#2b2b2b] bg-[#1f1f1f] mb-4">
+        <div className="flex-1 flex flex-col p-4 text-[#9C9C9C] text-xs">
+          <div className="h-7 -mx-4 -mt-4 px-3 flex items-center justify-between text-[11px] font-bold text-[#D5D2CC] tracking-wider uppercase border-b border-[#303030] bg-[#0c0c0c] mb-4">
             <span>RUN AND DEBUG</span>
           </div>
           <div className="flex flex-col items-center justify-center h-48 text-center space-y-3">
-            <Bug className="w-10 h-10 text-[#555555]" />
-            <p className="text-[#858585]">To customize Run and Debug, open a folder and create a 'launch.json' file.</p>
-            <button className="px-3 py-1.5 rounded bg-[#0078d4] text-white font-medium hover:bg-[#006bb3] transition-colors">
+            <Bug className="w-10 h-10 text-[#4a4a4a]" />
+            <p className="text-[#9C9C9C]">To customize Run and Debug, open a folder and create a 'launch.json' file.</p>
+            <LumiButton variant="primary" size="sm">
               Run and Debug (F5)
-            </button>
+            </LumiButton>
           </div>
         </div>
       )}
@@ -67,7 +68,7 @@ export const Sidebar: React.FC = () => {
           isResizingRef.current = true;
           document.body.style.cursor = 'col-resize';
         }}
-        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-[#007acc] transition-colors z-20"
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-[#987654] transition-colors z-20"
       />
     </div>
   );

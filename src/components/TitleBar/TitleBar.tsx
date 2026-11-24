@@ -186,9 +186,9 @@ export const TitleBar: React.FC = () => {
         }
       },
       {
-        label: 'About Visual Studio Code',
+        label: 'About LUMI IDE',
         action: () => {
-          alert('Visual Studio Code Web Clone\nVersion: 1.95.0\nBuilt with React, TypeScript & Monaco Editor');
+          alert('LUMI IDE Studio\nVersion: 2.5.0\nIntegrated Engineering & Development Workspace');
         }
       }
     ]
@@ -198,11 +198,12 @@ export const TitleBar: React.FC = () => {
     <div className="h-8 bg-[#080808] border-b border-[#303030] flex items-center justify-between px-2 text-xs select-none text-[#D5D2CC] relative z-40 font-mono">
       {/* Left: App Logo & Menus */}
       <div className="flex items-center space-x-1" ref={menuRef}>
-        <div className="w-5 h-5 flex items-center justify-center mr-1 text-[#987654]">
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L20 7V17L12 22L4 17V7L12 2Z" stroke="#9C9C9C" strokeWidth="1.2" strokeLinejoin="round" />
-            <path d="M12 6L17 9.5V14.5L12 18L7 14.5V9.5L12 6Z" fill="#987654" />
-          </svg>
+        <div className="w-5 h-5 flex items-center justify-center mr-1 shrink-0">
+          <img
+            src="/lumi-logo.jpg"
+            alt="LUMI"
+            className="w-4 h-4 object-contain rounded-sm"
+          />
         </div>
 
         {Object.keys(menus).map(menuName => (

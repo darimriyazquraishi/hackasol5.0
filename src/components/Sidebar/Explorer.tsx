@@ -202,7 +202,7 @@ export const Explorer: React.FC = () => {
                   if (e.key === 'Enter') handleSubmitRename();
                   if (e.key === 'Escape') setRenamingPath(null);
                 }}
-                className="bg-[#3c3c3c] border border-[#007acc] text-white px-1 py-0 h-5 text-xs outline-none rounded-none w-44"
+                className="bg-[#141414] border border-[#987654] text-[#F5F4F1] px-1 py-0 h-5 text-xs outline-none rounded w-44"
                 onClick={e => e.stopPropagation()}
               />
             ) : (
@@ -210,7 +210,7 @@ export const Explorer: React.FC = () => {
             )}
 
             {/* Quick action buttons on hover */}
-            <div className="hidden group-hover:flex items-center space-x-1 pr-1 text-[#858585]">
+            <div className="hidden group-hover:flex items-center space-x-1 pr-1 text-[#9C9C9C]">
               {isFolder && (
                 <>
                   <button
@@ -220,7 +220,7 @@ export const Explorer: React.FC = () => {
                       setIsCreating({ type: 'file', parentPath: node.path });
                       if (!node.isOpen) toggleFolder(node.path);
                     }}
-                    className="p-0.5 hover:text-white hover:bg-[#3c3c3c] rounded"
+                    className="p-0.5 hover:text-[#F5F4F1] hover:bg-[#191919] rounded transition-colors"
                   >
                     <FilePlus className="w-3 h-3" />
                   </button>
@@ -231,7 +231,7 @@ export const Explorer: React.FC = () => {
                       setIsCreating({ type: 'folder', parentPath: node.path });
                       if (!node.isOpen) toggleFolder(node.path);
                     }}
-                    className="p-0.5 hover:text-white hover:bg-[#3c3c3c] rounded"
+                    className="p-0.5 hover:text-[#F5F4F1] hover:bg-[#191919] rounded transition-colors"
                   >
                     <FolderPlus className="w-3 h-3" />
                   </button>
@@ -266,7 +266,7 @@ export const Explorer: React.FC = () => {
                   if (e.key === 'Enter') handleSubmitNewItem();
                   if (e.key === 'Escape') setIsCreating(null);
                 }}
-                className="bg-[#3c3c3c] border border-[#007acc] text-white px-1 py-0 h-5 text-xs outline-none rounded-none w-44"
+                className="bg-[#141414] border border-[#987654] text-[#F5F4F1] px-1 py-0 h-5 text-xs outline-none rounded w-44"
               />
             </div>
           )}
@@ -485,7 +485,7 @@ export const Explorer: React.FC = () => {
                 if (e.key === 'Enter') handleSubmitNewItem();
                 if (e.key === 'Escape') setIsCreating(null);
               }}
-              className="bg-[#3c3c3c] border border-[#007acc] text-white px-1 py-0 h-5 text-xs outline-none rounded-none w-48"
+              className="bg-[#141414] border border-[#987654] text-[#F5F4F1] px-1 py-0 h-5 text-xs outline-none rounded w-48"
             />
           </div>
         )}
@@ -498,7 +498,7 @@ export const Explorer: React.FC = () => {
         <div
           ref={contextRef}
           style={{ top: contextMenu.y, left: contextMenu.x }}
-          className="fixed bg-[#252526] border border-[#454545] rounded shadow-2xl py-1 text-xs text-[#cccccc] z-50 min-w-[180px]"
+          className="fixed bg-[#121212] border border-[#303030] rounded-lg shadow-2xl py-1 text-xs text-[#D5D2CC] z-50 min-w-[180px]"
         >
           {contextMenu.node.type === 'folder' && (
             <>
@@ -507,9 +507,9 @@ export const Explorer: React.FC = () => {
                   setIsCreating({ type: 'file', parentPath: contextMenu.node.path });
                   setContextMenu(null);
                 }}
-                className="w-full px-3 py-1.5 text-left hover:bg-[#094771] hover:text-white flex items-center space-x-2"
+                className="w-full px-3 py-1.5 text-left hover:bg-[#191919] hover:text-[#F5F4F1] flex items-center space-x-2 transition-colors"
               >
-                <FilePlus className="w-3.5 h-3.5" />
+                <FilePlus className="w-3.5 h-3.5 text-[#987654]" />
                 <span>New File</span>
               </button>
               <button
@@ -517,12 +517,12 @@ export const Explorer: React.FC = () => {
                   setIsCreating({ type: 'folder', parentPath: contextMenu.node.path });
                   setContextMenu(null);
                 }}
-                className="w-full px-3 py-1.5 text-left hover:bg-[#094771] hover:text-white flex items-center space-x-2"
+                className="w-full px-3 py-1.5 text-left hover:bg-[#191919] hover:text-[#F5F4F1] flex items-center space-x-2 transition-colors"
               >
-                <FolderPlus className="w-3.5 h-3.5" />
+                <FolderPlus className="w-3.5 h-3.5 text-[#987654]" />
                 <span>New Folder</span>
               </button>
-              <div className="my-1 border-t border-[#3c3c3c]" />
+              <div className="my-1 border-t border-[#303030]" />
             </>
           )}
 
@@ -532,13 +532,13 @@ export const Explorer: React.FC = () => {
               setRenameValue(contextMenu.node.name);
               setContextMenu(null);
             }}
-            className="w-full px-3 py-1.5 text-left hover:bg-[#094771] hover:text-white flex items-center justify-between"
+            className="w-full px-3 py-1.5 text-left hover:bg-[#191919] hover:text-[#F5F4F1] flex items-center justify-between transition-colors"
           >
             <div className="flex items-center space-x-2">
-              <Edit2 className="w-3.5 h-3.5" />
+              <Edit2 className="w-3.5 h-3.5 text-[#987654]" />
               <span>Rename</span>
             </div>
-            <span className="text-[10px] text-[#858585]">F2</span>
+            <span className="text-[10px] text-[#9C9C9C] font-mono">F2</span>
           </button>
 
           <button
@@ -548,25 +548,25 @@ export const Explorer: React.FC = () => {
               }
               setContextMenu(null);
             }}
-            className="w-full px-3 py-1.5 text-left hover:bg-[#e81123] hover:text-white flex items-center justify-between"
+            className="w-full px-3 py-1.5 text-left hover:bg-rose-900/60 hover:text-white flex items-center justify-between transition-colors"
           >
             <div className="flex items-center space-x-2">
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3.5 h-3.5 text-rose-400" />
               <span>Delete</span>
             </div>
-            <span className="text-[10px] text-[#858585]">Del</span>
+            <span className="text-[10px] text-[#9C9C9C] font-mono">Del</span>
           </button>
 
-          <div className="my-1 border-t border-[#3c3c3c]" />
+          <div className="my-1 border-t border-[#303030]" />
 
           <button
             onClick={() => {
               navigator.clipboard?.writeText(contextMenu.node.path);
               setContextMenu(null);
             }}
-            className="w-full px-3 py-1.5 text-left hover:bg-[#094771] hover:text-white flex items-center space-x-2"
+            className="w-full px-3 py-1.5 text-left hover:bg-[#191919] hover:text-[#F5F4F1] flex items-center space-x-2 transition-colors"
           >
-            <Copy className="w-3.5 h-3.5" />
+            <Copy className="w-3.5 h-3.5 text-[#987654]" />
             <span>Copy Path</span>
           </button>
 
@@ -576,9 +576,9 @@ export const Explorer: React.FC = () => {
                 downloadFileItem(contextMenu.node.path);
                 setContextMenu(null);
               }}
-              className="w-full px-3 py-1.5 text-left hover:bg-[#094771] hover:text-white flex items-center space-x-2"
+              className="w-full px-3 py-1.5 text-left hover:bg-[#191919] hover:text-[#F5F4F1] flex items-center space-x-2 transition-colors"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-3.5 h-3.5 text-[#987654]" />
               <span>Download File</span>
             </button>
           )}

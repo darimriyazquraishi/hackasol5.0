@@ -20,7 +20,7 @@ export class TerminalEmulator {
 
   getPrompt(): string {
     const displayPath = this.currentPath === '/' ? '~' : `~${this.currentPath}`;
-    return `developer@vscode-web:${displayPath}$ `;
+    return `engineer@lumi:${displayPath}$ `;
   }
 
   execute(

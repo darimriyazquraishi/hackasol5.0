@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MessageSquare,
   Code2,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { LumiLogo } from '../Branding/LumiLogo';
+import { formatConversationAge } from '../../services/timeUtils';
 
 export const LeftSidebar: React.FC = () => {
   const {
@@ -33,6 +34,30 @@ export const LeftSidebar: React.FC = () => {
     e.stopPropagation();
     deleteConversation(id);
   };
+
+  // Live timer tick so conversation creation ages update periodically without full page reload
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTick(prev => prev + 1);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Shortcut to quickly start a new conversation (Alt+N or Ctrl+Shift+N)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.altKey && e.key.toLowerCase() === 'n') ||
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'n')
+      ) {
+        e.preventDefault();
+        createConversation();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [createConversation]);
 
   return (
     <aside
@@ -59,19 +84,38 @@ export const LeftSidebar: React.FC = () => {
         </div>
 
         {/* Quick New Conversation Action */}
-        <div className="p-2 border-b border-[#303030] shrink-0">
-          <button
-            onClick={createConversation}
-            title="Start New Conversation"
-            className={`w-full py-2 rounded flex items-center justify-center space-x-2 text-xs font-medium transition-colors ${
-              leftNavCollapsed
-                ? 'bg-[#191919] hover:bg-[#202020] text-[#F5F4F1] border border-[#303030]'
-                : 'bg-[#987654] hover:bg-[#765B43] text-[#F5F4F1]'
-            }`}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            {!leftNavCollapsed && <span>New Conversation</span>}
-          </button>
+        <div className="p-2.5 border-b border-[#303030] shrink-0">
+          {leftNavCollapsed ? (
+            <button
+              onClick={createConversation}
+              title="Start New Conversation (Alt+N)"
+              className="group relative w-10 h-10 mx-auto rounded-xl bg-[#121212] hover:bg-[#181818] border border-[#2c2c2c] hover:border-[#987654] text-[#987654] hover:text-[#F5F4F1] flex items-center justify-center transition-all duration-200 active:scale-95 shadow-sm hover:shadow-[0_2px_10px_rgba(152,118,84,0.18)] cursor-pointer"
+            >
+              <Plus className="w-4 h-4 stroke-[2.2] transition-transform duration-300 group-hover:rotate-90 text-[#987654] group-hover:text-[#F5F4F1]" />
+            </button>
+          ) : (
+            <button
+              onClick={createConversation}
+              title="Start New Conversation (Alt+N)"
+              className="group relative w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[#121212] hover:bg-[#191919] border border-[#2c2c2c] hover:border-[#987654]/70 transition-all duration-200 active:scale-[0.98] shadow-sm hover:shadow-[0_2px_12px_rgba(152,118,84,0.12)] cursor-pointer overflow-hidden"
+            >
+              {/* Subtle top hairline highlight */}
+              <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-[#987654]/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <div className="w-5 h-5 rounded-md bg-[#987654]/15 border border-[#987654]/30 flex items-center justify-center text-[#987654] group-hover:bg-[#987654] group-hover:text-[#F5F4F1] group-hover:border-[#987654] transition-all duration-200 shadow-sm shrink-0">
+                  <Plus className="w-3.5 h-3.5 stroke-[2.4] transition-transform duration-300 group-hover:rotate-90" />
+                </div>
+                <span className="text-xs font-medium text-[#F5F4F1] tracking-wide truncate">
+                  New Conversation
+                </span>
+              </div>
+
+              <kbd className="text-[10px] font-mono text-[#9C9C9C]/60 px-1.5 py-0.5 rounded bg-[#080808] border border-[#242424] group-hover:border-[#383838] group-hover:text-[#D5D2CC] transition-colors shrink-0">
+                Alt+N
+              </kbd>
+            </button>
+          )}
         </div>
 
         {/* Conversation History Section */}
@@ -104,8 +148,11 @@ export const LeftSidebar: React.FC = () => {
 
                     <div className="min-w-0 pr-1 flex-1">
                       <div className="truncate text-xs text-[#F5F4F1]">{conv.title}</div>
-                      <div className="text-[10px] text-[#9C9C9C] font-mono mt-0.5">
-                        {conv.lastUpdated}
+                      <div
+                        className="text-[10px] text-[#9C9C9C] font-mono mt-0.5"
+                        title={conv.createdAt ? `Created ${new Date(conv.createdAt).toLocaleString()}` : undefined}
+                      >
+                        {formatConversationAge(conv)}
                       </div>
                     </div>
 

@@ -60,7 +60,7 @@ export const BottomPanel: React.FC = () => {
   return (
     <div
       style={{ height: isMaximized ? '85%' : `${height}px` }}
-      className="bg-[#181818] border-t border-[#2b2b2b] flex flex-col w-full relative shrink-0 select-none z-20"
+      className="bg-[#0c0c0c] border-t border-[#303030] flex flex-col w-full relative shrink-0 select-none z-20"
     >
       {/* Top resize border */}
       {!isMaximized && (
@@ -70,12 +70,12 @@ export const BottomPanel: React.FC = () => {
             isResizingRef.current = true;
             document.body.style.cursor = 'row-resize';
           }}
-          className="absolute top-0 left-0 right-0 h-1 cursor-row-resize hover:bg-[#007acc] transition-colors z-30"
+          className="absolute top-0 left-0 right-0 h-1 cursor-row-resize hover:bg-[#987654] transition-colors z-30"
         />
       )}
 
       {/* Panel Tab Header */}
-      <div className="h-8 bg-[#181818] border-b border-[#2b2b2b] flex items-center justify-between px-3 text-xs select-none">
+      <div className="h-8 bg-[#0c0c0c] border-b border-[#303030] flex items-center justify-between px-3 text-xs select-none">
         {/* Tabs */}
         <div className="flex items-center space-x-4 h-full">
           {tabs.map(tab => {
@@ -86,13 +86,13 @@ export const BottomPanel: React.FC = () => {
                 onClick={() => setPanelTab(tab.id)}
                 className={`h-full flex items-center space-x-1.5 border-b-2 text-[11px] font-semibold tracking-wider transition-colors uppercase ${
                   isActive
-                    ? 'text-white border-[#0078d4]'
-                    : 'text-[#858585] border-transparent hover:text-[#cccccc]'
+                    ? 'text-[#F5F4F1] border-[#987654]'
+                    : 'text-[#9C9C9C] border-transparent hover:text-[#F5F4F1]'
                 }`}
               >
                 <span>{tab.label}</span>
                 {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#3c3c3c] text-[#cccccc]">
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#191919] border border-[#303030] text-[#D5D2CC]">
                     {tab.badge}
                   </span>
                 )}
@@ -102,18 +102,18 @@ export const BottomPanel: React.FC = () => {
         </div>
 
         {/* Right Action Icons */}
-        <div className="flex items-center space-x-2 text-[#858585]">
+        <div className="flex items-center space-x-2 text-[#9C9C9C]">
           <button
             onClick={() => setIsMaximized(!isMaximized)}
             title={isMaximized ? 'Restore Panel Size' : 'Maximize Panel Size'}
-            className="p-1 hover:text-white hover:bg-[#2b2b2b] rounded"
+            className="p-1 hover:text-[#F5F4F1] hover:bg-[#191919] rounded transition-colors"
           >
             <Maximize2 className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setPanelVisible(false)}
             title="Close Panel (Ctrl+`)"
-            className="p-1 hover:text-white hover:bg-[#2b2b2b] rounded"
+            className="p-1 hover:text-[#F5F4F1] hover:bg-[#191919] rounded transition-colors"
           >
             <X className="w-3.5 h-3.5" />
           </button>

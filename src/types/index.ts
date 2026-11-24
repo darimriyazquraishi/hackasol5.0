@@ -371,5 +371,7 @@ export interface ConversationThread {
   id: string;
   title: string;
   lastUpdated: string;
+  createdAt?: number;
+  updatedAt?: number;
   messages: ChatMessage[];
 }

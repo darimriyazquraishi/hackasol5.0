@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../../context/WorkspaceContext';
 import { AssistantMessage } from '../../types';
+import { SendButton, LumiButton } from '../Common/Button';
 
 export const AntigravityAssistant: React.FC = () => {
   const {
@@ -207,7 +208,7 @@ export const AntigravityAssistant: React.FC = () => {
   return (
     <div
       style={{ width: `${panelWidth}px` }}
-      className="bg-[#18191c] border-l border-[#2e3035] flex flex-col h-full relative shrink-0 select-none overflow-hidden z-20 font-sans"
+      className="bg-[#0c0c0c] border-l border-[#303030] flex flex-col h-full relative shrink-0 select-none overflow-hidden z-20 font-sans"
     >
       {/* Resizable handle on the left edge */}
       <div
@@ -220,29 +221,29 @@ export const AntigravityAssistant: React.FC = () => {
       />
 
       {/* Header */}
-      <div className="h-10 px-3 bg-[#1e1f22] border-b border-[#2e3035] flex items-center justify-between shrink-0">
+      <div className="h-10 px-3 bg-[#121212] border-b border-[#303030] flex items-center justify-between shrink-0">
         <div className="flex items-center space-x-2">
           <div className="w-5 h-5 flex items-center justify-center shrink-0 text-[#987654]">
             <Sparkles className="w-4 h-4" />
           </div>
-          <span className="font-semibold text-xs tracking-wide text-white font-mono">
+          <span className="font-semibold text-xs tracking-wide text-[#F5F4F1] font-mono">
             LUMI Coding Agent
           </span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#26272b] text-[#987654] border border-[#3e4046] font-mono">
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#191919] text-[#987654] border border-[#303030] font-mono">
             qwen2.5:1.5b
           </span>
         </div>
 
         <button
           onClick={() => setAssistantVisible(false)}
-          className="p-1 hover:bg-[#2b2c30] rounded text-[#858585] hover:text-white transition-colors"
+          className="p-1 hover:bg-[#191919] rounded text-[#9C9C9C] hover:text-[#F5F4F1] transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
       {/* Project Context Pill */}
-      <div className="px-3 py-1.5 bg-[#141517] border-b border-[#25262a] flex items-center justify-between text-[11px] font-mono text-[#858585]">
+      <div className="px-3 py-1.5 bg-[#080808] border-b border-[#303030] flex items-center justify-between text-[11px] font-mono text-[#9C9C9C]">
         <div className="flex items-center space-x-1.5 truncate">
           <Layers className="w-3 h-3 text-[#987654] shrink-0" />
           <span className="text-[#D5D2CC] truncate">
@@ -250,7 +251,7 @@ export const AntigravityAssistant: React.FC = () => {
           </span>
         </div>
         {activeFile && (
-          <span className="text-[#737373] text-[10px] truncate max-w-[120px]">
+          <span className="text-[#9C9C9C] text-[10px] truncate max-w-[120px]">
             {activeFile.name}
           </span>
         )}
@@ -265,23 +266,23 @@ export const AntigravityAssistant: React.FC = () => {
               msg.sender === 'user' ? 'items-end' : 'items-start'
             }`}
           >
-            <div className="text-[10px] text-[#737373] font-mono px-1">
+            <div className="text-[10px] text-[#9C9C9C] font-mono px-1">
               {msg.sender === 'user' ? 'You' : 'LUMI Agent'} • {msg.timestamp}
             </div>
 
             <div
               className={`p-3 rounded-xl text-xs leading-relaxed max-w-[92%] space-y-2.5 ${
                 msg.sender === 'user'
-                  ? 'bg-[#26272b] text-white border border-[#3e4046]'
-                  : 'bg-[#1b1c20] text-[#D5D2CC] border border-[#2e3035] w-full'
+                  ? 'bg-[#191919] text-[#F5F4F1] border border-[#303030]'
+                  : 'bg-[#121212] text-[#D5D2CC] border border-[#303030] w-full'
               }`}
             >
               <div className="whitespace-pre-wrap font-sans">{msg.content}</div>
 
               {/* Proposed Code Diff for Approval (Part 5.8) */}
               {msg.proposedDiff && (
-                <div className="p-2.5 rounded-lg bg-[#121316] border border-[#987654]/70 space-y-2 font-mono">
-                  <div className="flex items-center justify-between text-[11px] border-b border-[#2a2b2f] pb-1.5">
+                <div className="p-2.5 rounded-lg bg-[#080808] border border-[#987654]/50 space-y-2 font-mono">
+                  <div className="flex items-center justify-between text-[11px] border-b border-[#303030] pb-1.5">
                     <div className="flex items-center space-x-1.5 text-[#987654] font-semibold">
                       <FileCode2 className="w-3.5 h-3.5" />
                       <span>{msg.proposedDiff.filePath}</span>
@@ -294,25 +295,27 @@ export const AntigravityAssistant: React.FC = () => {
                     )}
                   </div>
 
-                  <pre className="p-2 rounded bg-[#080808] border border-[#222] text-[10px] text-[#D5D2CC] overflow-x-auto max-h-48">
+                  <pre className="p-2 rounded bg-[#0c0c0c] border border-[#303030] text-[10px] text-[#D5D2CC] overflow-x-auto max-h-48">
                     <code>{msg.proposedDiff.proposedCode}</code>
                   </pre>
 
                   {!msg.proposedDiff.applied && (
                     <div className="flex items-center space-x-2 pt-1">
-                      <button
+                      <LumiButton
+                        variant="primary"
+                        size="xs"
+                        icon={<Check className="w-3 h-3" />}
                         onClick={() => handleApplyDiff(msg.id, msg.proposedDiff!)}
-                        className="px-2.5 py-1 rounded bg-[#987654] hover:bg-[#765B43] text-white text-[11px] font-semibold flex items-center space-x-1 transition-colors cursor-pointer"
                       >
-                        <Check className="w-3 h-3" />
-                        <span>Apply Modification</span>
-                      </button>
-                      <button
+                        Apply Modification
+                      </LumiButton>
+                      <LumiButton
+                        variant="secondary"
+                        size="xs"
                         onClick={() => handleRejectDiff(msg.id)}
-                        className="px-2 py-1 rounded bg-[#222] hover:bg-[#2b2b2b] text-[#999] text-[11px] transition-colors cursor-pointer"
                       >
-                        Reject
-                      </button>
+                        Discard
+                      </LumiButton>
                     </div>
                   )}
                 </div>
@@ -322,7 +325,7 @@ export const AntigravityAssistant: React.FC = () => {
         ))}
 
         {isThinking && (
-          <div className="flex items-center space-x-2 p-2.5 rounded-lg bg-[#1b1c20] border border-[#2e3035] text-xs font-mono text-[#987654]">
+          <div className="flex items-center space-x-2 p-2.5 rounded-lg bg-[#121212] border border-[#303030] text-xs font-mono text-[#987654]">
             <div className="w-3 h-3 rounded-full border border-[#987654] border-t-transparent animate-spin" />
             <span>Analyzing project with local model...</span>
           </div>
@@ -332,8 +335,8 @@ export const AntigravityAssistant: React.FC = () => {
       </div>
 
       {/* Composer Input */}
-      <div className="p-3 border-t border-[#2e3035] bg-[#1a1b1e] shrink-0">
-        <div className="relative bg-[#222327] border border-[#36383e] focus-within:border-[#987654] rounded-xl p-2 transition-colors">
+      <div className="p-3 border-t border-[#303030] bg-[#0c0c0c] shrink-0">
+        <div className="relative bg-[#141414] border border-[#303030] focus-within:border-[#987654] rounded-xl p-2 transition-colors">
           <textarea
             ref={textareaRef}
             rows={2}
@@ -341,22 +344,17 @@ export const AntigravityAssistant: React.FC = () => {
             onChange={e => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={activeProject ? "Ask coding agent about this project..." : "Create or open a project first..."}
-            className="w-full bg-transparent border-none outline-none text-xs text-white placeholder-[#737373] resize-none font-sans leading-relaxed"
+            className="w-full bg-transparent border-none outline-none text-xs text-[#F5F4F1] placeholder-[#737373] resize-none font-sans leading-relaxed"
           />
 
-          <div className="flex items-center justify-between pt-1 border-t border-[#2c2d33] text-xs">
-            <span className="text-[10px] font-mono text-[#737373]">Enter to send, Shift+Enter for newline</span>
-            <button
+          <div className="flex items-center justify-between pt-1 border-t border-[#303030] text-xs">
+            <span className="text-[10px] font-mono text-[#9C9C9C]">Enter to send, Shift+Enter for newline</span>
+            <SendButton
               onClick={handleSendMessage}
               disabled={!inputValue.trim() || isThinking}
-              className={`p-1.5 rounded-lg transition-colors ${
-                inputValue.trim() && !isThinking
-                  ? 'bg-[#987654] hover:bg-[#765B43] text-white cursor-pointer'
-                  : 'bg-[#2b2c31] text-[#666] cursor-not-allowed'
-              }`}
-            >
-              <ArrowUp className="w-3.5 h-3.5" />
-            </button>
+              isGenerating={isThinking}
+              size="sm"
+            />
           </div>
         </div>
       </div>
